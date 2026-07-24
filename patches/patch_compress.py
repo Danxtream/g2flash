@@ -6,9 +6,11 @@ Build a CFW image for g2_2.2.6.10 with:
       targets the old 2.2.4.34 base and is not part of this build),
   (2) the zlib image glue (multi-mode load_image_z, incl. keepalive kick + buzzer),
       entered at image_deferred,
-  (3) a CFW capability-advertisement field (protobuf field 100) appended to the
-      sid=0x09 settings READ response, and
-  (4) EvenHub long-press + ring release-long-press forwarding.
+  (3) a CFW capability-advertisement field (protobuf field 100) plus a private,
+      fail-open Faceclaw wake-ownership lease on sid=0x09,
+  (4) conditional idle-double-tap dashboard deferral and conditional stock
+      Even-AI suppression while that lease is valid, and
+  (5) EvenHub long-press + ring release-long-press forwarding.
 
 REBASED 2.2.4.34 -> 2.2.6.10 (2026-07-16). Every address below was re-derived and
 cross-checked; see notes/fw-2.2.6.10-cfw-rebase.md for the full table and the evidence
@@ -98,32 +100,23 @@ SNAPSHOT_BL_SITES      = {   # both decode to `bl 0x45a568` (verified)
     0x4dbd5c: "7e f7 04 fc",   # multi-fragment last-fragment complete
 }
 SETTINGS_BL_SITE       = (0x49bb68, "d9 f7 d4 ff")  # bl FUN_00475b14 (aa21 send) -> wrapper
+# nanopb decode in pb_service_setting's inbound parser. The wrapper scans raw
+# unknown field 101 before the stock decoder discards it, then tail-calls decode.
+SETTINGS_DECODE_BL_SITE = (0x49b268, "f4 f7 5a ff") # bl FUN_00490120 -> settings_decode_wrapper
+# The two REQUEST_DISPLAY_START_UP(1) sites reached by the local and mirrored
+# idle double-tap paths. Both must defer or the peer lens can still flash.
+DISPLAY_START_BL_SITES = {
+    0x45c65a: "08 f0 68 fa",
+    0x45c71a: "08 f0 08 fa",
+}
 GESTURE_LONGPRESS_SITE = (0x442e92, "28 f0 03 f8")  # bl FUN_0046ae9c -> evenhub_longpress
 GESTURE_RELEASE_SITE   = (0x4431c2, "1c f0 9b fb")  # bl FUN_0045f8fc -> ring_release
-# Wakeword ("Hey Even") capture. The GX8002 voice codec raises cmd_id 0x0c, which the
-# audio thread (2.2.4.34 audio_recv_voice_event @ 0x54e47e) turns into the local Even AI
-# wake action. That action does TWO independent things:
-#   1. posts EvenAIDataPackage{command_id=CTRL, ctrl.status=EVEN_AI_WAKE_UP} to service 7,
-#      which the phone sees as an `aa 21` notify on sid 0x07, and
-#   2. calls even_ai_display_ctrl(START), which foregrounds the stock Even AI app over
-#      whatever EvenHub app is running and draws the "Even AI listening" modal (then, with
-#      no official phone app answering, errors out a few seconds later).
-# We want (1) without (2), so faceclaw can own the interaction. This flips the op==START
-# dispatch test at the head of even_ai_display_ctrl from `bne` to an unconditional `b`,
-# so START falls through to the op==UPDATE/op==STOP compares (which fail for op 0) and the
-# function just returns. UPDATE and STOP keep working, so the phone-driven exit path and
-# the stock timeout teardown are both untouched. The notify in (1) is emitted earlier in
-# the chain (2.2.4.34: FUN_004b0b54 -> FUN_005086e0) and is not affected.
-#
-# Both encodings are 2-byte Thumb to the same target (imm8 0x34 / imm11 0x034), so this is
-# a pure in-place edit with no size change.
-# Site found with firmware/find_site.py from the 2.2.4.34 address 0x506f44; the matcher
-# reported two candidates and this one was confirmed by its `bl 0x45a568` (the
-# independently-derived 2.2.6.10 lens_side), by the surrounding window matching
-# 2.2.4.34's even_ai_display_ctrl head instruction-for-instruction, and by the following
-# `movs r0,#0x67` being the same source line number (103) in both versions.
-EVENAI_START_SITE      = (0x4e1fec, "34 d1")        # bne 0x4e2058 (op != START)
-EVENAI_START_NEW       = "34 e0"                    # b   0x4e2058 (always skip START)
+# Wakeword ("Hey Even") capture. The old patch unconditionally changed the
+# op==START branch in even_ai_display_ctrl, which also broke the official Even
+# app. Replace the first four bytes with a B.W trampoline: the injected entry
+# reproduces the overwritten push/mov and suppresses START only under Faceclaw's
+# volatile lease; with no lease it resumes at 0x4e1fd6 byte-for-byte stock.
+EVENAI_ENTRY_SITE      = (0x4e1fd2, "7f b5 06 00")
 
 def enc_bl(pc, target):
     """Encode a Thumb-2 BL (T1) from instruction address `pc` to `target`."""
@@ -140,6 +133,23 @@ def enc_bl(pc, target):
     j2 = (~(i2 ^ S)) & 1
     hw1 = 0xF000 | (S << 10) | imm10
     hw2 = 0xD000 | (j1 << 13) | (j2 << 11) | imm11
+    return bytes([hw1 & 0xFF, hw1 >> 8, hw2 & 0xFF, hw2 >> 8]).hex()
+
+def enc_bw(pc, target):
+    """Encode an unconditional Thumb-2 B.W (T4)."""
+    off = target - (pc + 4)
+    assert off % 2 == 0, f"B.W target {target:#x} not halfword-aligned from {pc:#x}"
+    assert -(1 << 24) <= off < (1 << 24), f"B.W {pc:#x}->{target:#x} out of +-16MB range"
+    imm = (off >> 1) & 0xFFFFFF
+    S = (imm >> 23) & 1
+    i1 = (imm >> 22) & 1
+    i2 = (imm >> 21) & 1
+    imm10 = (imm >> 11) & 0x3FF
+    imm11 = imm & 0x7FF
+    j1 = (~(i1 ^ S)) & 1
+    j2 = (~(i2 ^ S)) & 1
+    hw1 = 0xF000 | (S << 10) | imm10
+    hw2 = 0x9000 | (j1 << 13) | (j2 << 11) | imm11
     return bytes([hw1 & 0xFF, hw1 >> 8, hw2 & 0xFF, hw2 >> 8]).hex()
 
 def build_blob(src):
@@ -194,6 +204,9 @@ def layout(img):
     snapshot_addr  = base + _fn(built, "snapshot_side")["offset"]
     deferred_addr  = base + _fn(built, "image_deferred")["offset"]
     settings_addr  = base + _fn(built, "settings_send_wrapper")["offset"]
+    settings_decode_addr = base + _fn(built, "settings_decode_wrapper")["offset"]
+    display_start_addr = base + _fn(built, "faceclaw_display_start")["offset"]
+    evenai_entry_addr = base + _fn(built, "faceclaw_evenai_display_entry")["offset"]
     longpress_addr = base + _fn(built, "evenhub_longpress")["offset"]
     release_addr   = base + _fn(built, "ring_release")["offset"]
 
@@ -241,13 +254,20 @@ def layout(img):
         # redirect the settings responder send -> settings_send_wrapper (caps field 100)
         (g2f(SETTINGS_BL_SITE[0]), SETTINGS_BL_SITE[1], enc_bl(SETTINGS_BL_SITE[0], settings_addr),
          "bl settings_send_wrapper (append caps field 100)"),
+        (g2f(SETTINGS_DECODE_BL_SITE[0]), SETTINGS_DECODE_BL_SITE[1],
+         enc_bl(SETTINGS_DECODE_BL_SITE[0], settings_decode_addr),
+         "bl settings_decode_wrapper (Faceclaw lease field 101)"),
+        *[(g2f(site), orig, enc_bl(site, display_start_addr),
+           f"bl faceclaw_display_start @ {site:#x} (fail-open double-tap takeover)")
+          for site, orig in DISPLAY_START_BL_SITES.items()],
         # EvenHub long-press + ring release-long-press forwarding
         (g2f(GESTURE_LONGPRESS_SITE[0]), GESTURE_LONGPRESS_SITE[1],
          enc_bl(GESTURE_LONGPRESS_SITE[0], longpress_addr), "bl evenhub_longpress (replaces force-quit dialog)"),
         (g2f(GESTURE_RELEASE_SITE[0]), GESTURE_RELEASE_SITE[1],
          enc_bl(GESTURE_RELEASE_SITE[0], release_addr), "bl ring_release (forward ring release-long-press)"),
-        (g2f(EVENAI_START_SITE[0]), EVENAI_START_SITE[1], EVENAI_START_NEW,
-         "even_ai_display_ctrl: skip Even AI app START (wakeword -> phone)"),
+        (g2f(EVENAI_ENTRY_SITE[0]), EVENAI_ENTRY_SITE[1],
+         enc_bw(EVENAI_ENTRY_SITE[0], evenai_entry_addr),
+         "even_ai_display_ctrl entry -> conditional Faceclaw lease trampoline"),
     ]
     return bytes(append), in_place, (idx, comp_off, old_ps)
 

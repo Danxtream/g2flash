@@ -272,6 +272,15 @@ typedef struct {
     uint8_t  seq_count;                   /* steps in the current sequence (0 = idle) */
     uint8_t  seq_cursor;                  /* index of the next step to play */
     uint8_t  seq_steps[CFW_SEQ_MAX * 5];  /* freqLo,freqHi,duty,msLo,msHi per step */
+    /* --- Faceclaw wake takeover. A volatile, fail-open ownership lease lets
+     * Faceclaw defer the stock dashboard only while its phone process is
+     * demonstrably alive. See settings_ext.c for the private sid-0x09 control
+     * protocol and the double-tap / Even AI entry hooks. */
+    uint32_t wake_lease_deadline;          /* FW_MS_TICK deadline; 0 = no owner */
+    uint32_t wake_fallback_timer;          /* one-shot stock-dashboard fallback */
+    uint16_t wake_nonce;                   /* current pending wake, 0 = none */
+    uint8_t  wake_dashboard_pending;       /* dashboard request held for Faceclaw */
+    uint8_t  wake_notify_buf[16];          /* stable storage for sid-0x09 notify */
 } customCfwContext;
 
 #define CFW_CTX_SLOT  0x20003ffcU    /* ble_msgrx context +0x0 (spare, never freed) */
@@ -1024,10 +1033,10 @@ static int load_bmp_fast(uint8_t *state, const uint8_t *bmp, uint32_t len) {
 
 /* Fetch (or lazily create) the CFW singleton context. Its pointer lives in a
  * spare word of the BLE-RX task context (CFW_CTX_SLOT); we only ever touch that
- * word from here, i.e. only after a CFW image message has arrived. The slot ptr
- * is range-checked to SRAM and the struct's magic verified before trusting it, so
- * warm-reset garbage can't be mistaken for a live context. Returns 0 if the
- * one-time struct malloc fails. */
+ * word through this helper (image traffic or the private settings lease). The
+ * slot ptr is range-checked to SRAM and the struct's magic verified before
+ * trusting it, so warm-reset garbage can't be mistaken for a live context.
+ * Returns 0 if the one-time struct malloc fails. */
 static customCfwContext *getCustomCfwContext(void) {
     customCfwContext *ctx = *(customCfwContext **)CFW_CTX_SLOT;
     if (((uintptr_t)ctx & 3) == 0 && (uintptr_t)ctx - 0x20000000u < 0x00800000u &&
@@ -1426,4 +1435,3 @@ int image_deferred(uint8_t *state, uint8_t *src, uint32_t len) {
     (void)src; (void)len;
     return r;                                             /* 0 if nothing pending (no dup) */
 }
-
