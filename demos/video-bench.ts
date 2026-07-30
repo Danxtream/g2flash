@@ -7,18 +7,13 @@
 // a CFW display path. The 4bpp modes that go through the firmware's shadow (3 and
 // 6) run their pixels through RLE before deflate — their payload is zlib(rle(px)),
 // not zlib(px) — since runs of one gray level are what this content is made of.
-// G2_MODE picks the encoding (handy for comparing 4bpp-BMP vs 8bpp
-// compressibility and throughput):
-//   full  (default) 8bpp: every frame -> mode 2 (full 8bpp frame, raw pixels)
-//   delta           4bpp: first frame mode 2, rest mode 3 (bounding-box update)
-//   bmp             4bpp: every frame -> mode 1 (full 4bpp indexed BMP)
-//   raw4            4bpp: every frame -> mode 6 (headerless 4bpp, fast expander)
+// G2_MODE picks the encoding:
+//   delta (default) 4bpp: mode-6 keyframe, then mode-3 bounding-box updates
+//   raw4            4bpp: every frame -> mode 6 (headerless packed shadow)
 //   lz4             4bpp: STOCK 2.2.6.10 path — 4bpp BMP, LZ4'd, CompressMode=2
-// 8bpp carries a full byte per pixel (the panel requantizes to ~16 levels);
-// 4bpp is half the raw size before compression. `bmp` (mode 1) runs through the
-// stock BMP loader, which decodes with two function calls per pixel; `raw4`
-// (mode 6) sends headerless 4bpp and expands it on-device with a plain nibble
-// copy, so it gets the 4bpp airtime without the stock decoder's CPU cost.
+// The custom modes use the fixed 580x300 logical shadow while their EvenHub
+// carrier remains 576x288. `raw4` sends that shadow in full; `delta` sends only
+// the bounding box that changed after its initial keyframe.
 // `delta` sends only the bounding box of pixels that changed vs the previous
 // frame (as 4bpp), so for mostly-static content like Bad Apple it moves very few
 // pixels per frame — the cheapest mode both on wire and on-device CPU, at the
@@ -41,12 +36,12 @@
 //   ffmpeg -i bad_apple.mp4 -vf "fps=30,scale=288:144:flags=area,format=gray" bad_apple.gif
 //
 // Env:
-//   G2_IMG_W / G2_IMG_H   target size (default 288x144)
+//   G2_IMG_W / G2_IMG_H   target size (custom modes require 580x300)
 //   G2_IMG_THRESHOLD      >=0 = 1-bit threshold; -1 = grayscale (default -1)
 //   G2_MAX_FRAMES         cap frame count (default 0 = all)
 //   G2_FRAME_STRIDE       use every Nth decoded frame (default 1)
 //   G2_KEYFRAME_INTERVAL  (delta mode) force a full frame every N (default 0 = only the first)
-//   G2_MODE               "full" (default), "delta", "bmp", "raw4", or "lz4" (see above)
+//   G2_MODE               "delta" (default), "raw4", or "lz4" (see above)
 //   G2_DRY_RUN=1          decode+compress+report only, don't connect/stream
 //   G2_MEASURE_PERSIST=1  also report frame sizes if zlib state persisted across
 //                         frames (measurement only; firmware doesn't do this yet)
@@ -86,21 +81,24 @@ import { GifReader } from "omggif";
 import { lz4CompressBlock } from "./lz4";
 
 const ACK_MS = 12_000;
-const W = Math.max(16, Math.min(576, Number(process.env.G2_IMG_W ?? "288")));
-const H = Math.max(16, Math.min(288, Number(process.env.G2_IMG_H ?? "144")));
+const MODE = (process.env.G2_MODE ?? "delta").toLowerCase();
+if (!["delta", "raw4", "lz4"].includes(MODE)) {
+  console.error(`G2_MODE must be one of delta|raw4|lz4 (got "${MODE}")`);
+  process.exit(1);
+}
+const LZ4 = MODE === "lz4";
+const W = Math.max(16, Math.min(LZ4 ? 576 : 580, Number(process.env.G2_IMG_W ?? (LZ4 ? "288" : "580"))));
+const H = Math.max(16, Math.min(LZ4 ? 288 : 300, Number(process.env.G2_IMG_H ?? (LZ4 ? "144" : "300"))));
+if (!LZ4 && MODE==="raw4" && (W !== 580 || H !== 300)) {
+  console.error("CFW raw4/delta modes use a fixed 580x300 logical screen");
+  process.exit(1);
+}
 const THRESHOLD = Math.max(-1, Math.min(255, Number(process.env.G2_IMG_THRESHOLD ?? "-1")));
 const MAX_FRAMES = Math.max(0, Number(process.env.G2_MAX_FRAMES ?? "0"));
 const STRIDE = Math.max(1, Number(process.env.G2_FRAME_STRIDE ?? "1"));
 const KEYFRAME_INTERVAL = Math.max(0, Number(process.env.G2_KEYFRAME_INTERVAL ?? "0"));
-const MODE = (process.env.G2_MODE ?? "full").toLowerCase(); // "full"|"delta"|"bmp"|"raw4"|"lz4"
-if (!["full", "delta", "bmp", "raw4", "lz4"].includes(MODE)) {
-  console.error(`G2_MODE must be one of full|delta|bmp|raw4|lz4 (got "${MODE}")`);
-  process.exit(1);
-}
-const BMP4 = MODE === "bmp";    // mode 1: full 4bpp BMP per frame (stock BMP path)
-const RAW4 = MODE === "raw4";   // mode 6: headerless 4bpp, our fast expander
-const DELTA = MODE === "delta"; // mode 2 keyframes + mode 3 XOR deltas
-const LZ4 = MODE === "lz4";     // stock 2.2.6.10: 4bpp BMP as an LZ4 block, CompressMode=2
+const RAW4 = MODE === "raw4";   // mode 6: full headerless packed-4bpp shadow
+const DELTA = MODE === "delta"; // mode 6 keyframes + mode 3 bounding-box deltas
 // Stock firmware sizes its decode buffer as W*H from the container geometry and hands
 // LZ4_decompress_safe that as dstCapacity, so a payload inflating past W*H is refused
 // on-device ("decompress failed"). Catch it here instead of on the lens.
@@ -200,10 +198,10 @@ for (let i = 0; i < total; i++) {
 
   if (i % STRIDE !== 0) continue;
   const gray = rescaleGray(rgba);
-  // In delta mode a frame is a keyframe on the first frame or every Nth; full
-  // and bmp modes send a whole frame every time.
-  //const isKey = !DELTA || prev === null || (KEYFRAME_INTERVAL > 0 && used % KEYFRAME_INTERVAL === 0);
-  const isKey = (i==0);
+  // In delta mode a frame is a keyframe on the first frame or every Nth; raw4
+  // sends a keyframe every time.
+  const isKey = !DELTA || prev === null ||
+    (KEYFRAME_INTERVAL > 0 && used % KEYFRAME_INTERVAL === 0);
   // Build this frame's payload. Simple modes are [mode][zlib(raw)]; the mode-3
   // box carries a 4-byte uncompressed header before its zlib box pixels. For the
   // persist measurement we also track the pre-compression bytes and the length of
@@ -221,24 +219,16 @@ for (let i = 0; i < total; i++) {
       process.exit(1);
     }
     payload = lz4CompressBlock(persistRaw); prefixLen = 0;
-  } else if (BMP4) {
-    // mode 1: full 4bpp indexed BMP (gray 0..255 -> 0..15), zlib-compressed.
-    persistRaw = buildEvenHubBmp(W, H, (x, y) => gray[y * W + x]! >> 4);
-    payload = pack(1, persistRaw); prefixLen = 1;
   } else if (RAW4) {
-    // mode 6: headerless tight 4bpp (gray>>4), RLE'd then deflated, expanded by our
-    // fast on-device expander.
-    persistRaw = rleEncode(pack4bpp(gray));
-    payload = pack(6, persistRaw); prefixLen = 1;
-  } else if (isKey && DELTA) {
-    // delta keyframe: mode 6 full 4bpp — seeds the firmware's persistent 4bpp
-    // shadow (which the box deltas composite onto), unlike an 8bpp mode-2 frame.
+    // mode 6: headerless tight 4bpp (gray>>4), RLE'd then deflated into the
+    // direct-framebuffer shadow.
     persistRaw = rleEncode(pack4bpp(gray));
     payload = pack(6, persistRaw); prefixLen = 1;
   } else if (isKey) {
-    // G2_MODE=full: full 8bpp frame every frame.
-    persistRaw = gray;
-    payload = pack(2, gray); prefixLen = 1;
+    // delta keyframe: mode 6 full 4bpp — seeds the firmware's persistent 4bpp
+    // shadow that subsequent bounding-box deltas composite onto.
+    persistRaw = rleEncode(pack4bpp(gray));
+    payload = pack(6, persistRaw); prefixLen = 1;
   } else {
     // mode 3: bounding-box delta — send only the changed rectangle as 4bpp, RLE'd
     // then deflated.
@@ -435,9 +425,13 @@ try {
     name: `b${suffix}`, items: ["."], containerId: 1, captureEvents: false, magic: nextMagic(), extraContainerNames: [`c${suffix}`],
   });
   if (!(await session.sendPb(0xe0, create.pb, create.magic, { ackTimeoutMs: ACK_MS }))) throw new Error("CREATE did not ack");
-  const container: ImageContainerSpec = {
-    name: `c${suffix}`, containerId: 2, x: Math.max(0, (576 - W) >> 1), y: Math.max(0, (288 - H) >> 1), width: W, height: H,
-  };
+  const container: ImageContainerSpec = LZ4
+    ? {
+        name: `c${suffix}`, containerId: 2,
+        x: Math.max(0, (576 - W) >> 1), y: Math.max(0, (288 - H) >> 1),
+        width: W, height: H,
+      }
+    : { name: `c${suffix}`, containerId: 2, x: 0, y: 0, width: 576, height: 288 };
   const rebuild = buildImageContainers({ containers: [container], magic: nextMagic() });
   if (!(await session.sendPb(0xe0, rebuild.pb, rebuild.magic, { ackTimeoutMs: ACK_MS }))) throw new Error("REBUILD did not ack");
   // Layout is created on the default arm; we stream to IMAGE_SEND_ARM. Let the

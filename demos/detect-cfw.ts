@@ -10,9 +10,9 @@
 //
 // Expected on CFW:
 //     firmware: L=2.2.4.34 R=2.2.4.34
-//     CFW detected: EVENCFW/1 img576 imgz xordelta stereo
-//       contract v1, features: img576, imgz, xordelta, stereo
-//       img576=yes imgz=yes xordelta=yes stereo=yes
+//     CFW detected: EVENCFW/5 img576 img580 imgz rle wakelease directfb fbguard
+//       contract v5, features: img576, img580, imgz, rle, wakelease, directfb, fbguard
+//       img576=yes img580=yes imgz=yes rle=yes directfb=yes fbguard=yes
 // Expected on stock:
 //     no CFW capability field — stock firmware (or pre-caps CFW build)
 
@@ -32,7 +32,7 @@ if (!caps) {
   console.log(`CFW detected: ${caps.raw}`);
   console.log(`  contract v${caps.version}, features: ${[...caps.features].join(", ")}`);
   // Example of gating behavior on individual features:
-  for (const f of ["img576", "imgz", "xordelta", "stereo"]) {
+  for (const f of ["img576", "img580", "imgz", "rle", "directfb", "fbguard"]) {
     process.stdout.write(`  ${f}=${hasFeature(caps, f) ? "yes" : "no"}`);
   }
   console.log();

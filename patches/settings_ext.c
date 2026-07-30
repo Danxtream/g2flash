@@ -26,6 +26,8 @@
 //     op 2 RELEASE        -- clear the lease; launch a pending dashboard now
 //     op 3 WAKE_CLAIM     -- phone saw our wake notify; extend fallback to 5s
 //     op 4 WAKE_READY     -- EvenHub frame is ready; cancel the fallback
+//     op 5 FB_ACQUIRE      -- arm/renew a separate 90-second direct-framebuffer lease
+//     op 6 FB_RELEASE      -- release that lease and restore stock compositor repaints
 //
 // A deferred double tap is reported to the phone as field 102:
 //
@@ -50,6 +52,8 @@ typedef void (*display_start_fn)(unsigned app_id, void *arg, unsigned arg_len, v
 #define FACECLAW_OP_RELEASE    2u
 #define FACECLAW_OP_CLAIM      3u
 #define FACECLAW_OP_READY      4u
+#define FACECLAW_OP_FB_ACQUIRE 5u
+#define FACECLAW_OP_FB_RELEASE 6u
 #define FACECLAW_EVENT_WAKE    1u
 #define FACECLAW_LEASE_MS      90000u
 #define FACECLAW_FALLBACK_MS   400u
@@ -190,6 +194,16 @@ static void faceclaw_apply_control(const uint8_t *data, uint32_t len) {
             ctx->wake_nonce = 0;
             if (ctx->wake_fallback_timer) FW_TIMER_STOP(ctx->wake_fallback_timer);
         }
+    } else if (op == FACECLAW_OP_FB_ACQUIRE) {
+        /* A fresh lease must earn preservation with a newly presented direct
+         * frame; a renewal keeps the current one. */
+        if (ctx->direct_lease_deadline == 0 ||
+            (int32_t)(ctx->direct_lease_deadline - FW_MS_TICK) <= 0)
+            ctx->direct_active = 0;
+        ctx->direct_lease_deadline = FW_MS_TICK + FACECLAW_LEASE_MS;
+    } else if (op == FACECLAW_OP_FB_RELEASE) {
+        ctx->direct_lease_deadline = 0;
+        ctx->direct_active = 0;
     }
 }
 
@@ -261,20 +275,21 @@ void faceclaw_evenai_display_entry(void) {
 }
 
 // Capability string "EVENCFW/<ver> <space-separated feature tokens>":
-//   EVENCFW/1  -> magic prefix + contract version (detect: starts-with "EVENCFW/")
+//   EVENCFW/5  -> magic prefix + contract version (detect: starts-with "EVENCFW/")
 //   img576     -> 576x288 image containers (vs stock 288x144 cap)
 //   imgz       -> zlib (DEFLATE) compressed image payloads
-//   xordelta   -> 8bpp XOR-delta frame updates (modes 2/3)
-//   stereo     -> per-lens stereo image pairs (mode 4)
 //   rle        -> compact run-length encoded delta rows
 //   wakelease  -> fail-open Faceclaw ownership of idle wakes / local Even AI
+//   directfb   -> bypass LVGL and copy the packed shadow into the panel framebuffer
+//   img580     -> modes 3/6/8/9 use a 580x300 logical image independent of the carrier
+//   fbguard    -> preserve direct frames across stock widget repaints under a fail-open lease
 //
 // The string is a normal rodata literal now that build.py emits/relocates .rodata
 // (earlier this had to be spelled out byte-by-byte to avoid a rodata section). strlcpy
 // comes from zlib_glue.c, which shares this translation unit via patches_main.c.
 int settings_send_wrapper(int type, int sid, unsigned char *buf, unsigned len) {
     if (sid == 9) {
-        static const char caps[] = "EVENCFW/3 img576 imgz rle wakelease";
+        static const char caps[] = "EVENCFW/5 img576 img580 imgz rle wakelease directfb fbguard";
         unsigned char *p = buf + len;
         p[0] = 0xA2; p[1] = 0x06;                          // field 100, wire type 2: tag 802
         unsigned clen = strlcpy((char *)(p + 3), caps, sizeof(caps));

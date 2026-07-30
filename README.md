@@ -31,9 +31,12 @@ exactly the reviewed image). Run `./build_cfw.sh --help` for options
 The patches in `patches/` add image/display features on top of stock 2.2.6.10:
 
 - **576×288 image containers** (stock caps at 288×144).
-- **zlib-compressed image payloads** and **8bpp XOR-delta** frame updates, for
-  much faster image/video streaming.
-- **Per-lens stereo image pairs**.
+- A **580×300 packed-4bpp logical screen** stored in the 576×288 container's
+  reconstruction allocation and copied directly into the centered 640×480
+  physical framebuffer. A fail-open Faceclaw lease preserves that physical
+  frame when stock swipe-capture widgets request an unrelated repaint.
+- **zlib/RLE-compressed keyframes, bounding-box deltas, and atomic multi-rect
+  updates** for much faster image/video streaming.
 - A **capability-advertisement field** on the settings response, so a connected
   app can detect this firmware and which features it supports.
 
@@ -52,8 +55,9 @@ The patches in `patches/` add image/display features on top of stock 2.2.6.10:
     `cfw_patches.json`. Run it after editing the patch sources:
     `python3 patches/gen_patches.py g2_2.2.6.10.bin patches/cfw_patches.json`
     (or `./build_cfw.sh --update-patches`), then commit the JSON.
-  - `patch_compress.py` — the all-in-one patcher (576 lift + image compression
-    + stereo + capability field); `gen_patches.py` calls it to build the ops.
+  - `patch_compress.py` — the all-in-one patcher (576 carrier lift + image
+    compression + direct framebuffer presentation + capability field);
+    `gen_patches.py` calls it to build the ops.
     Holds every stock-firmware address the patches depend on; see
     `notes/fw-2.2.6.10-cfw-rebase.md` for how they were derived.
   - `patch_img_container_576.py` — standalone tool for just the 576×288 lift.

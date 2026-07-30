@@ -10,7 +10,8 @@ Build a CFW image for g2_2.2.6.10 with:
       fail-open Faceclaw wake-ownership lease on sid=0x09,
   (4) conditional idle-double-tap dashboard deferral and conditional stock
       Even-AI suppression while that lease is valid, and
-  (5) EvenHub long-press + ring release-long-press forwarding.
+  (5) EvenHub long-press + ring release-long-press forwarding, and
+  (6) a 580x300 packed-4bpp shadow copied directly into the physical framebuffer.
 
 REBASED 2.2.4.34 -> 2.2.6.10 (2026-07-16). Every address below was re-derived and
 cross-checked; see notes/fw-2.2.6.10-cfw-rebase.md for the full table and the evidence
@@ -117,6 +118,14 @@ GESTURE_RELEASE_SITE   = (0x4431c2, "1c f0 9b fb")  # bl FUN_0045f8fc -> ring_re
 # reproduces the overwritten push/mov and suppresses START only under Faceclaw's
 # volatile lease; with no lease it resumes at 0x4e1fd6 byte-for-byte stock.
 EVENAI_ENTRY_SITE      = (0x4e1fd2, "7f b5 06 00")
+# The display task copies the composed 576x288 A4 buffer into the physical
+# 640x480 framebuffer at two switch cases. Redirect both calls through
+# display_copy_hook: ordinary refreshes pass through, while a pending Faceclaw
+# shadow replaces the stock compositor copy immediately before panel refresh.
+DISPLAY_COPY_BL_SITES = {
+    0x473c8e: "f8 f7 c1 fe",   # queue message type 3 -> bl FUN_0046ca14
+    0x473d68: "f8 f7 54 fe",   # queue message type 6 -> bl FUN_0046ca14
+}
 
 def enc_bl(pc, target):
     """Encode a Thumb-2 BL (T1) from instruction address `pc` to `target`."""
@@ -209,6 +218,7 @@ def layout(img):
     evenai_entry_addr = base + _fn(built, "faceclaw_evenai_display_entry")["offset"]
     longpress_addr = base + _fn(built, "evenhub_longpress")["offset"]
     release_addr   = base + _fn(built, "ring_release")["offset"]
+    display_copy_addr = base + _fn(built, "display_copy_hook")["offset"]
 
     # --- assemble the appended payload bytes (old_ps .. end) ---
     pad = blob_off - old_ps                     # alignment gap before the blob
@@ -268,6 +278,9 @@ def layout(img):
         (g2f(EVENAI_ENTRY_SITE[0]), EVENAI_ENTRY_SITE[1],
          enc_bw(EVENAI_ENTRY_SITE[0], evenai_entry_addr),
          "even_ai_display_ctrl entry -> conditional Faceclaw lease trampoline"),
+        *[(g2f(site), orig, enc_bl(site, display_copy_addr),
+           f"bl display_copy_hook @ {site:#x} (580x300 direct framebuffer)")
+          for site, orig in DISPLAY_COPY_BL_SITES.items()],
     ]
     return bytes(append), in_place, (idx, comp_off, old_ps)
 
