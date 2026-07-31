@@ -275,13 +275,13 @@ void faceclaw_evenai_display_entry(void) {
 }
 
 // Capability string "EVENCFW/<ver> <space-separated feature tokens>":
-//   EVENCFW/5  -> magic prefix + contract version (detect: starts-with "EVENCFW/")
+//   EVENCFW/6  -> magic prefix + contract version (detect: starts-with "EVENCFW/")
 //   img576     -> 576x288 image containers (vs stock 288x144 cap)
 //   imgz       -> zlib (DEFLATE) compressed image payloads
 //   rle        -> compact run-length encoded delta rows
 //   wakelease  -> fail-open Faceclaw ownership of idle wakes / local Even AI
 //   directfb   -> bypass LVGL and copy the packed shadow into the panel framebuffer
-//   img580     -> modes 3/6/8/9 use a 580x300 logical image independent of the carrier
+//   img640     -> modes 3/6/8/9 use the full 640x480 panel independent of the carrier
 //   fbguard    -> preserve direct frames across stock widget repaints under a fail-open lease
 //
 // The string is a normal rodata literal now that build.py emits/relocates .rodata
@@ -289,7 +289,7 @@ void faceclaw_evenai_display_entry(void) {
 // comes from zlib_glue.c, which shares this translation unit via patches_main.c.
 int settings_send_wrapper(int type, int sid, unsigned char *buf, unsigned len) {
     if (sid == 9) {
-        static const char caps[] = "EVENCFW/5 img576 img580 imgz rle wakelease directfb fbguard";
+        static const char caps[] = "EVENCFW/6 img576 img640 imgz rle wakelease directfb fbguard";
         unsigned char *p = buf + len;
         p[0] = 0xA2; p[1] = 0x06;                          // field 100, wire type 2: tag 802
         unsigned clen = strlcpy((char *)(p + 3), caps, sizeof(caps));

@@ -11,7 +11,7 @@ Build a CFW image for g2_2.2.6.10 with:
   (4) conditional idle-double-tap dashboard deferral and conditional stock
       Even-AI suppression while that lease is valid, and
   (5) EvenHub long-press + ring release-long-press forwarding, and
-  (6) a 580x300 packed-4bpp shadow copied directly into the physical framebuffer.
+  (6) a full-panel 640x480 packed-4bpp shadow copied directly into the physical framebuffer.
 
 REBASED 2.2.4.34 -> 2.2.6.10 (2026-07-16). Every address below was re-derived and
 cross-checked; see notes/fw-2.2.6.10-cfw-rebase.md for the full table and the evidence
@@ -279,7 +279,7 @@ def layout(img):
          enc_bw(EVENAI_ENTRY_SITE[0], evenai_entry_addr),
          "even_ai_display_ctrl entry -> conditional Faceclaw lease trampoline"),
         *[(g2f(site), orig, enc_bl(site, display_copy_addr),
-           f"bl display_copy_hook @ {site:#x} (580x300 direct framebuffer)")
+           f"bl display_copy_hook @ {site:#x} (640x480 direct framebuffer)")
           for site, orig in DISPLAY_COPY_BL_SITES.items()],
     ]
     return bytes(append), in_place, (idx, comp_off, old_ps)

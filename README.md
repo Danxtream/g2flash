@@ -31,9 +31,10 @@ exactly the reviewed image). Run `./build_cfw.sh --help` for options
 The patches in `patches/` add image/display features on top of stock 2.2.6.10:
 
 - **576×288 image containers** (stock caps at 288×144).
-- A **580×300 packed-4bpp logical screen** stored in the 576×288 container's
-  reconstruction allocation and copied directly into the centered 640×480
-  physical framebuffer. A fail-open Faceclaw lease preserves that physical
+- A **full 640×480 packed-4bpp screen** copied directly into the physical
+  framebuffer. The 576×288 carrier's otherwise-unused display allocation holds
+  the shadow, leaving its separate reconstruction allocation fully available
+  for incoming messages. A fail-open Faceclaw lease preserves that physical
   frame when stock swipe-capture widgets request an unrelated repaint.
 - **zlib/RLE-compressed keyframes, bounding-box deltas, and atomic multi-rect
   updates** for much faster image/video streaming.

@@ -37,9 +37,9 @@ On the custom firmware you'll see something like:
 
 ```
 firmware: L=2.2.4.34 R=2.2.4.34
-CFW detected: EVENCFW/5 img576 img580 imgz rle wakelease directfb fbguard
-  contract v5, features: img576, img580, imgz, rle, wakelease, directfb, fbguard
-  img576=yes img580=yes imgz=yes rle=yes directfb=yes fbguard=yes
+CFW detected: EVENCFW/6 img576 img640 imgz rle wakelease directfb fbguard
+  contract v6, features: img576, img640, imgz, rle, wakelease, directfb, fbguard
+  img576=yes img640=yes imgz=yes rle=yes directfb=yes fbguard=yes
 ```
 
 On stock firmware it prints `no CFW capability field`.
@@ -61,7 +61,7 @@ Useful environment variables:
 
 | Var | Default | Meaning |
 |-----|---------|---------|
-| `G2_IMG_W` / `G2_IMG_H` | `580` / `300` | target size (CFW modes are fixed at `580`×`300`; `lz4` defaults to `288`×`144`) |
+| `G2_IMG_W` / `G2_IMG_H` | `640` / `480` | target size (CFW modes are fixed at `640`×`480`; `lz4` defaults to `288`×`144`) |
 | `G2_IMG_THRESHOLD` | `-1` | `>=0` = 1-bit threshold; `-1` = grayscale |
 | `G2_MODE` | `delta` | `delta` = mode-6 keyframe plus mode-3 bounding-box updates; `raw4` = mode-6 full frames; `lz4` = stock compressed BMP. CFW modes RLE pixels before deflate. |
 | `G2_KEYFRAME_INTERVAL` | `0` | in `delta` mode, force a full frame every N |

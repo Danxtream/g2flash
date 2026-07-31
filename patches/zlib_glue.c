@@ -8,7 +8,7 @@
  *
  *   'B' (0x42)  -> raw BMP: decode with our own fast 4bpp decoder (load_bmp_fast).
  *   3           -> [3][l/4][t/2][w/4][h/2][fid16][zlib(rle)]  bounding-box delta: composite a
- *                              tight-4bpp rectangle onto the persistent 580x300
+ *                              tight-4bpp rectangle onto the persistent 640x480
  *                              shadow, then queue a direct physical-framebuffer
  *                              refresh. Box origin/size is quantized (left/width *4,
  *                              top/height *2). Needs a prior mode-6 keyframe.
@@ -43,7 +43,7 @@
  *                              arms that same osTimer for auto-stop. None spin or
  *                              block here. Returns 0 (success).
  *   6           -> [6][zlib(rle)]  headerless 4bpp full frame: inflate + RLE-decode the
- *                              tightly packed 580x300 pixels into the persistent CFW
+ *                              tightly packed 640x480 pixels into the persistent CFW
  *                              shadow (seeding it for mode-3 deltas), then queue a
  *                              direct physical-framebuffer refresh.
  *   7           -> [7][sub]    diagnostic control (no display change): 0 clears the
@@ -63,11 +63,11 @@
  * a stereo shift without duplicating pixels; each lens draws at its own box. For mode 9
  * it carries two rect-sets (left then right); each lens uses its own.
  *
- * Custom modes 3/6/8/9 operate on a fixed 580x300 logical image. The EvenHub
- * container remains 576x288 and is only a transport/reconstruction allocation;
- * cfw_back_buffer reserves the logical image's 4bpp shadow in the tail of that
- * allocation. This explicit separation is what lets the logical image grow beyond
- * the container without asking the stock compositor or container allocator to do so.
+ * Custom modes 3/6/8/9 operate on the full 640x480 physical image. The EvenHub
+ * container remains 576x288 and supplies two 165888-byte allocations: its display
+ * buffer A holds the 153600-byte packed-4bpp shadow, while reconstruction buffer B
+ * remains wholly available for multi-packet messages. Direct mode does not otherwise
+ * use A, so this separation reaches the full panel without another large allocation.
  *
  * RLE (modes 3 and 6 only): those two modes do not deflate the packed 4bpp bytes
  * directly — the pixels are first run-length encoded and the RLE STREAM is what gets
@@ -105,7 +105,7 @@
  * Raw BMP remains on the legacy LVGL path for backwards compatibility. Custom
  * shadow modes bypass LVGL and the stock 576x288-to-640x480 copy: they serialize
  * with the stock display semaphore, and display_copy_hook copies packed 4bpp
- * directly into the centered physical framebuffer before the normal panel refresh.
+ * directly into the physical framebuffer before the normal panel refresh.
  *
  * Self-contained: no external symbols, no writable globals. Firmware entry points
  * are called by absolute constant address (movw/movt + blx, no relocation).
@@ -177,12 +177,12 @@ typedef void (*display_copy_fn)(void);               /* stock 576x288 -> 640x480
 #define PANEL_H 480u
 #define PANEL_STRIDE (PANEL_W / 2u)
 #define PANEL_BYTES (PANEL_STRIDE * PANEL_H)
-#define IMAGE_W 580u
-#define IMAGE_H 300u
+#define IMAGE_W PANEL_W
+#define IMAGE_H PANEL_H
 #define IMAGE_STRIDE (IMAGE_W / 2u)
 #define IMAGE_BYTES (IMAGE_STRIDE * IMAGE_H)
-#define IMAGE_X ((PANEL_W - IMAGE_W) / 2u)
-#define IMAGE_Y ((PANEL_H - IMAGE_H) / 2u)
+#define IMAGE_X 0u
+#define IMAGE_Y 0u
 
 /* --- glasses-side timing: Arm DWT cycle counter, clock derived by calibration -----
  * CYCCNT is a free-running core-cycle counter (~4 ns). To use it we (1) UNLOCK the DWT
@@ -221,9 +221,9 @@ typedef void (*display_copy_fn)(void);               /* stock 576x288 -> 640x480
 
 /* Persistent CFW-owned state that must survive image-container teardown/rebuild.
  * The image container (its display buffer A @ state+0x8 and recon buffer B @
- * state+0xc) is freed and reallocated on rebuild. The packed shadow therefore
- * lives in B only for the lifetime of the current streaming layout and must be
- * seeded by a mode-6 keyframe after every rebuild. The bookkeeping that does
+ * state+0xc) is freed and reallocated on rebuild. The packed shadow lives in A
+ * only for the lifetime of the current streaming layout and must be seeded by a
+ * mode-6 keyframe after every rebuild. The bookkeeping that does
  * need to survive rebuilds is anchored by a pointer to this struct in a spare
  * word of the BLE-RX task context (ble_msgrx, base = *0x004a069c ->
  * 0x20003ffc; only its +0x8/+0xc are used by the firmware, and it is never freed).
@@ -251,8 +251,8 @@ typedef struct {
      * snapshot_side() copies each completed message here (both lenses); image_deferred
      * drains this lens's pending snapshots and runs the worker on each, ignoring the
      * live (possibly-overwritten) recon buffer B. (The 4bpp shadow of the last frame,
-     * needed by mode-3 deltas, lives in each container's own recon-buffer tail — see
-     * cfw_back_buffer — so it's per-container and costs no extra RAM.) */
+     * needed by mode-3 deltas, reuses each container's display buffer A — see
+     * cfw_shadow_buffer — so it's per-container and costs no extra RAM.) */
     cfw_snap snaps[CFW_SNAP_RING];
     uint32_t snap_seq;   /* next push sequence number */
     /* --- diagnostics, overlaid as a text line (verify the fix; should stay clear). Mode
@@ -300,7 +300,7 @@ typedef struct {
 } customCfwContext;
 
 #define CFW_CTX_SLOT  0x20003ffcU    /* ble_msgrx context +0x0 (spare, never freed) */
-#define CFW_CTX_MAGIC 0xC0FFEE60U    /* bumped for the independent framebuffer lease */
+#define CFW_CTX_MAGIC 0xC0FFEE61U    /* bumped for the full-panel shadow allocation */
 
 void *zwrap_alloc(void *opaque, uint32_t items, uint32_t size) {
     (void)opaque;
@@ -348,7 +348,7 @@ static void unpack4bpp(uint8_t *dst, uint32_t dst_stride, const uint8_t *pix,
 static int load_bmp_fast(uint8_t *state, const uint8_t *bmp, uint32_t len);
 static customCfwContext *peekCustomCfwContext(void);
 static customCfwContext *getCustomCfwContext(void);
-static uint8_t *cfw_back_buffer(uint8_t *state);
+static uint8_t *cfw_shadow_buffer(uint8_t *state);
 static void bzero(uint8_t *buf, uint32_t len);
 static int is_shadow_message(const uint8_t *src, uint32_t srclen);
 static int cfw_diag(int has_fid, uint16_t fid);
@@ -628,7 +628,7 @@ static int image_dispatch(uint8_t *state, const uint8_t *src, uint32_t srclen,
         uint32_t dL = rd16(r + 8), dT = rd16(r + 10), dW = rd16(r + 12), dH = rd16(r + 14);
         if (sW == 0 || sH == 0 || sW != dW || sH != dH) return -1;    /* copy = same size */
         if (sL + sW > w || sT + sH > h || dL + dW > w || dT + dH > h) return -1;  /* bounds */
-        uint8_t *shadow = cfw_back_buffer(state);
+        uint8_t *shadow = cfw_shadow_buffer(state);
         if (shadow == 0) return -1;
         rect_copy_4bpp(shadow, (w + 1) >> 1, sL, sT, dL, dT, sW, sH);
         rl_add(rl, dL, dT, dW, dH);                     /* updated region = destination rect */
@@ -652,13 +652,13 @@ static int image_dispatch(uint8_t *state, const uint8_t *src, uint32_t srclen,
 
     if (mode == 6) {
         /* Full headerless 4bpp frame. Inflate + RLE-decode it into the persistent
-         * shadow (this container's recon-buffer tail) that mode-3 deltas composite
+         * shadow (this container's display allocation A) that mode-3 deltas composite
          * onto, so a mode-6 keyframe seeds a stable base, then present (unless
          * deferred by a multi-segment wrapper). */
         cfw_diag(0, 0);                               /* keyframe: rebaseline delta fid */
         uint32_t stride = (w + 1) >> 1;                          /* tight 4bpp */
-        uint8_t *dst = cfw_back_buffer(state);
-        if (dst == 0) return -1;                      /* no recon buffer -> can't proceed */
+        uint8_t *dst = cfw_shadow_buffer(state);
+        if (dst == 0) return -1;                      /* no shadow allocation -> can't proceed */
         if (!inflate_rle(strm, dst, stride, stride, h)) return -1;
         rl_add(rl, 0, 0, w, h);                       /* keyframe updates the whole screen */
         if (present) present_shadow(state, w, h, rl);
@@ -667,14 +667,14 @@ static int image_dispatch(uint8_t *state, const uint8_t *src, uint32_t srclen,
 
     if (mode == 3) {
         /* Bounding-box delta, composited onto a PERSISTENT 4bpp shadow of the last
-         * frame kept in this container's recon-buffer tail (see cfw_back_buffer),
+         * frame kept in this container's display allocation (see cfw_shadow_buffer),
          * then the packed shadow is queued for a direct framebuffer refresh.
          *
          * The stale-base race that used to force a CFW-owned shadow is now fixed at the
          * source: the worker runs on a per-frame SNAPSHOT (drained in order by
          * image_deferred), not the live recon buffer, so successive deltas compose onto
-         * the shadow in the right order. The shadow itself is stable in B's tail (B lives
-         * for the streaming session and its head only holds a small message).
+         * the shadow in the right order. The shadow is stable in A, while B remains
+         * dedicated to reassembly and can use its full carrier-sized allocation.
          *
          *   [3][left/4][top/2][width/4][height/2][fid_lo][fid_hi][zlib(rle(box pixels))]
          * left/width are *4 (=> multiples of 4 => even) so left>>1 and bw>>1 are whole
@@ -711,7 +711,7 @@ static int image_dispatch(uint8_t *state, const uint8_t *src, uint32_t srclen,
         if (cfw_diag(1, fid)) return 0;               /* dup fid -> skip (records order/skip) */
 
         uint32_t sstride = (w + 1) >> 1;              /* 4bpp shadow row stride */
-        uint8_t *shadow = cfw_back_buffer(state);     /* persistent last frame (recon tail) */
+        uint8_t *shadow = cfw_shadow_buffer(state);   /* persistent last frame (buffer A) */
         if (shadow == 0) return -1;                   /* no stable base -> keyframe resyncs */
         uint32_t rowbytes = bw >> 1;                  /* whole bytes (bw even) */
 
@@ -746,7 +746,7 @@ static void rl_add(cfw_rectlist *rl, uint32_t l, uint32_t t, uint32_t w, uint32_
  * its normal panel refresh, bypassing LVGL and the stock 576x288 compositor copy. */
 static void present_shadow(uint8_t *state, uint32_t w, uint32_t h, cfw_rectlist *rl) {
     customCfwContext *ctx = getCustomCfwContext();
-    uint8_t *shadow = cfw_back_buffer(state);
+    uint8_t *shadow = cfw_shadow_buffer(state);
     if (ctx == 0 || shadow == 0 || w != IMAGE_W || h != IMAGE_H) return;
 
     ctx->direct_shadow = shadow;
@@ -1019,31 +1019,32 @@ static customCfwContext *getCustomCfwContext(void) {
     return ctx;
 }
 
-/* Return the fixed 580x300 4bpp shadow stored at the tail of this container's recon
- * allocation. The carrier's dimensions determine only allocation capacity; they are
- * deliberately unrelated to the logical image dimensions. A 576x288 carrier provides
- * 165888 bytes, leaving 78888 bytes ahead of the 87000-byte shadow for reconstruction. */
-static uint8_t *cfw_back_buffer(uint8_t *state) {
-    uint8_t *b = *(uint8_t **)(state + 0xc);
-    if (b == 0) return 0;
+/* Return the full-panel packed-4bpp shadow stored in this container's display
+ * allocation A. The 576x288 carrier allocates 165888 bytes for A; the 640x480
+ * shadow needs 153600, leaving 12288 bytes unused. Buffer B remains independent
+ * and wholly available for reconstruction/snapshotting incoming messages. */
+static uint8_t *cfw_shadow_buffer(uint8_t *state) {
+    uint8_t *a = *(uint8_t **)(state + 0x8);
+    if (a == 0) return 0;
     uint32_t carrier_w = *(uint16_t *)(state + 0x40);
     uint32_t carrier_h = *(uint16_t *)(state + 0x42);
     uint32_t capacity = carrier_w * carrier_h;
     if (capacity < IMAGE_BYTES) return 0;
-    return b + capacity - IMAGE_BYTES;
+    return a;
 }
 
 static void bzero(uint8_t *buf, uint32_t len) {
     for (uint32_t i = 0; i < len; i++) buf[i] = 0;
 }
 
-static void clear_panel(uint8_t *fb) {
-    uint32_t *p = (uint32_t *)(void *)fb;
-    for (uint32_t i = 0; i < PANEL_BYTES / 4u; i++) p[i] = 0;
+static void copy_panel(uint8_t *fb, const uint8_t *shadow) {
+    uint32_t *dst = (uint32_t *)(void *)fb;
+    const uint32_t *src = (const uint32_t *)(const void *)shadow;
+    for (uint32_t i = 0; i < PANEL_BYTES / 4u; i++) dst[i] = src[i];
 }
 
 /* Replaces both display-task calls to the stock 576x288 packed-buffer copier.
- * A pending custom job copies the centered 580x300 shadow straight into the
+ * A pending custom job copies the full 640x480 shadow straight into the
  * physical 640x480 4bpp framebuffer. Once that succeeds, unrelated stock widget
  * repaints are suppressed while Faceclaw's fail-open framebuffer lease is valid:
  * the display task refreshes the already-correct physical buffer instead of
@@ -1068,12 +1069,7 @@ void display_copy_hook(void) {
     cfw_time_start(&t);
     int ok = fb != 0;
     if (ok) {
-        clear_panel(fb);
-        for (uint32_t y = 0; y < IMAGE_H; y++) {
-            uint8_t *dst = fb + (IMAGE_Y + y) * PANEL_STRIDE + (IMAGE_X >> 1);
-            const uint8_t *src = shadow + y * IMAGE_STRIDE;
-            for (uint32_t x = 0; x < IMAGE_STRIDE; x++) dst[x] = src[x];
-        }
+        copy_panel(fb, shadow);
         cfw_draw_flags(fb, PANEL_W, PANEL_H);
     }
 

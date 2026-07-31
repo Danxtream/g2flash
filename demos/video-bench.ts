@@ -11,7 +11,7 @@
 //   delta (default) 4bpp: mode-6 keyframe, then mode-3 bounding-box updates
 //   raw4            4bpp: every frame -> mode 6 (headerless packed shadow)
 //   lz4             4bpp: STOCK 2.2.6.10 path — 4bpp BMP, LZ4'd, CompressMode=2
-// The custom modes use the fixed 580x300 logical shadow while their EvenHub
+// The custom modes use the fixed 640x480 full-panel shadow while their EvenHub
 // carrier remains 576x288. `raw4` sends that shadow in full; `delta` sends only
 // the bounding box that changed after its initial keyframe.
 // `delta` sends only the bounding box of pixels that changed vs the previous
@@ -36,7 +36,7 @@
 //   ffmpeg -i bad_apple.mp4 -vf "fps=30,scale=288:144:flags=area,format=gray" bad_apple.gif
 //
 // Env:
-//   G2_IMG_W / G2_IMG_H   target size (custom modes require 580x300)
+//   G2_IMG_W / G2_IMG_H   target size (custom modes require 640x480)
 //   G2_IMG_THRESHOLD      >=0 = 1-bit threshold; -1 = grayscale (default -1)
 //   G2_MAX_FRAMES         cap frame count (default 0 = all)
 //   G2_FRAME_STRIDE       use every Nth decoded frame (default 1)
@@ -87,10 +87,10 @@ if (!["delta", "raw4", "lz4"].includes(MODE)) {
   process.exit(1);
 }
 const LZ4 = MODE === "lz4";
-const W = Math.max(16, Math.min(LZ4 ? 576 : 580, Number(process.env.G2_IMG_W ?? (LZ4 ? "288" : "580"))));
-const H = Math.max(16, Math.min(LZ4 ? 288 : 300, Number(process.env.G2_IMG_H ?? (LZ4 ? "144" : "300"))));
-if (!LZ4 && MODE==="raw4" && (W !== 580 || H !== 300)) {
-  console.error("CFW raw4/delta modes use a fixed 580x300 logical screen");
+const W = Math.max(16, Math.min(LZ4 ? 576 : 640, Number(process.env.G2_IMG_W ?? (LZ4 ? "288" : "640"))));
+const H = Math.max(16, Math.min(LZ4 ? 288 : 480, Number(process.env.G2_IMG_H ?? (LZ4 ? "144" : "480"))));
+if (!LZ4 && (W !== 640 || H !== 480)) {
+  console.error("CFW raw4/delta modes use a fixed 640x480 full-panel screen");
   process.exit(1);
 }
 const THRESHOLD = Math.max(-1, Math.min(255, Number(process.env.G2_IMG_THRESHOLD ?? "-1")));
