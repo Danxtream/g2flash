@@ -289,6 +289,7 @@ typedef struct {
     uint16_t wake_nonce;                   /* current pending wake, 0 = none */
     uint8_t  wake_dashboard_pending;       /* dashboard request held for Faceclaw */
     uint8_t  wake_notify_buf[16];          /* stable storage for sid-0x09 notify */
+    uint8_t  wear_notify_buf[12];          /* stable storage for sid-0x10 wear notify */
     /* Direct-framebuffer job. The EvenHub worker holds the stock display gate
      * before it mutates the shadow and until the display task consumes this
      * pointer, so no second snapshot or full-size display buffer is required. */
@@ -300,7 +301,7 @@ typedef struct {
 } customCfwContext;
 
 #define CFW_CTX_SLOT  0x20003ffcU    /* ble_msgrx context +0x0 (spare, never freed) */
-#define CFW_CTX_MAGIC 0xC0FFEE61U    /* bumped for the full-panel shadow allocation */
+#define CFW_CTX_MAGIC 0xC0FFEE62U    /* bumped for the wear-notify buffer */
 
 void *zwrap_alloc(void *opaque, uint32_t items, uint32_t size) {
     (void)opaque;

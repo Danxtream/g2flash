@@ -28,6 +28,7 @@
 //     op 4 WAKE_READY     -- EvenHub frame is ready; cancel the fallback
 //     op 5 FB_ACQUIRE      -- arm/renew a separate 90-second direct-framebuffer lease
 //     op 6 FB_RELEASE      -- release that lease and restore stock compositor repaints
+//     op 7 WEAR_QUERY      -- emit the current stock wear state on sid 0x10
 //
 // A deferred double tap is reported to the phone as field 102:
 //
@@ -41,9 +42,12 @@ typedef int  (*pb_decode_fn)(void *stream, const void *fields, void *dest);
 typedef void (*display_start_fn)(unsigned app_id, void *arg, unsigned arg_len, void *cb);
 
 #define FW_SEND 0x00475b15 /* FUN_00475b14 | thumb bit */
+#define FW_NOTIFY_SEND 0x00475c1bu /* FUN_00475c1a | thumb bit */
 #define FW_PB_DECODE ((pb_decode_fn)0x00490121u)       /* FUN_00490120 */
 #define FW_DISPLAY_START ((display_start_fn)0x00464b2fu) /* FUN_00464b2e */
 #define FW_SIDE_ID ((lens_side_fn)0x0045a569u)         /* 1=right, 2=left */
+typedef unsigned (*wear_status_fn)(void);
+#define FW_WEAR_STATUS ((wear_status_fn)0x0049eb8fu)   /* cached WearDetect status: 1=off, 2=on */
 
 #define FACECLAW_PROTO_VERSION 1u
 #define FACECLAW_CONTROL_FIELD 101u
@@ -54,6 +58,7 @@ typedef void (*display_start_fn)(unsigned app_id, void *arg, unsigned arg_len, v
 #define FACECLAW_OP_READY      4u
 #define FACECLAW_OP_FB_ACQUIRE 5u
 #define FACECLAW_OP_FB_RELEASE 6u
+#define FACECLAW_OP_WEAR_QUERY 7u
 #define FACECLAW_EVENT_WAKE    1u
 #define FACECLAW_LEASE_MS      90000u
 #define FACECLAW_FALLBACK_MS   400u
@@ -124,6 +129,28 @@ static void faceclaw_send_wake_event(customCfwContext *ctx) {
     p[11] = (unsigned char)ctx->wake_nonce;
     p[12] = (unsigned char)(ctx->wake_nonce >> 8);
     ((send_fn)FW_SEND)(1, 9, p, 13);
+}
+
+/* Send the stock OnboardingDataPackage EVENT/GLS_WEAR_STATUS wire shape
+ * directly. The stock helper first checks the running app id and then routes
+ * through onboarding's encoder state; using the generic notify sender removes
+ * both lifecycle dependencies while retaining its right-arm/BLE guards.
+ *
+ *   field 1 commandId=3 (EVENT)
+ *   field 2 magic=0
+ *   field 5 { field 1 event=1, field 2 eventParam=wearing }
+ */
+__attribute__((used, noinline))
+void faceclaw_send_wear_event(unsigned wearing) {
+    customCfwContext *ctx = getCustomCfwContext();
+    if (!ctx) return;
+    unsigned char *p = ctx->wear_notify_buf;
+    p[0] = 0x08; p[1] = 0x03;
+    p[2] = 0x10; p[3] = 0x00;
+    p[4] = 0x2a; p[5] = 0x04;
+    p[6] = 0x08; p[7] = 0x01;
+    p[8] = 0x10; p[9] = wearing ? 1u : 0u;
+    ((send_fn)FW_NOTIFY_SEND)(1, 0x10, p, 10);
 }
 
 /* Replaces only the two dashboard-start BLs in the idle double-click policy.
@@ -204,6 +231,10 @@ static void faceclaw_apply_control(const uint8_t *data, uint32_t len) {
     } else if (op == FACECLAW_OP_FB_RELEASE) {
         ctx->direct_lease_deadline = 0;
         ctx->direct_active = 0;
+    } else if (op == FACECLAW_OP_WEAR_QUERY) {
+        unsigned status = FW_WEAR_STATUS();
+        if (status == 1u || status == 2u)
+            faceclaw_send_wear_event(status == 2u ? 1u : 0u);
     }
 }
 
@@ -275,7 +306,7 @@ void faceclaw_evenai_display_entry(void) {
 }
 
 // Capability string "EVENCFW/<ver> <space-separated feature tokens>":
-//   EVENCFW/6  -> magic prefix + contract version (detect: starts-with "EVENCFW/")
+//   EVENCFW/8  -> magic prefix + contract version (detect: starts-with "EVENCFW/")
 //   img576     -> 576x288 image containers (vs stock 288x144 cap)
 //   imgz       -> zlib (DEFLATE) compressed image payloads
 //   rle        -> compact run-length encoded delta rows
@@ -283,13 +314,14 @@ void faceclaw_evenai_display_entry(void) {
 //   directfb   -> bypass LVGL and copy the packed shadow into the panel framebuffer
 //   img640     -> modes 3/6/8/9 use the full 640x480 panel independent of the carrier
 //   fbguard    -> preserve direct frames across stock widget repaints under a fail-open lease
+//   wearnotify -> lifecycle-independent wear events + private current-state query
 //
 // The string is a normal rodata literal now that build.py emits/relocates .rodata
 // (earlier this had to be spelled out byte-by-byte to avoid a rodata section). strlcpy
 // comes from zlib_glue.c, which shares this translation unit via patches_main.c.
 int settings_send_wrapper(int type, int sid, unsigned char *buf, unsigned len) {
     if (sid == 9) {
-        static const char caps[] = "EVENCFW/6 img576 img640 imgz rle wakelease directfb fbguard";
+        static const char caps[] = "EVENCFW/8 img576 img640 imgz rle wakelease directfb fbguard wearnotify";
         unsigned char *p = buf + len;
         p[0] = 0xA2; p[1] = 0x06;                          // field 100, wire type 2: tag 802
         unsigned clen = strlcpy((char *)(p + 3), caps, sizeof(caps));

@@ -11,7 +11,9 @@ Build a CFW image for g2_2.2.6.10 with:
   (4) conditional idle-double-tap dashboard deferral and conditional stock
       Even-AI suppression while that lease is valid, and
   (5) EvenHub long-press + ring release-long-press forwarding, and
-  (6) a full-panel 640x480 packed-4bpp shadow copied directly into the physical framebuffer.
+  (6) a full-panel 640x480 packed-4bpp shadow copied directly into the physical
+      framebuffer, and
+  (7) stock wear-state notifications outside onboarding plus a current-state query.
 
 REBASED 2.2.4.34 -> 2.2.6.10 (2026-07-16). Every address below was re-derived and
 cross-checked; see notes/fw-2.2.6.10-cfw-rebase.md for the full table and the evidence
@@ -126,6 +128,12 @@ DISPLAY_COPY_BL_SITES = {
     0x473c8e: "f8 f7 c1 fe",   # queue message type 3 -> bl FUN_0046ca14
     0x473d68: "f8 f7 54 fe",   # queue message type 6 -> bl FUN_0046ca14
 }
+# The stock wear handler calls its onboarding-only transmitter in both branches.
+# Redirect those calls to our lifecycle-independent sender instead.
+WEAR_NOTIFY_BL_SITES = {
+    0x49ec3c: "df f7 70 fb",  # ON_HEAD:  bl 0x47e320
+    0x49ec9a: "df f7 41 fb",  # OFF_HEAD: bl 0x47e320
+}
 
 def enc_bl(pc, target):
     """Encode a Thumb-2 BL (T1) from instruction address `pc` to `target`."""
@@ -219,6 +227,7 @@ def layout(img):
     longpress_addr = base + _fn(built, "evenhub_longpress")["offset"]
     release_addr   = base + _fn(built, "ring_release")["offset"]
     display_copy_addr = base + _fn(built, "display_copy_hook")["offset"]
+    wear_notify_addr = base + _fn(built, "faceclaw_send_wear_event")["offset"]
 
     # --- assemble the appended payload bytes (old_ps .. end) ---
     pad = blob_off - old_ps                     # alignment gap before the blob
@@ -281,6 +290,9 @@ def layout(img):
         *[(g2f(site), orig, enc_bl(site, display_copy_addr),
            f"bl display_copy_hook @ {site:#x} (640x480 direct framebuffer)")
           for site, orig in DISPLAY_COPY_BL_SITES.items()],
+        *[(g2f(site), orig, enc_bl(site, wear_notify_addr),
+           f"bl faceclaw_send_wear_event @ {site:#x} (outside onboarding)")
+          for site, orig in WEAR_NOTIFY_BL_SITES.items()],
     ]
     return bytes(append), in_place, (idx, comp_off, old_ps)
 

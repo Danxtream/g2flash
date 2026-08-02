@@ -38,6 +38,9 @@ The patches in `patches/` add image/display features on top of stock 2.2.6.10:
   frame when stock swipe-capture widgets request an unrelated repaint.
 - **zlib/RLE-compressed keyframes, bounding-box deltas, and atomic multi-rect
   updates** for much faster image/video streaming.
+- **Wear-state notifications outside onboarding**, including while EvenHub is
+  active or the stock dashboard is running, plus a current-state query for
+  reconnect-safe lock screens.
 - A **capability-advertisement field** on the settings response, so a connected
   app can detect this firmware and which features it supports.
 
