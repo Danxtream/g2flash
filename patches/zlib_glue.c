@@ -56,6 +56,10 @@
  *   9           -> [9][srcrect][dstrect]  rect-copy inside the 4bpp shadow (full uint16
  *                              L/T/W/H each; same size; may overlap), then present.
  *                              Pairs with a delta (usually via mode 8) to scroll.
+ *   10          -> [10][enabled] compass control (no display change): invokes the
+ *                              firmware's own compass start/stop routines on the
+ *                              right arm. Stock navigation notifications carry the
+ *                              resulting heading/calibration events back to the phone.
  *   anything else / too short  -> load_bmp_fast (rejects cleanly if not a BMP).
  *
  * The HIGH BIT of the mode byte is a "lenses differ" flag; most modes ignore it. For
@@ -139,6 +143,9 @@ typedef int  (*complete_emit_fn)(uint32_t id, void *hdr, int kind, uint32_t p4);
 typedef void (*display_gate_fn)(void);               /* display semaphore take/give */
 typedef int  (*display_queue_fn)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
 typedef void (*display_copy_fn)(void);               /* stock 576x288 -> 640x480 packed copy */
+typedef int (*compass_control_fn)(void);              /* stock Start/StopIMUCompassFunc */
+typedef int (*display_event_forward_fn)(uint32_t, uint32_t, void *); /* display event -> active UI */
+typedef int (*compass_notify_fn)(uint32_t);           /* stock sid-0x08 compass notifier */
 
 /* firmware entry points (Thumb bit set for blx via constant pointer) */
 #define FW_MALLOC  ((malloc_fn)0x00474cd3U)         /* FUN_00474cd2 malloc(size) */
@@ -169,6 +176,10 @@ typedef void (*display_copy_fn)(void);               /* stock 576x288 -> 640x480
 #define FW_DISPLAY_SIGNAL ((display_gate_fn)0x0047386bU)  /* FUN_0047386a: give display semaphore */
 #define FW_DISPLAY_QUEUE  ((display_queue_fn)0x00474067U) /* FUN_00474066: queue type-3 refresh */
 #define FW_DISPLAY_COPY   ((display_copy_fn)0x0046ca15U)  /* FUN_0046ca14: stock packed-buffer copy */
+#define FW_COMPASS_START  ((compass_control_fn)0x005455e5U) /* FUN_005455e4 StartIMUCompassFunc */
+#define FW_COMPASS_STOP   ((compass_control_fn)0x0054566dU) /* FUN_0054566c StopIMUCompassFunc */
+#define FW_DISPLAY_EVENT_FORWARD ((display_event_forward_fn)0x0045f8fdU) /* FUN_0045f8fc */
+#define FW_COMPASS_NOTIFY ((compass_notify_fn)0x0058705dU) /* FUN_0058705c navigation_notify_compass_changed_cmd */
 #define FW_DISPLAY_FB     (*(uint8_t * volatile *)0x200007b8U) /* stock copier's 640x480 destination */
 #define BUZZ_TIMER_ADDR 0x20074504U                   /* RAM: buzzer osTimer handle (buzzer osTimer handle global) */
 #define ZLIB_VER   ((const char *)0x0078d654U)      /* "1.1.4" */
@@ -288,6 +299,7 @@ typedef struct {
     uint32_t wake_fallback_timer;          /* one-shot stock-dashboard fallback */
     uint16_t wake_nonce;                   /* current pending wake, 0 = none */
     uint8_t  wake_dashboard_pending;       /* dashboard request held for Faceclaw */
+    volatile uint8_t compass_forward;      /* mode 10: forward global heading events to BLE */
     uint8_t  wake_notify_buf[16];          /* stable storage for sid-0x09 notify */
     uint8_t  wear_notify_buf[12];          /* stable storage for sid-0x10 wear notify */
     /* Direct-framebuffer job. The EvenHub worker holds the stock display gate
@@ -301,7 +313,7 @@ typedef struct {
 } customCfwContext;
 
 #define CFW_CTX_SLOT  0x20003ffcU    /* ble_msgrx context +0x0 (spare, never freed) */
-#define CFW_CTX_MAGIC 0xC0FFEE62U    /* bumped for the wear-notify buffer */
+#define CFW_CTX_MAGIC 0xC0FFEE63U    /* bumped for compass event forwarding */
 
 void *zwrap_alloc(void *opaque, uint32_t items, uint32_t size) {
     (void)opaque;
@@ -581,6 +593,34 @@ static int image_dispatch(uint8_t *state, const uint8_t *src, uint32_t srclen,
             }
         }
         return 0;
+    }
+
+    if (mode == 10) {
+        /* Compass control (no display change): [10][0] stops, [10][1] starts.
+         * The stock compass implementation owns the sensor setup, calibration,
+         * sampling, and heading computation. Heading events normally reach the
+         * sid-0x08 notifier only through Navigation's UI handler; mode 10 also
+         * enables compass_event_forward(), which taps the earlier global display
+         * event so Faceclaw does not need the stock Navigation app in foreground.
+         * This deferred image handler runs on both lenses, but the stock firmware
+         * logs that the left arm cannot open the IMU, so invoke it only on right. */
+        if (srclen < 2) return -1;
+        customCfwContext *ctx = getCustomCfwContext();
+        if (ctx == 0) return -1;
+        if (src[1] == 0) {
+            ctx->compass_forward = 0;
+            return FW_SIDE() == 1 ? FW_COMPASS_STOP() : 0;
+        }
+        if (src[1] == 1) {
+            ctx->compass_forward = 1;
+            if (FW_SIDE() == 1) {
+                int r = FW_COMPASS_START();
+                if (r != 0) ctx->compass_forward = 0;
+                return r;
+            }
+            return 0;
+        }
+        return -1;
     }
 
     /* Custom shadow geometry is deliberately independent from the EvenHub carrier. */
@@ -1018,6 +1058,22 @@ static customCfwContext *getCustomCfwContext(void) {
     }
     *(customCfwContext **)CFW_CTX_SLOT = ctx;      /* 0 on OOM: retried next message */
     return ctx;
+}
+
+/* Wrapper for the one global display-dispatch call handling sensor event 9 /
+ * UI event 0x41 (IMU_COMPASS_DIRECTION). The stock call is always preserved.
+ * Navigation normally consumes this event and invokes FW_COMPASS_NOTIFY itself,
+ * but its handler is absent while EvenHub/Faceclaw is active. Mode 10 marks the
+ * CFW context so we invoke that same stock notifier directly with the already-
+ * computed heading. This runs only on the right arm and allocates no CFW state. */
+int compass_event_forward(uint32_t display, uint32_t event, void *value) {
+    int r = FW_DISPLAY_EVENT_FORWARD(display, event, value);
+    customCfwContext *ctx = peekCustomCfwContext();
+    if (event == 0x41 && value != 0 && FW_SIDE() == 1 && ctx && ctx->compass_forward) {
+        int32_t heading = *(int32_t *)value;
+        if (heading >= 0) FW_COMPASS_NOTIFY((uint32_t)heading);
+    }
+    return r;
 }
 
 /* Return the full-panel packed-4bpp shadow stored in this container's display

@@ -13,7 +13,9 @@ Build a CFW image for g2_2.2.6.10 with:
   (5) EvenHub long-press + ring release-long-press forwarding, and
   (6) a full-panel 640x480 packed-4bpp shadow copied directly into the physical
       framebuffer, and
-  (7) stock wear-state notifications outside onboarding plus a current-state query.
+  (7) stock wear-state notifications outside onboarding plus a current-state query, and
+  (8) Faceclaw compass forwarding from the global sensor display event to the stock
+      navigation BLE notifier while image-handler mode 10 is enabled.
 
 REBASED 2.2.4.34 -> 2.2.6.10 (2026-07-16). Every address below was re-derived and
 cross-checked; see notes/fw-2.2.6.10-cfw-rebase.md for the full table and the evidence
@@ -134,6 +136,11 @@ WEAR_NOTIFY_BL_SITES = {
     0x49ec3c: "df f7 70 fb",  # ON_HEAD:  bl 0x47e320
     0x49ec9a: "df f7 41 fb",  # OFF_HEAD: bl 0x47e320
 }
+# Global display-thread routing of IMU sensor event 9 as UI event 0x41. Navigation's
+# UI handler normally receives this and calls the BLE compass notifier; Faceclaw has
+# EvenHub active instead, so redirect through a wrapper that preserves the stock call
+# and additionally invokes that notifier while mode 10 owns the compass.
+COMPASS_EVENT_BL_SITE = (0x443288, "1c f0 38 fb")  # bl FUN_0045f8fc(display,0x41,&heading)
 
 def enc_bl(pc, target):
     """Encode a Thumb-2 BL (T1) from instruction address `pc` to `target`."""
@@ -228,6 +235,7 @@ def layout(img):
     release_addr   = base + _fn(built, "ring_release")["offset"]
     display_copy_addr = base + _fn(built, "display_copy_hook")["offset"]
     wear_notify_addr = base + _fn(built, "faceclaw_send_wear_event")["offset"]
+    compass_event_addr = base + _fn(built, "compass_event_forward")["offset"]
 
     # --- assemble the appended payload bytes (old_ps .. end) ---
     pad = blob_off - old_ps                     # alignment gap before the blob
@@ -293,6 +301,9 @@ def layout(img):
         *[(g2f(site), orig, enc_bl(site, wear_notify_addr),
            f"bl faceclaw_send_wear_event @ {site:#x} (outside onboarding)")
           for site, orig in WEAR_NOTIFY_BL_SITES.items()],
+        (g2f(COMPASS_EVENT_BL_SITE[0]), COMPASS_EVENT_BL_SITE[1],
+         enc_bl(COMPASS_EVENT_BL_SITE[0], compass_event_addr),
+         "bl compass_event_forward (global IMU heading -> stock nav BLE notifier)"),
     ]
     return bytes(append), in_place, (idx, comp_off, old_ps)
 

@@ -315,13 +315,14 @@ void faceclaw_evenai_display_entry(void) {
 //   img640     -> modes 3/6/8/9 use the full 640x480 panel independent of the carrier
 //   fbguard    -> preserve direct frames across stock widget repaints under a fail-open lease
 //   wearnotify -> lifecycle-independent wear events + private current-state query
+//   compass10  -> mode 10 controls the stock compass and its navigation notifications
 //
 // The string is a normal rodata literal now that build.py emits/relocates .rodata
 // (earlier this had to be spelled out byte-by-byte to avoid a rodata section). strlcpy
 // comes from zlib_glue.c, which shares this translation unit via patches_main.c.
 int settings_send_wrapper(int type, int sid, unsigned char *buf, unsigned len) {
     if (sid == 9) {
-        static const char caps[] = "EVENCFW/8 img576 img640 imgz rle wakelease directfb fbguard wearnotify";
+        static const char caps[] = "EVENCFW/8 img576 img640 imgz rle wakelease directfb fbguard wearnotify compass10";
         unsigned char *p = buf + len;
         p[0] = 0xA2; p[1] = 0x06;                          // field 100, wire type 2: tag 802
         unsigned clen = strlcpy((char *)(p + 3), caps, sizeof(caps));
