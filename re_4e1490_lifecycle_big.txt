@@ -1,0 +1,501 @@
+============================================================
+DIRECT REFERENCES TO 0x4E1490
+============================================================
+
+  stock_disasm.txt:268808:  4e1436:	f06e f86a 	bl	0x54f50e
+  stock_disasm.txt:268809:  4e143a:	f8df 0580 	ldr.w	r0, [pc, #1408]	@ 0x4e19bc
+  stock_disasm.txt:268810:  4e143e:	6800      	ldr	r0, [r0, #0]
+  stock_disasm.txt:268811:  4e1440:	bd02      	pop	{r1, pc}
+  stock_disasm.txt:268812:  4e1442:	0000      	movs	r0, r0
+  stock_disasm.txt:268813:  4e1444:	45c4      	cmp	ip, r8
+  stock_disasm.txt:268814:  4e1446:	2007      	movs	r0, #7
+  stock_disasm.txt:268815:  4e1448:	45b8      	cmp	r8, r7
+  stock_disasm.txt:268816:  4e144a:	2007      	movs	r0, #7
+  stock_disasm.txt:268817:  4e144c:	45ac      	cmp	ip, r5
+  stock_disasm.txt:268818:  4e144e:	2007      	movs	r0, #7
+  stock_disasm.txt:268819:  4e1450:	4fc4      	ldr	r7, [pc, #784]	@ (0x4e1764)
+  stock_disasm.txt:268820:  4e1452:	2007      	movs	r0, #7
+  stock_disasm.txt:268821:  4e1454:	45a8      	cmp	r8, r5
+  stock_disasm.txt:268822:  4e1456:	2007      	movs	r0, #7
+  stock_disasm.txt:268823:  4e1458:	6128      	str	r0, [r5, #16]
+  stock_disasm.txt:268824:  4e145a:	006d      	lsls	r5, r5, #1
+  stock_disasm.txt:268825:  4e145c:	462c      	mov	r4, r5
+  stock_disasm.txt:268826:  4e145e:	0075      	lsls	r5, r6, #1
+  stock_disasm.txt:268827:  4e1460:	2988      	cmp	r1, #136	@ 0x88
+  stock_disasm.txt:268828:  4e1462:	0070      	lsls	r0, r6, #1
+  stock_disasm.txt:268829:  4e1464:	5e70      	ldrsh	r0, [r6, r1]
+  stock_disasm.txt:268830:  4e1466:	0078      	lsls	r0, r7, #1
+  stock_disasm.txt:268831:  4e1468:	47f0      	blx	lr
+  stock_disasm.txt:268832:  4e146a:	006d      	lsls	r5, r5, #1
+  stock_disasm.txt:268833:  4e146c:	f400 0077 	and.w	r0, r0, #16187392	@ 0xf70000
+  stock_disasm.txt:268834:  4e1470:	b82c      			@ <UNDEFINED> instruction: 0xb82c
+  stock_disasm.txt:268835:  4e1472:	0076      	lsls	r6, r6, #1
+  stock_disasm.txt:268836:  4e1474:	ff70 0075 	vqadd.u64	q8, q0, <illegal reg q10.5>
+  stock_disasm.txt:268837:  4e1478:	4034      	ands	r4, r6
+  stock_disasm.txt:268838:  4e147a:	0073      	lsls	r3, r6, #1
+  stock_disasm.txt:268839:  4e147c:	4fbc      	ldr	r7, [pc, #752]	@ (0x4e1770)
+  stock_disasm.txt:268840:  4e147e:	0071      	lsls	r1, r6, #1
+  stock_disasm.txt:268841:  4e1480:	45c0      	cmp	r8, r8
+  stock_disasm.txt:268842:  4e1482:	2007      	movs	r0, #7
+  stock_disasm.txt:268843:  4e1484:	4fc3      	ldr	r7, [pc, #780]	@ (0x4e1794)
+  stock_disasm.txt:268844:  4e1486:	2007      	movs	r0, #7
+  stock_disasm.txt:268845:  4e1488:	ed14 0073 	ldc	0, cr0, [r4, #-460]	@ 0xfffffe34
+  stock_disasm.txt:268846:  4e148c:	4ff8      	ldr	r7, [pc, #992]	@ (0x4e1870)
+  stock_disasm.txt:268847:  4e148e:	0071      	lsls	r1, r6, #1
+> stock_disasm.txt:268848:  4e1490:	e92d 41f8 	stmdb	sp!, {r3, r4, r5, r6, r7, r8, lr}
+  stock_disasm.txt:268849:  4e1494:	b087      	sub	sp, #28
+  stock_disasm.txt:268850:  4e1496:	000c      	movs	r4, r1
+  stock_disasm.txt:268851:  4e1498:	0016      	movs	r6, r2
+  stock_disasm.txt:268852:  4e149a:	001f      	movs	r7, r3
+  stock_disasm.txt:268853:  4e149c:	2802      	cmp	r0, #2
+  stock_disasm.txt:268854:  4e149e:	d00a      	beq.n	0x4e14b6
+  stock_disasm.txt:268855:  4e14a0:	f0c0 8255 	bcc.w	0x4e194e
+  stock_disasm.txt:268856:  4e14a4:	2804      	cmp	r0, #4
+  stock_disasm.txt:268857:  4e14a6:	f000 8124 	beq.w	0x4e16f2
+  stock_disasm.txt:268858:  4e14aa:	f0c0 811a 	bcc.w	0x4e16e2
+  stock_disasm.txt:268859:  4e14ae:	2805      	cmp	r0, #5
+  stock_disasm.txt:268860:  4e14b0:	f000 8196 	beq.w	0x4e17e0
+  stock_disasm.txt:268861:  4e14b4:	e24b      	b.n	0x4e194e
+  stock_disasm.txt:268862:  4e14b6:	f767 fe09 	bl	0x4490cc
+  stock_disasm.txt:268863:  4e14ba:	f8df 1504 	ldr.w	r1, [pc, #1284]	@ 0x4e19c0
+  stock_disasm.txt:268864:  4e14be:	6008      	str	r0, [r1, #0]
+  stock_disasm.txt:268865:  4e14c0:	2000      	movs	r0, #0
+  stock_disasm.txt:268866:  4e14c2:	f8df 14f8 	ldr.w	r1, [pc, #1272]	@ 0x4e19bc
+  stock_disasm.txt:268867:  4e14c6:	6008      	str	r0, [r1, #0]
+  stock_disasm.txt:268868:  4e14c8:	2000      	movs	r0, #0
+  stock_disasm.txt:268869:  4e14ca:	f8df 14f8 	ldr.w	r1, [pc, #1272]	@ 0x4e19c4
+  stock_disasm.txt:268870:  4e14ce:	6008      	str	r0, [r1, #0]
+  stock_disasm.txt:268871:  4e14d0:	2000      	movs	r0, #0
+  stock_disasm.txt:268872:  4e14d2:	f8df 14f4 	ldr.w	r1, [pc, #1268]	@ 0x4e19c8
+  stock_disasm.txt:268873:  4e14d6:	6008      	str	r0, [r1, #0]
+  stock_disasm.txt:268874:  4e14d8:	2000      	movs	r0, #0
+  stock_disasm.txt:268875:  4e14da:	f8df 14f0 	ldr.w	r1, [pc, #1264]	@ 0x4e19cc
+  stock_disasm.txt:268876:  4e14de:	6008      	str	r0, [r1, #0]
+  stock_disasm.txt:268877:  4e14e0:	2000      	movs	r0, #0
+  stock_disasm.txt:268878:  4e14e2:	f8df 14ec 	ldr.w	r1, [pc, #1260]	@ 0x4e19d0
+  stock_disasm.txt:268879:  4e14e6:	6008      	str	r0, [r1, #0]
+  stock_disasm.txt:268880:  4e14e8:	f7f8 fb24 	bl	0x4d9b34
+  stock_disasm.txt:268881:  4e14ec:	f8df 54e4 	ldr.w	r5, [pc, #1252]	@ 0x4e19d4
+  stock_disasm.txt:268882:  4e14f0:	2038      	movs	r0, #56	@ 0x38
+  stock_disasm.txt:268883:  4e14f2:	f793 fbee 	bl	0x474cd2
+  stock_disasm.txt:268884:  4e14f6:	6028      	str	r0, [r5, #0]
+  stock_disasm.txt:268885:  4e14f8:	6828      	ldr	r0, [r5, #0]
+  stock_disasm.txt:268886:  4e14fa:	2800      	cmp	r0, #0
+  stock_disasm.txt:268887:  4e14fc:	d106      	bne.n	0x4e150c
+  stock_disasm.txt:268888:  4e14fe:	f118 fdd1 	bl	0x5fa0a4
+  stock_disasm.txt:268889:  4e1502:	2000      	movs	r0, #0
+  stock_disasm.txt:268890:  4e1504:	f05f 31ff 	movs.w	r1, #4294967295
+  stock_disasm.txt:268891:  4e1508:	6008      	str	r0, [r1, #0]
+  stock_disasm.txt:268892:  4e150a:	e7fe      	b.n	0x4e150a
+  stock_disasm.txt:268893:  4e150c:	2138      	movs	r1, #56	@ 0x38
+  stock_disasm.txt:268894:  4e150e:	2200      	movs	r2, #0
+  stock_disasm.txt:268895:  4e1510:	f8d5 8000 	ldr.w	r8, [r5]
+  stock_disasm.txt:268896:  4e1514:	4640      	mov	r0, r8
+  stock_disasm.txt:268897:  4e1516:	f75a fde5 	bl	0x43c0e4
+  stock_disasm.txt:268898:  4e151a:	0038      	movs	r0, r7
+  stock_disasm.txt:268899:  4e151c:	f7b3 f98a 	bl	0x494834
+  stock_disasm.txt:268900:  4e1520:	6829      	ldr	r1, [r5, #0]
+  stock_disasm.txt:268901:  4e1522:	6008      	str	r0, [r1, #0]
+  stock_disasm.txt:268902:  4e1524:	6828      	ldr	r0, [r5, #0]
+  stock_disasm.txt:268903:  4e1526:	6800      	ldr	r0, [r0, #0]
+  stock_disasm.txt:268904:  4e1528:	2800      	cmp	r0, #0
+  stock_disasm.txt:268905:  4e152a:	d128      	bne.n	0x4e157e
+  stock_disasm.txt:268906:  4e152c:	f75b fdcf 	bl	0x43d0ce
+  stock_disasm.txt:268907:  4e1530:	0780      	lsls	r0, r0, #30
+  stock_disasm.txt:268908:  4e1532:	d50e      	bpl.n	0x4e1552
+
+============================================================
+THUMB POINTER REFERENCES TO 0x4E1491
+============================================================
+
+============================================================
+REFERENCES TO 0x4E16E2
+============================================================
+  stock_disasm.txt:268828:  4e1462:	0070      	lsls	r0, r6, #1
+  stock_disasm.txt:268829:  4e1464:	5e70      	ldrsh	r0, [r6, r1]
+  stock_disasm.txt:268830:  4e1466:	0078      	lsls	r0, r7, #1
+  stock_disasm.txt:268831:  4e1468:	47f0      	blx	lr
+  stock_disasm.txt:268832:  4e146a:	006d      	lsls	r5, r5, #1
+  stock_disasm.txt:268833:  4e146c:	f400 0077 	and.w	r0, r0, #16187392	@ 0xf70000
+  stock_disasm.txt:268834:  4e1470:	b82c      			@ <UNDEFINED> instruction: 0xb82c
+  stock_disasm.txt:268835:  4e1472:	0076      	lsls	r6, r6, #1
+  stock_disasm.txt:268836:  4e1474:	ff70 0075 	vqadd.u64	q8, q0, <illegal reg q10.5>
+  stock_disasm.txt:268837:  4e1478:	4034      	ands	r4, r6
+  stock_disasm.txt:268838:  4e147a:	0073      	lsls	r3, r6, #1
+  stock_disasm.txt:268839:  4e147c:	4fbc      	ldr	r7, [pc, #752]	@ (0x4e1770)
+  stock_disasm.txt:268840:  4e147e:	0071      	lsls	r1, r6, #1
+  stock_disasm.txt:268841:  4e1480:	45c0      	cmp	r8, r8
+  stock_disasm.txt:268842:  4e1482:	2007      	movs	r0, #7
+  stock_disasm.txt:268843:  4e1484:	4fc3      	ldr	r7, [pc, #780]	@ (0x4e1794)
+  stock_disasm.txt:268844:  4e1486:	2007      	movs	r0, #7
+  stock_disasm.txt:268845:  4e1488:	ed14 0073 	ldc	0, cr0, [r4, #-460]	@ 0xfffffe34
+  stock_disasm.txt:268846:  4e148c:	4ff8      	ldr	r7, [pc, #992]	@ (0x4e1870)
+  stock_disasm.txt:268847:  4e148e:	0071      	lsls	r1, r6, #1
+  stock_disasm.txt:268848:  4e1490:	e92d 41f8 	stmdb	sp!, {r3, r4, r5, r6, r7, r8, lr}
+  stock_disasm.txt:268849:  4e1494:	b087      	sub	sp, #28
+  stock_disasm.txt:268850:  4e1496:	000c      	movs	r4, r1
+  stock_disasm.txt:268851:  4e1498:	0016      	movs	r6, r2
+  stock_disasm.txt:268852:  4e149a:	001f      	movs	r7, r3
+  stock_disasm.txt:268853:  4e149c:	2802      	cmp	r0, #2
+  stock_disasm.txt:268854:  4e149e:	d00a      	beq.n	0x4e14b6
+  stock_disasm.txt:268855:  4e14a0:	f0c0 8255 	bcc.w	0x4e194e
+  stock_disasm.txt:268856:  4e14a4:	2804      	cmp	r0, #4
+  stock_disasm.txt:268857:  4e14a6:	f000 8124 	beq.w	0x4e16f2
+> stock_disasm.txt:268858:  4e14aa:	f0c0 811a 	bcc.w	0x4e16e2
+  stock_disasm.txt:268859:  4e14ae:	2805      	cmp	r0, #5
+  stock_disasm.txt:268860:  4e14b0:	f000 8196 	beq.w	0x4e17e0
+  stock_disasm.txt:268861:  4e14b4:	e24b      	b.n	0x4e194e
+  stock_disasm.txt:268862:  4e14b6:	f767 fe09 	bl	0x4490cc
+  stock_disasm.txt:268863:  4e14ba:	f8df 1504 	ldr.w	r1, [pc, #1284]	@ 0x4e19c0
+  stock_disasm.txt:268864:  4e14be:	6008      	str	r0, [r1, #0]
+  stock_disasm.txt:268865:  4e14c0:	2000      	movs	r0, #0
+  stock_disasm.txt:268866:  4e14c2:	f8df 14f8 	ldr.w	r1, [pc, #1272]	@ 0x4e19bc
+  stock_disasm.txt:268867:  4e14c6:	6008      	str	r0, [r1, #0]
+  stock_disasm.txt:268868:  4e14c8:	2000      	movs	r0, #0
+  stock_disasm.txt:268869:  4e14ca:	f8df 14f8 	ldr.w	r1, [pc, #1272]	@ 0x4e19c4
+  stock_disasm.txt:268870:  4e14ce:	6008      	str	r0, [r1, #0]
+  stock_disasm.txt:268871:  4e14d0:	2000      	movs	r0, #0
+  stock_disasm.txt:268872:  4e14d2:	f8df 14f4 	ldr.w	r1, [pc, #1268]	@ 0x4e19c8
+  stock_disasm.txt:268873:  4e14d6:	6008      	str	r0, [r1, #0]
+  stock_disasm.txt:268874:  4e14d8:	2000      	movs	r0, #0
+  stock_disasm.txt:268875:  4e14da:	f8df 14f0 	ldr.w	r1, [pc, #1264]	@ 0x4e19cc
+  stock_disasm.txt:268876:  4e14de:	6008      	str	r0, [r1, #0]
+  stock_disasm.txt:268877:  4e14e0:	2000      	movs	r0, #0
+  stock_disasm.txt:268878:  4e14e2:	f8df 14ec 	ldr.w	r1, [pc, #1260]	@ 0x4e19d0
+  stock_disasm.txt:268879:  4e14e6:	6008      	str	r0, [r1, #0]
+  stock_disasm.txt:268880:  4e14e8:	f7f8 fb24 	bl	0x4d9b34
+  stock_disasm.txt:268881:  4e14ec:	f8df 54e4 	ldr.w	r5, [pc, #1252]	@ 0x4e19d4
+  stock_disasm.txt:268882:  4e14f0:	2038      	movs	r0, #56	@ 0x38
+  stock_disasm.txt:268883:  4e14f2:	f793 fbee 	bl	0x474cd2
+  stock_disasm.txt:268884:  4e14f6:	6028      	str	r0, [r5, #0]
+  stock_disasm.txt:268885:  4e14f8:	6828      	ldr	r0, [r5, #0]
+  stock_disasm.txt:268886:  4e14fa:	2800      	cmp	r0, #0
+  stock_disasm.txt:268887:  4e14fc:	d106      	bne.n	0x4e150c
+  stock_disasm.txt:268888:  4e14fe:	f118 fdd1 	bl	0x5fa0a4
+  stock_disasm.txt:268889:  4e1502:	2000      	movs	r0, #0
+  stock_disasm.txt:268890:  4e1504:	f05f 31ff 	movs.w	r1, #4294967295
+  stock_disasm.txt:268891:  4e1508:	6008      	str	r0, [r1, #0]
+  stock_disasm.txt:268892:  4e150a:	e7fe      	b.n	0x4e150a
+  stock_disasm.txt:268893:  4e150c:	2138      	movs	r1, #56	@ 0x38
+  stock_disasm.txt:268894:  4e150e:	2200      	movs	r2, #0
+  stock_disasm.txt:268895:  4e1510:	f8d5 8000 	ldr.w	r8, [r5]
+  stock_disasm.txt:268896:  4e1514:	4640      	mov	r0, r8
+  stock_disasm.txt:268897:  4e1516:	f75a fde5 	bl	0x43c0e4
+  stock_disasm.txt:268898:  4e151a:	0038      	movs	r0, r7
+  stock_disasm.txt:269031:  4e1696:	f88d 0004 	strb.w	r0, [sp, #4]
+  stock_disasm.txt:269032:  4e169a:	2005      	movs	r0, #5
+  stock_disasm.txt:269033:  4e169c:	9000      	str	r0, [sp, #0]
+  stock_disasm.txt:269034:  4e169e:	2300      	movs	r3, #0
+  stock_disasm.txt:269035:  4e16a0:	2201      	movs	r2, #1
+  stock_disasm.txt:269036:  4e16a2:	a901      	add	r1, sp, #4
+  stock_disasm.txt:269037:  4e16a4:	20e0      	movs	r0, #224	@ 0xe0
+  stock_disasm.txt:269038:  4e16a6:	f783 feeb 	bl	0x465480
+  stock_disasm.txt:269039:  4e16aa:	6828      	ldr	r0, [r5, #0]
+  stock_disasm.txt:269040:  4e16ac:	6800      	ldr	r0, [r0, #0]
+  stock_disasm.txt:269041:  4e16ae:	f8df 1354 	ldr.w	r1, [pc, #852]	@ 0x4e1a04
+  stock_disasm.txt:269042:  4e16b2:	6048      	str	r0, [r1, #4]
+  stock_disasm.txt:269043:  4e16b4:	2c00      	cmp	r4, #0
+  stock_disasm.txt:269044:  4e16b6:	d103      	bne.n	0x4e16c0
+  stock_disasm.txt:269045:  4e16b8:	6828      	ldr	r0, [r5, #0]
+  stock_disasm.txt:269046:  4e16ba:	6800      	ldr	r0, [r0, #0]
+  stock_disasm.txt:269047:  4e16bc:	f782 fd25 	bl	0x46410a
+  stock_disasm.txt:269048:  4e16c0:	2001      	movs	r0, #1
+  stock_disasm.txt:269049:  4e16c2:	f8df 1344 	ldr.w	r1, [pc, #836]	@ 0x4e1a08
+  stock_disasm.txt:269050:  4e16c6:	7008      	strb	r0, [r1, #0]
+  stock_disasm.txt:269051:  4e16c8:	2000      	movs	r0, #0
+  stock_disasm.txt:269052:  4e16ca:	f8df 1340 	ldr.w	r1, [pc, #832]	@ 0x4e1a0c
+  stock_disasm.txt:269053:  4e16ce:	6008      	str	r0, [r1, #0]
+  stock_disasm.txt:269054:  4e16d0:	2000      	movs	r0, #0
+  stock_disasm.txt:269055:  4e16d2:	f8df 133c 	ldr.w	r1, [pc, #828]	@ 0x4e1a10
+  stock_disasm.txt:269056:  4e16d6:	6008      	str	r0, [r1, #0]
+  stock_disasm.txt:269057:  4e16d8:	2000      	movs	r0, #0
+  stock_disasm.txt:269058:  4e16da:	f8df 1338 	ldr.w	r1, [pc, #824]	@ 0x4e1a14
+  stock_disasm.txt:269059:  4e16de:	7008      	strb	r0, [r1, #0]
+  stock_disasm.txt:269060:  4e16e0:	e135      	b.n	0x4e194e
+> stock_disasm.txt:269061:  4e16e2:	0032      	movs	r2, r6
+  stock_disasm.txt:269062:  4e16e4:	b292      	uxth	r2, r2
+  stock_disasm.txt:269063:  4e16e6:	0021      	movs	r1, r4
+  stock_disasm.txt:269064:  4e16e8:	48ba      	ldr	r0, [pc, #744]	@ (0x4e19d4)
+  stock_disasm.txt:269065:  4e16ea:	6800      	ldr	r0, [r0, #0]
+  stock_disasm.txt:269066:  4e16ec:	f7b4 ff2a 	bl	0x496544
+  stock_disasm.txt:269067:  4e16f0:	e12d      	b.n	0x4e194e
+  stock_disasm.txt:269068:  4e16f2:	4cc5      	ldr	r4, [pc, #788]	@ (0x4e1a08)
+  stock_disasm.txt:269069:  4e16f4:	7820      	ldrb	r0, [r4, #0]
+  stock_disasm.txt:269070:  4e16f6:	2801      	cmp	r0, #1
+  stock_disasm.txt:269071:  4e16f8:	d12e      	bne.n	0x4e1758
+  stock_disasm.txt:269072:  4e16fa:	48c4      	ldr	r0, [pc, #784]	@ (0x4e1a0c)
+  stock_disasm.txt:269073:  4e16fc:	6801      	ldr	r1, [r0, #0]
+  stock_disasm.txt:269074:  4e16fe:	1c49      	adds	r1, r1, #1
+  stock_disasm.txt:269075:  4e1700:	6001      	str	r1, [r0, #0]
+  stock_disasm.txt:269076:  4e1702:	6801      	ldr	r1, [r0, #0]
+  stock_disasm.txt:269077:  4e1704:	f5b1 7f61 	cmp.w	r1, #900	@ 0x384
+  stock_disasm.txt:269078:  4e1708:	d326      	bcc.n	0x4e1758
+  stock_disasm.txt:269079:  4e170a:	2100      	movs	r1, #0
+  stock_disasm.txt:269080:  4e170c:	6001      	str	r1, [r0, #0]
+  stock_disasm.txt:269081:  4e170e:	f75b fcde 	bl	0x43d0ce
+  stock_disasm.txt:269082:  4e1712:	0780      	lsls	r0, r0, #30
+  stock_disasm.txt:269083:  4e1714:	d50a      	bpl.n	0x4e172c
+  stock_disasm.txt:269084:  4e1716:	48c0      	ldr	r0, [pc, #768]	@ (0x4e1a18)
+  stock_disasm.txt:269085:  4e1718:	9001      	str	r0, [sp, #4]
+  stock_disasm.txt:269086:  4e171a:	f44f 70a2 	mov.w	r0, #324	@ 0x144
+  stock_disasm.txt:269087:  4e171e:	9000      	str	r0, [sp, #0]
+  stock_disasm.txt:269088:  4e1720:	4bae      	ldr	r3, [pc, #696]	@ (0x4e19dc)
+  stock_disasm.txt:269089:  4e1722:	4aaf      	ldr	r2, [pc, #700]	@ (0x4e19e0)
+  stock_disasm.txt:269090:  4e1724:	49af      	ldr	r1, [pc, #700]	@ (0x4e19e4)
+  stock_disasm.txt:269091:  4e1726:	2003      	movs	r0, #3
+  stock_disasm.txt:269092:  4e1728:	f75b ff24 	bl	0x43d574
+  stock_disasm.txt:269093:  4e172c:	f75b fccf 	bl	0x43d0ce
+  stock_disasm.txt:269094:  4e1730:	07c0      	lsls	r0, r0, #31
+  stock_disasm.txt:269095:  4e1732:	d403      	bmi.n	0x4e173c
+  stock_disasm.txt:269096:  4e1734:	f75b fccb 	bl	0x43d0ce
+  stock_disasm.txt:269097:  4e1738:	0740      	lsls	r0, r0, #29
+  stock_disasm.txt:269098:  4e173a:	d505      	bpl.n	0x4e1748
+  stock_disasm.txt:269099:  4e173c:	49b7      	ldr	r1, [pc, #732]	@ (0x4e1a1c)
+  stock_disasm.txt:269100:  4e173e:	000a      	movs	r2, r1
+  stock_disasm.txt:269101:  4e1740:	f05f 6040 	movs.w	r0, #201326592	@ 0xc000000
+
+============================================================
+REFERENCES TO MODULE RECORD / CONTEXT AREA 0x6A4520
+============================================================
+  stock_disasm.txt:909554:  6a44b0:	0104      	lsls	r4, r0, #4
+  stock_disasm.txt:909555:  6a44b2:	0000      	movs	r0, r0
+  stock_disasm.txt:909556:  6a44b4:	c401      	stmia	r4!, {r0}
+  stock_disasm.txt:909557:  6a44b6:	0043      	lsls	r3, r0, #1
+  stock_disasm.txt:909558:  6a44b8:	c497      	stmia	r4!, {r0, r1, r2, r4, r7}
+  stock_disasm.txt:909559:  6a44ba:	0043      	lsls	r3, r0, #1
+  stock_disasm.txt:909560:  6a44bc:	0044      	lsls	r4, r0, #1
+  stock_disasm.txt:909561:  6a44be:	2000      	movs	r0, #0
+  stock_disasm.txt:909562:  6a44c0:	010e      	lsls	r6, r1, #4
+  stock_disasm.txt:909563:  6a44c2:	0000      	movs	r0, r0
+  stock_disasm.txt:909564:  6a44c4:	e73d      	b.n	0x6a4342
+  stock_disasm.txt:909565:  6a44c6:	004a      	lsls	r2, r1, #1
+  stock_disasm.txt:909566:	...
+  stock_disasm.txt:909567:  6a44d0:	000b      	movs	r3, r1
+  stock_disasm.txt:909568:  6a44d2:	0000      	movs	r0, r0
+  stock_disasm.txt:909569:  6a44d4:	0477      	lsls	r7, r6, #17
+  stock_disasm.txt:909570:  6a44d6:	005b      	lsls	r3, r3, #1
+  stock_disasm.txt:909571:  6a44d8:	06ab      	lsls	r3, r5, #26
+  stock_disasm.txt:909572:  6a44da:	005b      	lsls	r3, r3, #1
+  stock_disasm.txt:909573:  6a44dc:	04d8      	lsls	r0, r3, #19
+  stock_disasm.txt:909574:  6a44de:	2000      	movs	r0, #0
+  stock_disasm.txt:909575:  6a44e0:	0001      	movs	r1, r0
+  stock_disasm.txt:909576:  6a44e2:	0000      	movs	r0, r0
+  stock_disasm.txt:909577:  6a44e4:	ddb9      	ble.n	0x6a445a
+  stock_disasm.txt:909578:  6a44e6:	0049      	lsls	r1, r1, #1
+  stock_disasm.txt:909579:  6a44e8:	e68d      	b.n	0x6a4206
+  stock_disasm.txt:909580:  6a44ea:	0049      	lsls	r1, r1, #1
+  stock_disasm.txt:909581:  6a44ec:	05bc      	lsls	r4, r7, #22
+  stock_disasm.txt:909582:  6a44ee:	2000      	movs	r0, #0
+  stock_disasm.txt:909583:  6a44f0:	001f      	movs	r7, r3
+  stock_disasm.txt:909584:  6a44f2:	0000      	movs	r0, r0
+  stock_disasm.txt:909585:  6a44f4:	1821      	adds	r1, r4, r0
+  stock_disasm.txt:909586:  6a44f6:	0050      	lsls	r0, r2, #1
+  stock_disasm.txt:909587:	...
+  stock_disasm.txt:909588:  6a4500:	0007      	movs	r7, r0
+  stock_disasm.txt:909589:  6a4502:	0000      	movs	r0, r0
+  stock_disasm.txt:909590:  6a4504:	2977      	cmp	r1, #119	@ 0x77
+  stock_disasm.txt:909591:  6a4506:	004e      	lsls	r6, r1, #1
+  stock_disasm.txt:909592:  6a4508:	2c41      	cmp	r4, #65	@ 0x41
+  stock_disasm.txt:909593:  6a450a:	004e      	lsls	r6, r1, #1
+  stock_disasm.txt:909594:  6a450c:	09a4      	lsrs	r4, r4, #6
+  stock_disasm.txt:909595:  6a450e:	2000      	movs	r0, #0
+  stock_disasm.txt:909596:  6a4510:	0ffe      	lsrs	r6, r7, #31
+  stock_disasm.txt:909597:  6a4512:	0000      	movs	r0, r0
+  stock_disasm.txt:909598:  6a4514:	2f8d      	cmp	r7, #141	@ 0x8d
+  stock_disasm.txt:909599:  6a4516:	0049      	lsls	r1, r1, #1
+  stock_disasm.txt:909600:  6a4518:	2fdd      	cmp	r7, #221	@ 0xdd
+  stock_disasm.txt:909601:  6a451a:	0049      	lsls	r1, r1, #1
+  stock_disasm.txt:909602:  6a451c:	0b1c      	lsrs	r4, r3, #12
+  stock_disasm.txt:909603:  6a451e:	2000      	movs	r0, #0
+> stock_disasm.txt:909604:  6a4520:	00e0      	lsls	r0, r4, #3
+  stock_disasm.txt:909605:  6a4522:	0000      	movs	r0, r0
+  stock_disasm.txt:909606:  6a4524:	1193      	asrs	r3, r2, #6
+  stock_disasm.txt:909607:  6a4526:	004e      	lsls	r6, r1, #1
+  stock_disasm.txt:909608:  6a4528:	1491      	asrs	r1, r2, #18
+  stock_disasm.txt:909609:  6a452a:	004e      	lsls	r6, r1, #1
+  stock_disasm.txt:909610:  6a452c:	0b38      	lsrs	r0, r7, #12
+  stock_disasm.txt:909611:  6a452e:	2000      	movs	r0, #0
+  stock_disasm.txt:909612:  6a4530:	0020      	movs	r0, r4
+  stock_disasm.txt:909613:  6a4532:	0000      	movs	r0, r0
+  stock_disasm.txt:909614:  6a4534:	16bb      	asrs	r3, r7, #26
+  stock_disasm.txt:909615:  6a4536:	0047      	lsls	r7, r0, #1
+  stock_disasm.txt:909616:	...
+  stock_disasm.txt:909617:  6a4540:	000e      	movs	r6, r1
+  stock_disasm.txt:909618:  6a4542:	0000      	movs	r0, r0
+  stock_disasm.txt:909619:  6a4544:	fca3 004f 	stc2	0, cr0, [r3], #316	@ 0x13c
+  stock_disasm.txt:909620:	...
+  stock_disasm.txt:909621:  6a4550:	0109      	lsls	r1, r1, #4
+  stock_disasm.txt:909622:  6a4552:	0000      	movs	r0, r0
+  stock_disasm.txt:909623:  6a4554:	f24b 005b 	movw	r0, #45147	@ 0xb05b
+  stock_disasm.txt:909624:  6a4558:	f7b9 005b 			@ <UNDEFINED> instruction: 0xf7b9005b
+  stock_disasm.txt:909625:  6a455c:	14cc      	asrs	r4, r1, #19
+  stock_disasm.txt:909626:  6a455e:	2000      	movs	r0, #0
+  stock_disasm.txt:909627:  6a4560:	000f      	movs	r7, r1
+  stock_disasm.txt:909628:  6a4562:	0000      	movs	r0, r0
+  stock_disasm.txt:909629:  6a4564:	92dd      	str	r2, [sp, #884]	@ 0x374
+  stock_disasm.txt:909630:  6a4566:	0045      	lsls	r5, r0, #1
+  stock_disasm.txt:909631:	...
+  stock_disasm.txt:909632:  6a4570:	0003      	movs	r3, r0
+  stock_disasm.txt:909633:  6a4572:	0000      	movs	r0, r0
+  stock_disasm.txt:909634:  6a4574:	0639      	lsls	r1, r7, #24
+  stock_disasm.txt:909635:  6a4576:	0046      	lsls	r6, r0, #1
+  stock_disasm.txt:909636:  6a4578:	327f      	adds	r2, #127	@ 0x7f
+  stock_disasm.txt:909637:  6a457a:	0046      	lsls	r6, r0, #1
+  stock_disasm.txt:909638:  6a457c:	2ca8      	cmp	r4, #168	@ 0xa8
+  stock_disasm.txt:909639:  6a457e:	2000      	movs	r0, #0
+  stock_disasm.txt:909640:  6a4580:	0004      	movs	r4, r0
+  stock_disasm.txt:909641:  6a4582:	0000      	movs	r0, r0
+  stock_disasm.txt:909642:  6a4584:	1b31      	subs	r1, r6, r4
+  stock_disasm.txt:909643:  6a4586:	004e      	lsls	r6, r1, #1
+  stock_disasm.txt:909644:  6a4588:	1dd5      	adds	r5, r2, #7
+  stock_disasm.txt:909645:  6a458a:	004e      	lsls	r6, r1, #1
+  stock_disasm.txt:909646:  6a458c:	2cc4      	cmp	r4, #196	@ 0xc4
+  stock_disasm.txt:909647:  6a458e:	2000      	movs	r0, #0
+  stock_disasm.txt:909648:  6a4590:	0008      	movs	r0, r1
+  stock_disasm.txt:909649:  6a4592:	0000      	movs	r0, r0
+  stock_disasm.txt:909650:  6a4594:	5ccb      	ldrb	r3, [r1, r3]
+  stock_disasm.txt:909651:  6a4596:	0058      	lsls	r0, r3, #1
+  stock_disasm.txt:909652:  6a4598:	607b      	str	r3, [r7, #4]
+  stock_disasm.txt:909653:  6a459a:	0058      	lsls	r0, r3, #1
+  stock_disasm.txt:909654:  6a459c:	2ce0      	cmp	r4, #224	@ 0xe0
+  stock_disasm.txt:909655:  6a459e:	2000      	movs	r0, #0
+  stock_disasm.txt:909656:  6a45a0:	0010      	movs	r0, r2
+  stock_disasm.txt:909657:  6a45a2:	0000      	movs	r0, r0
+  stock_disasm.txt:909658:  6a45a4:	8485      	strh	r5, [r0, #36]	@ 0x24
+  stock_disasm.txt:909659:  6a45a6:	0046      	lsls	r6, r0, #1
+  stock_disasm.txt:909660:  6a45a8:	8f25      	ldrh	r5, [r4, #56]	@ 0x38
+  stock_disasm.txt:909661:  6a45aa:	0046      	lsls	r6, r0, #1
+  stock_disasm.txt:909662:  6a45ac:	2e34      	cmp	r6, #52	@ 0x34
+  stock_disasm.txt:909663:  6a45ae:	2000      	movs	r0, #0
+  stock_disasm.txt:909664:  6a45b0:	0091      	lsls	r1, r2, #2
+  stock_disasm.txt:909665:  6a45b2:	0000      	movs	r0, r0
+  stock_disasm.txt:909666:  6a45b4:	e691      	b.n	0x6a42da
+  stock_disasm.txt:909667:  6a45b6:	005c      	lsls	r4, r3, #1
+  stock_disasm.txt:909668:	...
+  stock_disasm.txt:909669:  6a45c0:	0110      	lsls	r0, r2, #4
+  stock_disasm.txt:909670:  6a45c2:	0000      	movs	r0, r0
+  stock_disasm.txt:909671:  6a45c4:	f2e7 005c 			@ <UNDEFINED> instruction: 0xf2e7005c
+  stock_disasm.txt:909672:  6a45c8:	f331 005c 			@ <UNDEFINED> instruction: 0xf331005c
+  stock_disasm.txt:909673:  6a45cc:	3064      	adds	r0, #100	@ 0x64
+  stock_disasm.txt:909674:  6a45ce:	2000      	movs	r0, #0
+  stock_disasm.txt:909675:  6a45d0:	010f      	lsls	r7, r1, #4
+  stock_disasm.txt:909676:  6a45d2:	0000      	movs	r0, r0
+  stock_disasm.txt:909677:  6a45d4:	f635 005c 			@ <UNDEFINED> instruction: 0xf635005c
+  stock_disasm.txt:909678:  6a45d8:	f67f 005c 			@ <UNDEFINED> instruction: 0xf67f005c
+  stock_disasm.txt:909679:  6a45dc:	3080      	adds	r0, #128	@ 0x80
+  stock_disasm.txt:909680:  6a45de:	2000      	movs	r0, #0
+  stock_disasm.txt:909681:  6a45e0:	010b      	lsls	r3, r1, #4
+  stock_disasm.txt:909682:  6a45e2:	0000      	movs	r0, r0
+  stock_disasm.txt:909683:  6a45e4:	f7a9 005c 			@ <UNDEFINED> instruction: 0xf7a9005c
+  stock_disasm.txt:909684:  6a45e8:	f7f3 005c 			@ <UNDEFINED> instruction: 0xf7f3005c
+
+============================================================
+REFERENCES TO HANDLER 0x4E1192 / THUMB 0x4E1193
+============================================================
+  stock_disasm.txt:268521:  4e1122:	6800      	ldr	r0, [r0, #0]
+  stock_disasm.txt:268522:  4e1124:	f783 f847 	bl	0x4641b6
+  stock_disasm.txt:268523:  4e1128:	a802      	add	r0, sp, #8
+  stock_disasm.txt:268524:  4e112a:	f8df 184c 	ldr.w	r1, [pc, #2124]	@ 0x4e1978
+  stock_disasm.txt:268525:  4e112e:	e9d1 2300 	ldrd	r2, r3, [r1]
+  stock_disasm.txt:268526:  4e1132:	e9c0 2300 	strd	r2, r3, [r0]
+  stock_disasm.txt:268527:  4e1136:	f7b2 fa62 	bl	0x4935fe
+  stock_disasm.txt:268528:  4e113a:	9002      	str	r0, [sp, #8]
+  stock_disasm.txt:268529:  4e113c:	aa02      	add	r2, sp, #8
+  stock_disasm.txt:268530:  4e113e:	2102      	movs	r1, #2
+  stock_disasm.txt:268531:  4e1140:	f8df 0838 	ldr.w	r0, [pc, #2104]	@ 0x4e197c
+  stock_disasm.txt:268532:  4e1144:	f7ad fcf5 	bl	0x48eb32
+  stock_disasm.txt:268533:  4e1148:	f7ff fdaa 	bl	0x4e0ca0
+  stock_disasm.txt:268534:  4e114c:	f75b ffbf 	bl	0x43d0ce
+  stock_disasm.txt:268535:  4e1150:	0780      	lsls	r0, r0, #30
+  stock_disasm.txt:268536:  4e1152:	d50a      	bpl.n	0x4e116a
+  stock_disasm.txt:268537:  4e1154:	f8df 0828 	ldr.w	r0, [pc, #2088]	@ 0x4e1980
+  stock_disasm.txt:268538:  4e1158:	9001      	str	r0, [sp, #4]
+  stock_disasm.txt:268539:  4e115a:	20cb      	movs	r0, #203	@ 0xcb
+  stock_disasm.txt:268540:  4e115c:	9000      	str	r0, [sp, #0]
+  stock_disasm.txt:268541:  4e115e:	4bc4      	ldr	r3, [pc, #784]	@ (0x4e1470)
+  stock_disasm.txt:268542:  4e1160:	4abf      	ldr	r2, [pc, #764]	@ (0x4e1460)
+  stock_disasm.txt:268543:  4e1162:	49c0      	ldr	r1, [pc, #768]	@ (0x4e1464)
+  stock_disasm.txt:268544:  4e1164:	2004      	movs	r0, #4
+  stock_disasm.txt:268545:  4e1166:	f75c fa05 	bl	0x43d574
+  stock_disasm.txt:268546:  4e116a:	f75b ffb0 	bl	0x43d0ce
+  stock_disasm.txt:268547:  4e116e:	07c0      	lsls	r0, r0, #31
+  stock_disasm.txt:268548:  4e1170:	d403      	bmi.n	0x4e117a
+  stock_disasm.txt:268549:  4e1172:	f75b ffac 	bl	0x43d0ce
+  stock_disasm.txt:268550:  4e1176:	0740      	lsls	r0, r0, #29
+  stock_disasm.txt:268551:  4e1178:	d506      	bpl.n	0x4e1188
+  stock_disasm.txt:268552:  4e117a:	f8df 1808 	ldr.w	r1, [pc, #2056]	@ 0x4e1984
+  stock_disasm.txt:268553:  4e117e:	000a      	movs	r2, r1
+  stock_disasm.txt:268554:  4e1180:	f05f 5080 	movs.w	r0, #268435456	@ 0x10000000
+  stock_disasm.txt:268555:  4e1184:	f75b fe8b 	bl	0x43ce9e
+  stock_disasm.txt:268556:  4e1188:	2001      	movs	r0, #1
+  stock_disasm.txt:268557:  4e118a:	e000      	b.n	0x4e118e
+  stock_disasm.txt:268558:  4e118c:	2001      	movs	r0, #1
+  stock_disasm.txt:268559:  4e118e:	b005      	add	sp, #20
+  stock_disasm.txt:268560:  4e1190:	bd30      	pop	{r4, r5, pc}
+> stock_disasm.txt:268561:  4e1192:	b578      	push	{r3, r4, r5, r6, lr}
+  stock_disasm.txt:268562:  4e1194:	b08b      	sub	sp, #44	@ 0x2c
+  stock_disasm.txt:268563:  4e1196:	0006      	movs	r6, r0
+  stock_disasm.txt:268564:  4e1198:	000c      	movs	r4, r1
+  stock_disasm.txt:268565:  4e119a:	0015      	movs	r5, r2
+  stock_disasm.txt:268566:  4e119c:	f75b ff97 	bl	0x43d0ce
+  stock_disasm.txt:268567:  4e11a0:	0780      	lsls	r0, r0, #30
+  stock_disasm.txt:268568:  4e11a2:	d50c      	bpl.n	0x4e11be
+  stock_disasm.txt:268569:  4e11a4:	9602      	str	r6, [sp, #8]
+  stock_disasm.txt:268570:  4e11a6:	f8df 07e0 	ldr.w	r0, [pc, #2016]	@ 0x4e1988
+  stock_disasm.txt:268571:  4e11aa:	9001      	str	r0, [sp, #4]
+  stock_disasm.txt:268572:  4e11ac:	20d9      	movs	r0, #217	@ 0xd9
+  stock_disasm.txt:268573:  4e11ae:	9000      	str	r0, [sp, #0]
+  stock_disasm.txt:268574:  4e11b0:	f8df 37d8 	ldr.w	r3, [pc, #2008]	@ 0x4e198c
+  stock_disasm.txt:268575:  4e11b4:	4aaa      	ldr	r2, [pc, #680]	@ (0x4e1460)
+  stock_disasm.txt:268576:  4e11b6:	49ab      	ldr	r1, [pc, #684]	@ (0x4e1464)
+  stock_disasm.txt:268577:  4e11b8:	2004      	movs	r0, #4
+  stock_disasm.txt:268578:  4e11ba:	f75c f9db 	bl	0x43d574
+  stock_disasm.txt:268579:  4e11be:	f75b ff86 	bl	0x43d0ce
+  stock_disasm.txt:268580:  4e11c2:	07c0      	lsls	r0, r0, #31
+  stock_disasm.txt:268581:  4e11c4:	d403      	bmi.n	0x4e11ce
+  stock_disasm.txt:268582:  4e11c6:	f75b ff82 	bl	0x43d0ce
+  stock_disasm.txt:268583:  4e11ca:	0740      	lsls	r0, r0, #29
+  stock_disasm.txt:268584:  4e11cc:	d507      	bpl.n	0x4e11de
+  stock_disasm.txt:268585:  4e11ce:	f8df 17c0 	ldr.w	r1, [pc, #1984]	@ 0x4e1990
+  stock_disasm.txt:268586:  4e11d2:	0033      	movs	r3, r6
+  stock_disasm.txt:268587:  4e11d4:	000a      	movs	r2, r1
+  stock_disasm.txt:268588:  4e11d6:	f05f 5082 	movs.w	r0, #272629760	@ 0x10400000
+  stock_disasm.txt:268589:  4e11da:	f75b fe60 	bl	0x43ce9e
+  stock_disasm.txt:268590:  4e11de:	2e00      	cmp	r6, #0
+  stock_disasm.txt:268591:  4e11e0:	d104      	bne.n	0x4e11ec
+  stock_disasm.txt:268592:  4e11e2:	0029      	movs	r1, r5
+  stock_disasm.txt:268593:  4e11e4:	0020      	movs	r0, r4
+  stock_disasm.txt:268594:  4e11e6:	f7f9 fb25 	bl	0x4da834
+  stock_disasm.txt:268595:  4e11ea:	e10a      	b.n	0x4e1402
+  stock_disasm.txt:268596:  4e11ec:	2e05      	cmp	r6, #5
+  stock_disasm.txt:268597:  4e11ee:	f040 8108 	bne.w	0x4e1402
+  stock_disasm.txt:268598:  4e11f2:	2c00      	cmp	r4, #0
+  stock_disasm.txt:268599:  4e11f4:	d001      	beq.n	0x4e11fa
+  stock_disasm.txt:268600:  4e11f6:	2d00      	cmp	r5, #0
+  stock_disasm.txt:268601:  4e11f8:	d12a      	bne.n	0x4e1250
+  stock_disasm.txt:268602:  4e11fa:	f762 f943 	bl	0x443484
+  stock_disasm.txt:268603:  4e11fe:	2800      	cmp	r0, #0
+  stock_disasm.txt:268604:  4e1200:	d004      	beq.n	0x4e120c
+  stock_disasm.txt:268605:  4e1202:	20e0      	movs	r0, #224	@ 0xe0
+  stock_disasm.txt:268606:  4e1204:	f762 f964 	bl	0x4434d0
+  stock_disasm.txt:268607:  4e1208:	2800      	cmp	r0, #0
+  stock_disasm.txt:268608:  4e120a:	d121      	bne.n	0x4e1250
+  stock_disasm.txt:268609:  4e120c:	f75b ff5f 	bl	0x43d0ce
+  stock_disasm.txt:268610:  4e1210:	0780      	lsls	r0, r0, #30
+  stock_disasm.txt:268611:  4e1212:	d50b      	bpl.n	0x4e122c
+  stock_disasm.txt:268612:  4e1214:	f8df 077c 	ldr.w	r0, [pc, #1916]	@ 0x4e1994
+  stock_disasm.txt:268613:  4e1218:	9001      	str	r0, [sp, #4]
+  stock_disasm.txt:268614:  4e121a:	20df      	movs	r0, #223	@ 0xdf
+  stock_disasm.txt:268615:  4e121c:	9000      	str	r0, [sp, #0]
+  stock_disasm.txt:268616:  4e121e:	f8df 376c 	ldr.w	r3, [pc, #1900]	@ 0x4e198c
+  stock_disasm.txt:268617:  4e1222:	4a8f      	ldr	r2, [pc, #572]	@ (0x4e1460)
+  stock_disasm.txt:268618:  4e1224:	498f      	ldr	r1, [pc, #572]	@ (0x4e1464)
+  stock_disasm.txt:268619:  4e1226:	2001      	movs	r0, #1
+  stock_disasm.txt:268620:  4e1228:	f75c f9a4 	bl	0x43d574
+  stock_disasm.txt:268621:  4e122c:	f75b ff4f 	bl	0x43d0ce
+
+============================================================
+REFERENCES TO CONTEXT 0x20000B38
+============================================================
+
+

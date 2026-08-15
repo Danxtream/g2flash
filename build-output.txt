@@ -1,0 +1,43 @@
+[1;34m==>[0m reusing existing virtualenv (./venv)
+[1;34m==>[0m installing dependencies (bleak, websocket-client)
+[1;32m  ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“[0m venv ready ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â flash with: ./venv/bin/python g2flash.py -c g2://local -f ...
+[1;34m==>[0m stock image already present and verified (g2_2.2.6.10.bin)
+[1;34m==>[0m regenerating committed patch set with clang (patches/cfw_patches.json)
+compiling injected blobs (build.py):
+  combined blob @ MRAM 0x00794324  +165796 B (.text 156316 + rodata 9480)
+    appended 165796 B -> payload end MRAM 0x007bcac8 (205 KB under 0x007f0000)
+applying in-place edits:
+  0x161e4d: container width  <= 576 (4 B)
+  0x161f15: container height movw #0x121 (4 B)
+  0x161f19: container height cmp r0,r1 (2 B)
+  0x1617ef: bl snapshot_side @ 0x4db968 (4 B)
+  0x161be3: bl snapshot_side @ 0x4dbd5c (4 B)
+  0x11c895: bl image_deferred (deferred consumer -> FIFO restore + worker, both lenses) (4 B)
+  0x1219ef: bl settings_send_wrapper (append caps field 100) (4 B)
+  0x1210ef: bl settings_decode_wrapper (Faceclaw lease field 101) (4 B)
+  0xe24e1: bl faceclaw_display_start @ 0x45c65a (fail-open double-tap takeover) (4 B)
+  0xe25a1: bl faceclaw_display_start @ 0x45c71a (fail-open double-tap takeover) (4 B)
+  0xc8d19: bl evenhub_longpress (replaces force-quit dialog) (4 B)
+  0xc9049: bl ring_release (forward ring release-long-press) (4 B)
+  0x167e59: even_ai_display_ctrl entry -> conditional Faceclaw lease trampoline (4 B)
+  0xf9b15: bl display_copy_hook @ 0x473c8e (640x480 direct framebuffer) (4 B)
+  0xf9bef: bl display_copy_hook @ 0x473d68 (640x480 direct framebuffer) (4 B)
+  0x124ac3: bl faceclaw_send_wear_event @ 0x49ec3c (outside onboarding) (4 B)
+  0x124b21: bl faceclaw_send_wear_event @ 0x49ec9a (outside onboarding) (4 B)
+  0xc910f: bl compass_event_forward (global IMU heading -> stock nav BLE notifier) (4 B)
+  appended 165796 B: ps 3523396 -> 3689192, preamble len -> 0x384ae8, load addr 0x00438000
+recomputing checksums:
+  [5] ota/s200_firmware_ota.bin: component crc32c=8d5a6b5a, preamble crc32=27da665f
+wrote patches/cfw_patches.json: 25 patches, 165890 bytes changed/appended
+  base   sha256 f4dfb0b49ad3de3c2daf17f8a27a157c3dc98411d6a0d3ab2cfd0918f41b9afa
+  output sha256 1d9c06ce661d2b0e8c1070b5c2c80ce58c1fc15d4f06f011efdbe28ccbb06925
+[1;32m  ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“[0m patch set regenerated ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â review & commit patches/cfw_patches.json
+[1;34m==>[0m applying committed patch set -> g2_2.2.6.10_cfw.bin
+  base verified (g2_2.2.6.10.bin)
+  applied 25 patches -> g2_2.2.6.10_cfw.bin (4467023 bytes)
+[1;32m  ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“[0m patched image verified (g2_2.2.6.10_cfw.bin)
+
+[1;34m==>[0m done. Custom firmware: g2_2.2.6.10_cfw.bin
+    Flash it (voids warranty, can brick the device) with, e.g.:
+      ./venv/bin/python g2flash.py -c g2://local -f g2_2.2.6.10_cfw.bin
+    See README.md for connection options and safety notes.

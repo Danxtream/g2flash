@@ -1,0 +1,2 @@
+b2db67f3303203824a7b20c6dcce517e44ed87d5bfe63d18e384b738229aa915  patches/zlib_glue.c
+021badc519c5d4cae2ca3abeafcddbc76ce51cea81312a1d6e81c2c6bbb49e0d  patches/patch_compress.py

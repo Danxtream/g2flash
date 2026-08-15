@@ -1,0 +1,114 @@
+﻿
+  stock_disasm.txt:142083:  49194e:	d506      	bpl.n	0x49195e
+  stock_disasm.txt:142084:  491950:	f8df 15c0 	ldr.w	r1, [pc, #1472]	@ 0x491f14
+  stock_disasm.txt:142085:  491954:	000a      	movs	r2, r1
+  stock_disasm.txt:142086:  491956:	f05f 6080 	movs.w	r0, #67108864	@ 0x4000000
+  stock_disasm.txt:142087:  49195a:	f7ab faa0 	bl	0x43ce9e
+  stock_disasm.txt:142088:  49195e:	2000      	movs	r0, #0
+  stock_disasm.txt:142089:  491960:	bd76      	pop	{r1, r2, r4, r5, r6, pc}
+  stock_disasm.txt:142090:  491962:	b53e      	push	{r1, r2, r3, r4, r5, lr}
+  stock_disasm.txt:142091:  491964:	2400      	movs	r4, #0
+  stock_disasm.txt:142092:  491966:	e000      	b.n	0x49196a
+  stock_disasm.txt:142093:  491968:	1c64      	adds	r4, r4, #1
+  stock_disasm.txt:142094:  49196a:	0023      	movs	r3, r4
+  stock_disasm.txt:142095:  49196c:	b2db      	uxtb	r3, r3
+  stock_disasm.txt:142096:  49196e:	2b20      	cmp	r3, #32
+  stock_disasm.txt:142097:  491970:	da16      	bge.n	0x4919a0
+  stock_disasm.txt:142098:  491972:	0023      	movs	r3, r4
+  stock_disasm.txt:142099:  491974:	b2db      	uxtb	r3, r3
+  stock_disasm.txt:142100:  491976:	eb00 03c3 	add.w	r3, r0, r3, lsl #3
+> stock_disasm.txt:142101:  49197a:	f247 0530 	movw	r5, #28720	@ 0x7030
+  stock_disasm.txt:142102:  49197e:	441d      	add	r5, r3
+  stock_disasm.txt:142103:  491980:	686b      	ldr	r3, [r5, #4]
+  stock_disasm.txt:142104:  491982:	2b00      	cmp	r3, #0
+  stock_disasm.txt:142105:  491984:	d1f0      	bne.n	0x491968
+  stock_disasm.txt:142106:  491986:	606a      	str	r2, [r5, #4]
+  stock_disasm.txt:142107:  491988:	8029      	strh	r1, [r5, #0]
+  stock_disasm.txt:142108:  49198a:	f247 1159 	movw	r1, #29017	@ 0x7159
+  stock_disasm.txt:142109:  49198e:	0022      	movs	r2, r4
+  stock_disasm.txt:142110:  491990:	5c43      	ldrb	r3, [r0, r1]
+  stock_disasm.txt:142111:  491992:	b2d2      	uxtb	r2, r2
+  stock_disasm.txt:142112:  491994:	429a      	cmp	r2, r3
+  stock_disasm.txt:142113:  491996:	d301      	bcc.n	0x49199c
+  stock_disasm.txt:142114:  491998:	1c64      	adds	r4, r4, #1
+  stock_disasm.txt:142115:  49199a:	5444      	strb	r4, [r0, r1]
+  stock_disasm.txt:142116:  49199c:	2001      	movs	r0, #1
+  stock_disasm.txt:142117:  49199e:	e022      	b.n	0x4919e6
+  stock_disasm.txt:142118:  4919a0:	f7ab fb95 	bl	0x43d0ce
+  stock_disasm.txt:142119:  4919a4:	0780      	lsls	r0, r0, #30
+  stock_disasm.txt:142215:  491a94:	f7ff fed3 	bl	0x49183e
+  stock_disasm.txt:142216:  491a98:	e07d      	b.n	0x491b96
+  stock_disasm.txt:142217:  491a9a:	2000      	movs	r0, #0
+  stock_disasm.txt:142218:  491a9c:	9007      	str	r0, [sp, #28]
+  stock_disasm.txt:142219:  491a9e:	2000      	movs	r0, #0
+  stock_disasm.txt:142220:  491aa0:	9008      	str	r0, [sp, #32]
+  stock_disasm.txt:142221:  491aa2:	2500      	movs	r5, #0
+  stock_disasm.txt:142222:  491aa4:	e000      	b.n	0x491aa8
+  stock_disasm.txt:142223:  491aa6:	1c6d      	adds	r5, r5, #1
+  stock_disasm.txt:142224:  491aa8:	0028      	movs	r0, r5
+  stock_disasm.txt:142225:  491aaa:	f247 1159 	movw	r1, #29017	@ 0x7159
+  stock_disasm.txt:142226:  491aae:	5c61      	ldrb	r1, [r4, r1]
+  stock_disasm.txt:142227:  491ab0:	b2c0      	uxtb	r0, r0
+  stock_disasm.txt:142228:  491ab2:	4288      	cmp	r0, r1
+  stock_disasm.txt:142229:  491ab4:	d221      	bcs.n	0x491afa
+  stock_disasm.txt:142230:  491ab6:	0028      	movs	r0, r5
+  stock_disasm.txt:142231:  491ab8:	b2c0      	uxtb	r0, r0
+  stock_disasm.txt:142232:  491aba:	eb04 00c0 	add.w	r0, r4, r0, lsl #3
+> stock_disasm.txt:142233:  491abe:	f247 0130 	movw	r1, #28720	@ 0x7030
+  stock_disasm.txt:142234:  491ac2:	eb00 0601 	add.w	r6, r0, r1
+  stock_disasm.txt:142235:  491ac6:	6870      	ldr	r0, [r6, #4]
+  stock_disasm.txt:142236:  491ac8:	2800      	cmp	r0, #0
+  stock_disasm.txt:142237:  491aca:	d0ec      	beq.n	0x491aa6
+  stock_disasm.txt:142238:  491acc:	8830      	ldrh	r0, [r6, #0]
+  stock_disasm.txt:142239:  491ace:	f8bd 1010 	ldrh.w	r1, [sp, #16]
+  stock_disasm.txt:142240:  491ad2:	4288      	cmp	r0, r1
+  stock_disasm.txt:142241:  491ad4:	d1e7      	bne.n	0x491aa6
+  stock_disasm.txt:142242:  491ad6:	a903      	add	r1, sp, #12
+  stock_disasm.txt:142243:  491ad8:	0020      	movs	r0, r4
+  stock_disasm.txt:142244:  491ada:	6872      	ldr	r2, [r6, #4]
+  stock_disasm.txt:142245:  491adc:	4790      	blx	r2
+  stock_disasm.txt:142246:  491ade:	0001      	movs	r1, r0
+  stock_disasm.txt:142247:  491ae0:	b2c9      	uxtb	r1, r1
+  stock_disasm.txt:142248:  491ae2:	2900      	cmp	r1, #0
+  stock_disasm.txt:142249:  491ae4:	d0df      	beq.n	0x491aa6
+  stock_disasm.txt:142250:  491ae6:	b2c0      	uxtb	r0, r0
+  stock_disasm.txt:142251:  491ae8:	2803      	cmp	r0, #3
+  stock_disasm.txt:142253:  491aec:	0032      	movs	r2, r6
+  stock_disasm.txt:142254:  491aee:	0029      	movs	r1, r5
+  stock_disasm.txt:142255:  491af0:	b2c9      	uxtb	r1, r1
+  stock_disasm.txt:142256:  491af2:	0020      	movs	r0, r4
+  stock_disasm.txt:142257:  491af4:	f7ff fecb 	bl	0x49188e
+  stock_disasm.txt:142258:  491af8:	e04d      	b.n	0x491b96
+  stock_disasm.txt:142259:  491afa:	2500      	movs	r5, #0
+  stock_disasm.txt:142260:  491afc:	e000      	b.n	0x491b00
+  stock_disasm.txt:142261:  491afe:	1c6d      	adds	r5, r5, #1
+  stock_disasm.txt:142262:  491b00:	0028      	movs	r0, r5
+  stock_disasm.txt:142263:  491b02:	f247 115a 	movw	r1, #29018	@ 0x715a
+  stock_disasm.txt:142264:  491b06:	5c61      	ldrb	r1, [r4, r1]
+  stock_disasm.txt:142265:  491b08:	b2c0      	uxtb	r0, r0
+  stock_disasm.txt:142266:  491b0a:	4288      	cmp	r0, r1
+  stock_disasm.txt:142267:  491b0c:	d21c      	bcs.n	0x491b48
+  stock_disasm.txt:142268:  491b0e:	0028      	movs	r0, r5
+  stock_disasm.txt:142269:  491b10:	b2c0      	uxtb	r0, r0
+  stock_disasm.txt:142270:  491b12:	eb04 0080 	add.w	r0, r4, r0, lsl #2
+> stock_disasm.txt:142271:  491b16:	f247 1130 	movw	r1, #28976	@ 0x7130
+  stock_disasm.txt:142272:  491b1a:	eb00 0601 	add.w	r6, r0, r1
+  stock_disasm.txt:142273:  491b1e:	6830      	ldr	r0, [r6, #0]
+  stock_disasm.txt:142274:  491b20:	2800      	cmp	r0, #0
+  stock_disasm.txt:142275:  491b22:	d0ec      	beq.n	0x491afe
+  stock_disasm.txt:142276:  491b24:	a903      	add	r1, sp, #12
+  stock_disasm.txt:142277:  491b26:	0020      	movs	r0, r4
+  stock_disasm.txt:142278:  491b28:	6832      	ldr	r2, [r6, #0]
+  stock_disasm.txt:142279:  491b2a:	4790      	blx	r2
+  stock_disasm.txt:142280:  491b2c:	0001      	movs	r1, r0
+  stock_disasm.txt:142281:  491b2e:	b2c9      	uxtb	r1, r1
+  stock_disasm.txt:142282:  491b30:	2900      	cmp	r1, #0
+  stock_disasm.txt:142283:  491b32:	d0e4      	beq.n	0x491afe
+  stock_disasm.txt:142284:  491b34:	b2c0      	uxtb	r0, r0
+  stock_disasm.txt:142285:  491b36:	2803      	cmp	r0, #3
+  stock_disasm.txt:142286:  491b38:	d105      	bne.n	0x491b46
+  stock_disasm.txt:142287:  491b3a:	0032      	movs	r2, r6
+  stock_disasm.txt:142288:  491b3c:	0029      	movs	r1, r5
+  stock_disasm.txt:142289:  491b3e:	b2c9      	uxtb	r1, r1
+
+

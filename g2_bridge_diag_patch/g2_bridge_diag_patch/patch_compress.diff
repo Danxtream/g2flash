@@ -1,0 +1,54 @@
+--- patches/patch_compress.py
++++ patches/patch_compress.py
+@@ -142,6 +142,17 @@
+ # and additionally invokes that notifier while mode 10 owns the compass.
+ COMPASS_EVENT_BL_SITE = (0x443288, "1c f0 38 fb")  # bl FUN_0045f8fc(display,0x41,&heading)
+ IMAGE_INGRESS_BL_SITE = (0x4e11e6, "f9 f7 25 fb")  # bl 0x4da834 -> image_ingress_probe
++H264_BRIDGE_GATE_BL_SITES = {
++    0x4db974: "67 f7 ac fd",  # single complete: bl 0x4434d0(E0)
++    0x4dbd66: "67 f7 b3 fb",  # multi complete:  bl 0x4434d0(E0)
++}
++H264_BRIDGE_EMIT_BL_SITES = {
++    0x4db986: "fe f7 fc fc",  # single complete: bl 0x4da382
++    0x4dbd76: "fe f7 04 fb",  # multi complete:  bl 0x4da382
++}
++H264_BRIDGE_SCHEDULE_BL_SITE = (0x4da498, "80 f7 17 fb") # field 0x4c -> bl 0x45aaca
++H264_BRIDGE_SEND_BL_SITE = (0x45aabc, "0a f0 79 f8")     # delayed callback -> bl 0x464bb2
++H264_BRIDGE_OP3_BL_SITE = (0x4e16ec, "b4 f7 2a ff")      # E0 op=3 -> bl 0x496544
+ 
+ 
+ def enc_bl(pc, target):
+@@ -250,6 +261,11 @@
+     display_copy_addr = base + _fn(built, "display_copy_hook")["offset"]
+     wear_notify_addr = base + _fn(built, "faceclaw_send_wear_event")["offset"]
+     compass_event_addr = base + _fn(built, "compass_event_forward")["offset"]
++    bridge_gate_addr = base + _fn(built, "h264_bridge_gate_probe")["offset"]
++    bridge_emit_addr = base + _fn(built, "h264_bridge_emit_probe")["offset"]
++    bridge_schedule_addr = base + _fn(built, "h264_bridge_schedule_probe")["offset"]
++    bridge_send_addr = base + _fn(built, "h264_bridge_send_probe")["offset"]
++    bridge_op3_addr = base + _fn(built, "h264_bridge_op3_probe")["offset"]
+ 
+     # --- assemble the appended payload bytes (old_ps .. end) ---
+     pad = blob_off - old_ps                     # alignment gap before the blob
+@@ -295,6 +311,21 @@
+         (g2f(IMAGE_INGRESS_BL_SITE[0]), IMAGE_INGRESS_BL_SITE[1],
+          enc_bl(IMAGE_INGRESS_BL_SITE[0], image_ingress_addr),
+          "bl image_ingress_probe (service 0xE0 -> stock image ingress telemetry)"),
++        *[(g2f(site), orig, enc_bl(site, bridge_gate_addr),
++           f"bl h264_bridge_gate_probe @ {site:#x}")
++          for site, orig in H264_BRIDGE_GATE_BL_SITES.items()],
++        *[(g2f(site), orig, enc_bl(site, bridge_emit_addr),
++           f"bl h264_bridge_emit_probe @ {site:#x}")
++          for site, orig in H264_BRIDGE_EMIT_BL_SITES.items()],
++        (g2f(H264_BRIDGE_SCHEDULE_BL_SITE[0]), H264_BRIDGE_SCHEDULE_BL_SITE[1],
++         enc_bl(H264_BRIDGE_SCHEDULE_BL_SITE[0], bridge_schedule_addr),
++         "bl h264_bridge_schedule_probe (field-0x4c delayed schedule)"),
++        (g2f(H264_BRIDGE_SEND_BL_SITE[0]), H264_BRIDGE_SEND_BL_SITE[1],
++         enc_bl(H264_BRIDGE_SEND_BL_SITE[0], bridge_send_addr),
++         "bl h264_bridge_send_probe (delayed E0 request send)"),
++        (g2f(H264_BRIDGE_OP3_BL_SITE[0]), H264_BRIDGE_OP3_BL_SITE[1],
++         enc_bl(H264_BRIDGE_OP3_BL_SITE[0], bridge_op3_addr),
++         "bl h264_bridge_op3_probe (E0 op=3 dispatch boundary)"),
+         # redirect the settings responder send -> settings_send_wrapper (caps field 100)
+         (g2f(SETTINGS_BL_SITE[0]), SETTINGS_BL_SITE[1], enc_bl(SETTINGS_BL_SITE[0], settings_addr),
+          "bl settings_send_wrapper (append caps field 100)"),

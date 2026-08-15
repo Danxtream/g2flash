@@ -34,7 +34,7 @@ benchmarks ~10 fps vs our zlib path's ~23 fps, so we ignore it and keep image_de
 which dispatches on the image's own leading bytes ('BM' vs a small u8 mode) and runs at a
 later stage. See notes/fw-2.2.6.10-lz4-images.md.
 
-PLACEMENT MODEL — APPEND, don't overwrite. The injected code blobs
+PLACEMENT MODEL â€” APPEND, don't overwrite. The injected code blobs
 (zlib glue, settings wrapper, gesture_fwd) are APPENDED to
 the tail of the main-app component (ota/s200_firmware_ota.bin) rather than being
 squeezed into a reclaimed dead function. The bootloader XIP-programs the whole
@@ -46,7 +46,7 @@ OTA flag at 0x007fe000. This removes the old ~2 KB dead-region ceiling.
 Appending changes the image size, so this script fixes up every size/offset field
 the container + bootloader read: the component's subheader payload size (ps), its
 TOC entry size (ps + 128), the main-app preamble length field (preamble[0] low
-24 bits — what the bootloader actually erases/programs), and then the checksums
+24 bits â€” what the bootloader actually erases/programs), and then the checksums
 (component CRC32C in the TOC + subheader echo, and the preamble zlib-CRC32). The
 main app is the LAST component so appending shifts no downstream offsets.
 
@@ -141,6 +141,28 @@ WEAR_NOTIFY_BL_SITES = {
 # EvenHub active instead, so redirect through a wrapper that preserves the stock call
 # and additionally invokes that notifier while mode 10 owns the compass.
 COMPASS_EVENT_BL_SITE = (0x443288, "1c f0 38 fb")  # bl FUN_0045f8fc(display,0x41,&heading)
+IMAGE_INGRESS_BL_SITE = (0x4e11e6, "f9 f7 25 fb")  # bl 0x4da834 -> image_ingress_probe
+H264_BRIDGE_GATE_BL_SITES = {
+    0x4db974: "67 f7 ac fd",  # single complete: bl 0x4434d0(E0)
+    0x4dbd66: "67 f7 b3 fb",  # multi complete:  bl 0x4434d0(E0)
+}
+H264_BRIDGE_EMIT_BL_SITES = {
+    0x4db986: "fe f7 fc fc",  # single complete: bl 0x4da382
+    0x4dbd76: "fe f7 04 fb",  # multi complete:  bl 0x4da382
+}
+H264_BRIDGE_SCHEDULE_BL_SITE = (0x4da498, "80 f7 17 fb") # field 0x4c -> bl 0x45aaca
+H264_BRIDGE_SEND_BL_SITE = (0x45aabc, "0a f0 79 f8")     # delayed callback -> bl 0x464bb2
+H264_BRIDGE_OP3_BL_SITE = (0x4e16ec, "b4 f7 2a ff")      # E0 op=3 -> bl 0x496544
+# V3: checkpoints inside stock FUN_00496544. Every site is an existing 4-byte BL,
+# so probes preserve the original callee/return ABI without touching branch flags.
+H264_DISPATCH_TYPE11_BL_SITE = (0x496720, "a6 f7 d5 fc")   # post type==11 && +2==16 -> bl 0x43d0ce
+H264_DISPATCH_LOOKUP_BL_SITE = (0x496768, "fd f7 1e fc")   # bl 0x493fa8
+H264_DISPATCH_SUBTYPE2_BL_SITE = (0x496824, "a6 f7 53 fc") # post node+8==2 -> bl 0x43d0ce
+H264_DISPATCH_MALLOC_BL_SITE = (0x496886, "de f7 24 fa")   # field+24==0x4c, mode 1/2 -> malloc
+H264_DISPATCH_PREP2_BL_SITE = (0x4968ea, "4a f0 8f f9")    # mode 2 -> bl 0x4e0c0c
+H264_DISPATCH_PREP1_BL_SITE = (0x4968fa, "4a f0 9b f9")    # mode 1 -> bl 0x4e0c34
+H264_DISPATCH_FIELD_MISMATCH_BL_SITE = (0x496ab2, "a6 f7 0c fb") # field+24 != 0x4c -> bl 0x43d0ce
+
 
 def enc_bl(pc, target):
     """Encode a Thumb-2 BL (T1) from instruction address `pc` to `target`."""
@@ -179,11 +201,22 @@ def enc_bw(pc, target):
 def build_blob(src):
     """Compile patches/<src> via build.py --json and return the parsed dict
     ({text, text_len, functions:[{name,offset,size,bytes}]})."""
-    cmd = ["python3", os.path.join(SCRIPT_DIR, "build.py"),
-           os.path.join(SCRIPT_DIR, src), "--json"]
+    cmd = [
+        sys.executable,
+        os.path.join(SCRIPT_DIR, "build.py"),
+        os.path.join(SCRIPT_DIR, src),
+
+        r"-IC:\Users\danxt\Desktop\G2 Video player project\Sub0h264\components\sub0h264\src",
+        r"-IC:\Users\danxt\Desktop\G2 Video player project\Sub0h264\components\sub0h264\include",
+        r"-IC:\Users\danxt\StudioProjects\g2flash\patches\h264",
+
+        "--json",
+    ]
+
     r = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode != 0:
         raise SystemExit(f"build.py failed for {src}:\n{r.stderr or r.stdout}")
+
     return json.loads(r.stdout)
 
 def _fn(blob, name):
@@ -219,7 +252,7 @@ def layout(img):
     # and each entry address here is just base + the function's offset in the one blob.
     blob_off = align_up(old_ps, BLOB_ALIGN)
     base = mram_addr(blob_off)
-    built = build_blob("patches_main.c")
+    built = build_blob("patches_main.cpp")
     blob = bytes.fromhex(built["text"])
 
     # injected entry points, resolved from the single blob's function table. These are all
@@ -227,6 +260,7 @@ def layout(img):
     # Thumb bit (unlike a fn-ptr consumed by blx, which the C code forms via `&fn`).
     snapshot_addr  = base + _fn(built, "snapshot_side")["offset"]
     deferred_addr  = base + _fn(built, "image_deferred")["offset"]
+    image_ingress_addr = base + _fn(built, "image_ingress_probe")["offset"]
     settings_addr  = base + _fn(built, "settings_send_wrapper")["offset"]
     settings_decode_addr = base + _fn(built, "settings_decode_wrapper")["offset"]
     display_start_addr = base + _fn(built, "faceclaw_display_start")["offset"]
@@ -236,6 +270,18 @@ def layout(img):
     display_copy_addr = base + _fn(built, "display_copy_hook")["offset"]
     wear_notify_addr = base + _fn(built, "faceclaw_send_wear_event")["offset"]
     compass_event_addr = base + _fn(built, "compass_event_forward")["offset"]
+    bridge_gate_addr = base + _fn(built, "h264_bridge_gate_probe")["offset"]
+    bridge_emit_addr = base + _fn(built, "h264_bridge_emit_probe")["offset"]
+    bridge_schedule_addr = base + _fn(built, "h264_bridge_schedule_probe")["offset"]
+    bridge_send_addr = base + _fn(built, "h264_bridge_send_probe")["offset"]
+    bridge_op3_addr = base + _fn(built, "h264_bridge_op3_probe")["offset"]
+    dispatch_type11_addr = base + _fn(built, "h264_dispatch_type11_probe")["offset"]
+    dispatch_lookup_addr = base + _fn(built, "h264_dispatch_lookup_probe")["offset"]
+    dispatch_subtype2_addr = base + _fn(built, "h264_dispatch_subtype2_probe")["offset"]
+    dispatch_malloc_addr = base + _fn(built, "h264_dispatch_malloc_probe")["offset"]
+    dispatch_prep2_addr = base + _fn(built, "h264_dispatch_prep2_probe")["offset"]
+    dispatch_prep1_addr = base + _fn(built, "h264_dispatch_prep1_probe")["offset"]
+    dispatch_field_mismatch_addr = base + _fn(built, "h264_dispatch_field_mismatch_probe")["offset"]
 
     # --- assemble the appended payload bytes (old_ps .. end) ---
     pad = blob_off - old_ps                     # alignment gap before the blob
@@ -278,6 +324,45 @@ def layout(img):
           for site, orig in SNAPSHOT_BL_SITES.items()],
         (g2f(LOADBMP_BL_SITE[0]), LOADBMP_BL_SITE[1], enc_bl(LOADBMP_BL_SITE[0], deferred_addr),
          "bl image_deferred (deferred consumer -> FIFO restore + worker, both lenses)"),
+        (g2f(IMAGE_INGRESS_BL_SITE[0]), IMAGE_INGRESS_BL_SITE[1],
+         enc_bl(IMAGE_INGRESS_BL_SITE[0], image_ingress_addr),
+         "bl image_ingress_probe (service 0xE0 -> stock image ingress telemetry)"),
+        *[(g2f(site), orig, enc_bl(site, bridge_gate_addr),
+           f"bl h264_bridge_gate_probe @ {site:#x}")
+          for site, orig in H264_BRIDGE_GATE_BL_SITES.items()],
+        *[(g2f(site), orig, enc_bl(site, bridge_emit_addr),
+           f"bl h264_bridge_emit_probe @ {site:#x}")
+          for site, orig in H264_BRIDGE_EMIT_BL_SITES.items()],
+        (g2f(H264_BRIDGE_SCHEDULE_BL_SITE[0]), H264_BRIDGE_SCHEDULE_BL_SITE[1],
+         enc_bl(H264_BRIDGE_SCHEDULE_BL_SITE[0], bridge_schedule_addr),
+         "bl h264_bridge_schedule_probe (field-0x4c delayed schedule)"),
+        (g2f(H264_BRIDGE_SEND_BL_SITE[0]), H264_BRIDGE_SEND_BL_SITE[1],
+         enc_bl(H264_BRIDGE_SEND_BL_SITE[0], bridge_send_addr),
+         "bl h264_bridge_send_probe (delayed E0 request send)"),
+        (g2f(H264_BRIDGE_OP3_BL_SITE[0]), H264_BRIDGE_OP3_BL_SITE[1],
+         enc_bl(H264_BRIDGE_OP3_BL_SITE[0], bridge_op3_addr),
+         "bl h264_bridge_op3_probe (E0 op=3 dispatch boundary)"),
+        (g2f(H264_DISPATCH_TYPE11_BL_SITE[0]), H264_DISPATCH_TYPE11_BL_SITE[1],
+         enc_bl(H264_DISPATCH_TYPE11_BL_SITE[0], dispatch_type11_addr),
+         "V3 dispatcher: type 11 + descriptor size 16 passed"),
+        (g2f(H264_DISPATCH_LOOKUP_BL_SITE[0]), H264_DISPATCH_LOOKUP_BL_SITE[1],
+         enc_bl(H264_DISPATCH_LOOKUP_BL_SITE[0], dispatch_lookup_addr),
+         "V3 dispatcher: wrap 0x493fa8 lookup"),
+        (g2f(H264_DISPATCH_SUBTYPE2_BL_SITE[0]), H264_DISPATCH_SUBTYPE2_BL_SITE[1],
+         enc_bl(H264_DISPATCH_SUBTYPE2_BL_SITE[0], dispatch_subtype2_addr),
+         "V3 dispatcher: lookup node subtype 2 passed"),
+        (g2f(H264_DISPATCH_MALLOC_BL_SITE[0]), H264_DISPATCH_MALLOC_BL_SITE[1],
+         enc_bl(H264_DISPATCH_MALLOC_BL_SITE[0], dispatch_malloc_addr),
+         "V3 dispatcher: field 0x4c + mode 1/2 allocation"),
+        (g2f(H264_DISPATCH_PREP2_BL_SITE[0]), H264_DISPATCH_PREP2_BL_SITE[1],
+         enc_bl(H264_DISPATCH_PREP2_BL_SITE[0], dispatch_prep2_addr),
+         "V3 dispatcher: mode 2 prep 0x4e0c0c"),
+        (g2f(H264_DISPATCH_PREP1_BL_SITE[0]), H264_DISPATCH_PREP1_BL_SITE[1],
+         enc_bl(H264_DISPATCH_PREP1_BL_SITE[0], dispatch_prep1_addr),
+         "V3 dispatcher: mode 1 prep 0x4e0c34"),
+        (g2f(H264_DISPATCH_FIELD_MISMATCH_BL_SITE[0]), H264_DISPATCH_FIELD_MISMATCH_BL_SITE[1],
+         enc_bl(H264_DISPATCH_FIELD_MISMATCH_BL_SITE[0], dispatch_field_mismatch_addr),
+         "V3 dispatcher: field+24 != 0x4c failure branch"),
         # redirect the settings responder send -> settings_send_wrapper (caps field 100)
         (g2f(SETTINGS_BL_SITE[0]), SETTINGS_BL_SITE[1], enc_bl(SETTINGS_BL_SITE[0], settings_addr),
          "bl settings_send_wrapper (append caps field 100)"),

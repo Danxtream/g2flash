@@ -26,22 +26,23 @@ instead of carrying pasted hex. --json has no side effects beyond the obj/<stem>
 compiler emits (it does NOT write obj/<stem>.text.bin).
 
 Self-containedness is enforced in both modes. build.py acts as a mini-linker over
-the emitted blob and resolves two relocation families in place:
+the emitted blob and resolves three relocation families in place:
 
   * Intra-.text branches (R_ARM_THM_CALL / R_ARM_THM_JUMP24 to a symbol defined in
     .text): the BL/B.W displacement is rewritten, so injected functions can call
     each other by name (incl. from inline asm) without an "everything must be
     static" restriction.
 
-  * PC-relative read-only-data references (R_ARM_THM_MOVW_PREL_NC / MOVT_PREL,
-    emitted under -fropi): string literals and other read-only constants. The
+  * PC-relative read-only-data references: R_ARM_REL32 emitted by C++ under
+    -fPIC, or R_ARM_THM_MOVW_PREL_NC / MOVT_PREL emitted by C under -fropi.
+    These cover string literals and other read-only constants. The
     referenced .rodata* sections are appended to the blob right after .text and
-    the movw/movt immediate pair is fixed up so the runtime `add rX, pc` lands on
-    the datum. Because these are PC-relative, the fixup depends only on the datum's
+    the relative word or movw/movt pair is fixed up so the runtime PC-relative
+    sequence lands on the datum. Because these are relative, the fixup depends only on the datum's
     offset WITHIN the blob, so the result stays position-independent regardless of
-    where the blob is later loaded -- exactly like the branch case. This is why we
-    compile with -fropi: absolute (MOVW_ABS/MOVT_ABS) rodata refs would need the
-    final load address, which only patch_compress.py knows.
+    where the blob is later loaded -- exactly like the branch case. Absolute
+    MOVW_ABS/MOVT_ABS references would need the final load address, which only
+    patch_compress.py knows.
 
 The emitted bytes are therefore .text followed by any referenced .rodata; the
 returned/reported `text`/`text_len` cover the whole blob and function offsets stay
@@ -68,8 +69,11 @@ def obj_path(src, suffix):
     stem = os.path.basename(src).rsplit(".", 1)[0]
     return os.path.join(OBJ_DIR, stem + suffix)
 
+R_ARM_REL32            = 3    # 32-bit data word: S + A - P
 R_ARM_THM_CALL         = 10   # BL / BLX  (Thumb-2, 32-bit)
 R_ARM_THM_JUMP24       = 30   # B.W       (Thumb-2, 32-bit)
+R_ARM_THM_MOVW_ABS_NC  = 47   # absolute address low half (not load-independent)
+R_ARM_THM_MOVT_ABS     = 48   # absolute address high half (not load-independent)
 R_ARM_THM_MOVW_PREL_NC = 49   # movw rX, #:lower16:(sym - .)   (PC-relative, -fropi)
 R_ARM_THM_MOVT_PREL    = 50   # movt rX, #:upper16:(sym - .)   (PC-relative, -fropi)
 
@@ -91,6 +95,30 @@ def resolve_thumb_branch(tbytes, off, target):
     hw1 = 0xF000 | (S << 10) | imm10
     hw2 = (hw2_old & 0xD000) | (j1 << 13) | (j2 << 11) | imm11   # keep bits 15/14(type)/12
     tbytes[off:off + 4] = bytes([hw1 & 0xFF, hw1 >> 8, hw2 & 0xFF, hw2 >> 8])
+
+def resolve_rel32(blob, pos, target_addr):
+    """
+    Resolve R_ARM_REL32.
+
+    ELF formula:
+        S + A - P
+
+    S = target address within emitted blob
+    A = existing 32-bit addend stored at relocation site
+    P = relocation site's address within emitted blob
+
+    Because S and P are both blob-relative, the runtime load
+    address cancels out and the result remains position-independent.
+    """
+    addend = struct.unpack_from("<i", blob, pos)[0]
+
+    value = (
+        target_addr
+        + addend
+        - pos
+    ) & 0xFFFFFFFF
+
+    struct.pack_into("<I", blob, pos, value)
 
 def _thumb_movwt_get_imm(hw1, hw2):
     """Extract the 16-bit immediate encoded in a Thumb-2 movw/movt (T3) pair."""
@@ -130,15 +158,54 @@ def resolve_movwt(blob, off, sym_addr, high):
     blob[off:off + 4] = bytes([hw1 & 0xFF, hw1 >> 8, hw2 & 0xFF, hw2 >> 8])
 
 CLANG = "clang"
-CFLAGS = [
-    "--target=thumbv7em-none-eabi", "-mthumb",
-    "-O2", "-ffreestanding", "-fno-jump-tables", "-fomit-frame-pointer",
-    "-fno-builtin", "-mno-unaligned-access",
-    "-fno-unwind-tables", "-fno-asynchronous-unwind-tables",
-    "-fropi",   # PC-relative rodata refs so string literals resolve in-blob (see module docstring)
-    "-Wall", "-Wextra",
+COMMON_FLAGS = [
+    "--target=thumbv7em-none-eabi",
+    "-mthumb",
+    "-O2",
+    "-fno-jump-tables",
+    "-fomit-frame-pointer",
+    "-fno-builtin",
+    "-mno-unaligned-access",
+    "-fno-unwind-tables",
+    "-fno-asynchronous-unwind-tables",
+    "-Wall",
+    "-Wextra",
 ]
 
+CFLAGS = [
+    *COMMON_FLAGS,
+    "-ffreestanding",
+    "-fropi",
+]
+
+CXXFLAGS = [
+    *COMMON_FLAGS,
+    "-std=c++23",
+    "-DNDEBUG",
+    "-fPIC",
+    "-fvisibility=hidden",
+    "-fno-exceptions",
+    "-fno-rtti",
+    "-fno-threadsafe-statics",
+
+    "-isystem",
+    r"C:\Program Files (x86)\Arm GNU Toolchain arm-none-eabi\14.2 rel1\arm-none-eabi\include\c++\14.2.1",
+
+    "-isystem",
+    r"C:\Program Files (x86)\Arm GNU Toolchain arm-none-eabi\14.2 rel1\arm-none-eabi\include\c++\14.2.1\arm-none-eabi",
+
+    "-isystem",
+    r"C:\Program Files (x86)\Arm GNU Toolchain arm-none-eabi\14.2 rel1\arm-none-eabi\include\c++\14.2.1\backward",
+
+    "-isystem",
+    r"C:\Program Files (x86)\Arm GNU Toolchain arm-none-eabi\14.2 rel1\lib\gcc\arm-none-eabi\14.2.1\include",
+
+    "-isystem",
+    r"C:\Program Files (x86)\Arm GNU Toolchain arm-none-eabi\14.2 rel1\lib\gcc\arm-none-eabi\14.2.1\include-fixed",
+
+    "-isystem",
+    r"C:\Program Files (x86)\Arm GNU Toolchain arm-none-eabi\14.2 rel1\arm-none-eabi\include",
+]
 # ---- minimal ELF32 LE parser (section headers + symtab) ----
 def parse_elf(path):
     d = open(path, "rb").read()
@@ -183,6 +250,13 @@ def _is_rodata(sec):
             and (sec["flags"] & SHF_ALLOC)
             and not (sec["flags"] & (SHF_WRITE | SHF_EXECINSTR)))
 
+def _is_text(sec):
+    """True for an allocated executable PROGBITS section (.text, .text.*, etc.)."""
+    return (sec["type"] == SHT_PROGBITS
+            and (sec["flags"] & SHF_ALLOC)
+            and (sec["flags"] & SHF_EXECINSTR)
+            and not (sec["flags"] & SHF_WRITE))
+
 def compile_text(src, extra=()):
     """Compile `src` to Thumb-2 and return (blob, funcs, rodata_len). `blob` is the
     .text bytes followed by any referenced .rodata* (both relocation families
@@ -193,28 +267,61 @@ def compile_text(src, extra=()):
     any reference to an external/undefined symbol. Sizes are resolved from st_size,
     falling back to the gap to the next function (or end of .text) when 0."""
     obj = obj_path(src, ".o")
-    subprocess.run([CLANG, *CFLAGS, *extra, "-c", src, "-o", obj], check=True)
+    is_cpp = src.lower().endswith((".cpp", ".cc", ".cxx"))
+    flags = CXXFLAGS if is_cpp else CFLAGS
+
+    subprocess.run(
+        [CLANG, *flags, *extra, "-c", src, "-o", obj],
+        check=True
+    )
 
     d, secs = parse_elf(obj)
-    text = section(secs, ".text")
-    text_idx = secs.index(text)
 
-    # Lay out the blob: .text first, then every referenced-able read-only data
-    # section, each aligned to its own sh_addralign. `base[shndx]` maps a section
-    # index to where it starts in the blob, so a symbol's blob address is
-    # base[sym.shndx] + sym.value and a relocation site's blob offset is
-    # base[target_section] + r_offset -- all blob-relative, hence load-independent.
-    blob = bytearray(d[text["offset"]:text["offset"] + text["size"]])
-    text_len = len(blob)
-    base = {text_idx: 0}
-    for i, s in enumerate(secs):
-        if i == text_idx or not _is_rodata(s):
-            continue
+    # Lay out all executable code sections first.
+    text_sections = [
+        (i, s)
+        for i, s in enumerate(secs)
+        if _is_text(s)
+    ]
+
+    if not text_sections:
+        raise BuildError(f"{src}: no executable text sections found")
+
+    # Keep literal ".text" first when present, then all .text.* sections.
+    text_sections.sort(
+        key=lambda item: (0 if item[1]["sname"] == ".text" else 1, item[0])
+    )
+
+    blob = bytearray()
+    base = {}
+    text_indices = set()
+
+    for i, s in text_sections:
         align = max(s["align"], 1)
+
         while len(blob) % align:
             blob.append(0)
+
+        base[i] = len(blob)
+        text_indices.add(i)
+
+        blob += d[s["offset"]:s["offset"] + s["size"]]
+
+    text_len = len(blob)
+
+    # Then append all read-only allocated sections.
+    for i, s in enumerate(secs):
+        if i in text_indices or not _is_rodata(s):
+            continue
+
+        align = max(s["align"], 1)
+
+        while len(blob) % align:
+            blob.append(0)
+
         base[i] = len(blob)
         blob += d[s["offset"]:s["offset"] + s["size"]]
+
     rodata_len = len(blob) - text_len
 
     # collect all symbols (name, value, size, type, section index)
@@ -232,9 +339,10 @@ def compile_text(src, extra=()):
 
     # Resolve relocations against any section we laid into the blob. clang emits
     # ELF REL for ARM (`.rel.<sec>`, 8-byte entries, addend in-place); `.rela.*`
-    # (12-byte) is tolerated for iteration. Two families are resolvable, both fully
+    # (12-byte) is tolerated for iteration. Three families are resolvable, all fully
     # PC-relative so the fixup is a blob-internal constant:
     #   * intra-.text BL/B.W  (R_ARM_THM_CALL / JUMP24 to a .text symbol)
+    #   * C++ PIC data refs (R_ARM_REL32)
     #   * PC-relative rodata refs (R_ARM_THM_MOVW_PREL_NC / MOVT_PREL, -fropi)
     # Anything else -- absolute rodata refs, data-to-data pointer relocs, external
     # branch targets -- is a hard error (no linker to bake in an absolute address).
@@ -252,16 +360,41 @@ def compile_text(src, extra=()):
             sym = syms[r_info >> 8]
             wpos = base[target] + r_offset  # blob offset of the site being patched
             if (r_type in (R_ARM_THM_CALL, R_ARM_THM_JUMP24)
-                    and target == text_idx and sym["shndx"] == text_idx):
-                resolve_thumb_branch(blob, wpos, sym["value"] & ~1)
-            elif r_type in (R_ARM_THM_MOVW_PREL_NC, R_ARM_THM_MOVT_PREL) \
+                    and target in text_indices
+                    and sym["shndx"] in text_indices):
+
+                target_addr = (
+                    base[sym["shndx"]]
+                    + (sym["value"] & ~1)
+                )
+
+                resolve_thumb_branch(blob, wpos, target_addr)
+                continue
+
+            if r_type == R_ARM_REL32:
+                if sym["shndx"] in base:
+                    target_addr = (
+                        base[sym["shndx"]]
+                        + sym["value"]
+                    )
+
+                    resolve_rel32(
+                        blob,
+                        wpos,
+                        target_addr
+                    )
+
+                    continue
+
+            if r_type in (R_ARM_THM_MOVW_PREL_NC, R_ARM_THM_MOVT_PREL) \
                     and sym["shndx"] in base:
                 resolve_movwt(blob, wpos, base[sym["shndx"]] + sym["value"],
                               high=(r_type == R_ARM_THM_MOVT_PREL))
-            else:
-                bad.append(f"  {rs['sname']}+{r_offset:#x} type={r_type} -> "
-                           f"{sym['name']!r} (shndx={sym['shndx']}); only intra-.text "
-                           f"BL/B.W and PC-relative (-fropi) rodata refs are resolvable")
+                continue
+
+            bad.append(f"  {rs['sname']}+{r_offset:#x} type={r_type} -> "
+                       f"{sym['name']!r} (shndx={sym['shndx']}); only intra-.text "
+                       f"BL/B.W and PC-relative REL32/(-fropi) rodata refs are resolvable")
     if bad:
         raise BuildError(f"{src}: unresolvable relocation(s) — call firmware entry "
                          f"points via absolute-constant fn-ptrs (not by name), and keep "
@@ -269,8 +402,20 @@ def compile_text(src, extra=()):
                          + "\n".join(bad))
 
     # collect STT_FUNC symbols for the report / patch_compress
-    raw_funcs = [(s["name"], s["value"] & ~1, s["size"])
-                 for s in syms if s["typ"] == 2 and s["shndx"] == text_idx]
+    raw_funcs = []
+
+    for s in syms:
+        if s["typ"] != 2:
+            continue
+
+        if s["shndx"] not in text_indices:
+            continue
+
+        blob_offset = base[s["shndx"]] + (s["value"] & ~1)
+
+        raw_funcs.append(
+            (s["name"], blob_offset, s["size"])
+        )
     # resolve sizes: st_size, else gap to next function, else end of .text
     raw_funcs.sort(key=lambda x: x[1])
     funcs = []

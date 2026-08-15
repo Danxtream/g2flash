@@ -306,7 +306,7 @@ void faceclaw_evenai_display_entry(void) {
 }
 
 // Capability string "EVENCFW/<ver> <space-separated feature tokens>":
-//   EVENCFW/8  -> magic prefix + contract version (detect: starts-with "EVENCFW/")
+//   EVENCFW/10 -> magic prefix + contract version (detect: starts-with "EVENCFW/")
 //   img576     -> 576x288 image containers (vs stock 288x144 cap)
 //   imgz       -> zlib (DEFLATE) compressed image payloads
 //   rle        -> compact run-length encoded delta rows
@@ -316,13 +316,15 @@ void faceclaw_evenai_display_entry(void) {
 //   fbguard    -> preserve direct frames across stock widget repaints under a fail-open lease
 //   wearnotify -> lifecycle-independent wear events + private current-state query
 //   compass10  -> mode 10 controls the stock compass and its navigation notifications
+//   h26411     -> mode 11 H.264 decoder control / complete-NAL input
 //
 // The string is a normal rodata literal now that build.py emits/relocates .rodata
 // (earlier this had to be spelled out byte-by-byte to avoid a rodata section). strlcpy
-// comes from zlib_glue.c, which shares this translation unit via patches_main.c.
+// comes from zlib_glue.c, which shares this translation unit via patches_main.cpp.
 int settings_send_wrapper(int type, int sid, unsigned char *buf, unsigned len) {
     if (sid == 9) {
-        static const char caps[] = "EVENCFW/8 img576 img640 imgz rle wakelease directfb fbguard wearnotify compass10";
+        static const char caps[] =
+            "EVENCFW/10 img576 img640 imgz rle wakelease directfb fbguard wearnotify compass10 h26411 h264seq2 h264scale2 h264quiet2";
         unsigned char *p = buf + len;
         p[0] = 0xA2; p[1] = 0x06;                          // field 100, wire type 2: tag 802
         unsigned clen = strlcpy((char *)(p + 3), caps, sizeof(caps));

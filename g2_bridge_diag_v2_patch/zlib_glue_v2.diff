@@ -1,0 +1,56 @@
+--- zlib_glue.before.c	2026-08-12 02:24:04.238378682 +0000
++++ patches/zlib_glue.c	2026-08-12 02:24:19.554581557 +0000
+@@ -1653,13 +1653,19 @@
+  * exact stage at which a completed RIGHT snapshot stops progressing. */
+ int h264_bridge_gate_probe(uint32_t module_id) {
+     customCfwContext *ctx = peekCustomCfwContext();
+-    if (ctx && ctx->h264_active) ctx->h264_bridge_gate_calls++;
++    if (ctx && ctx->h264_active) {
++        ctx->h264_bridge_gate_calls++;
++        h264_send_telemetry(ctx);
++    }
+     return FW_MODULE_GATE(module_id);
+ }
+ 
+ int h264_bridge_emit_probe(uint32_t id, void *hdr, int kind, uint32_t p4) {
+     customCfwContext *ctx = peekCustomCfwContext();
+-    if (ctx && ctx->h264_active) ctx->h264_bridge_emit_calls++;
++    if (ctx && ctx->h264_active) {
++        ctx->h264_bridge_emit_calls++;
++        h264_send_telemetry(ctx);
++    }
+     return FW_COMPLETE_EMIT(id, hdr, kind, p4);
+ }
+ 
+@@ -1667,19 +1673,28 @@
+     customCfwContext *ctx = peekCustomCfwContext();
+     if (ctx && ctx->h264_active) ctx->h264_bridge_schedule_calls++;
+     int r = FW_ASYNC_SCHEDULE(module_id, payload, len, delay_ms);
+-    if (ctx && ctx->h264_active && r == 0) ctx->h264_bridge_schedule_ok++;
++    if (ctx && ctx->h264_active) {
++        if (r == 0) ctx->h264_bridge_schedule_ok++;
++        h264_send_telemetry(ctx);
++    }
+     return r;
+ }
+ 
+ int h264_bridge_send_probe(uint32_t module_id, void *payload, uint32_t len, uint32_t arg3) {
+     customCfwContext *ctx = peekCustomCfwContext();
+-    if (ctx && ctx->h264_active) ctx->h264_bridge_send_calls++;
++    if (ctx && ctx->h264_active) {
++        ctx->h264_bridge_send_calls++;
++        h264_send_telemetry(ctx);
++    }
+     return FW_TRANSPORT_SEND(module_id, payload, len, arg3);
+ }
+ 
+ void h264_bridge_op3_probe(void *e0_obj, void *payload, uint32_t len) {
+     customCfwContext *ctx = peekCustomCfwContext();
+-    if (ctx && ctx->h264_active) ctx->h264_bridge_op3_calls++;
++    if (ctx && ctx->h264_active) {
++        ctx->h264_bridge_op3_calls++;
++        h264_send_telemetry(ctx);
++    }
+     FW_E0_OP3(e0_obj, payload, len);
+ }
+ 

@@ -1,0 +1,60 @@
+--- v1/g2_bridge_diag_patch/patches/patch_compress.py	2026-08-12 01:14:40.000000000 +0000
++++ g2flash_re/g2flash/patches/patch_compress.py	2026-08-12 03:23:40.149625419 +0000
+@@ -153,6 +153,15 @@
+ H264_BRIDGE_SCHEDULE_BL_SITE = (0x4da498, "80 f7 17 fb") # field 0x4c -> bl 0x45aaca
+ H264_BRIDGE_SEND_BL_SITE = (0x45aabc, "0a f0 79 f8")     # delayed callback -> bl 0x464bb2
+ H264_BRIDGE_OP3_BL_SITE = (0x4e16ec, "b4 f7 2a ff")      # E0 op=3 -> bl 0x496544
++# V3: checkpoints inside stock FUN_00496544. Every site is an existing 4-byte BL,
++# so probes preserve the original callee/return ABI without touching branch flags.
++H264_DISPATCH_TYPE11_BL_SITE = (0x496720, "a6 f7 d5 fc")   # post type==11 && +2==16 -> bl 0x43d0ce
++H264_DISPATCH_LOOKUP_BL_SITE = (0x496768, "fd f7 1e fc")   # bl 0x493fa8
++H264_DISPATCH_SUBTYPE2_BL_SITE = (0x496824, "a6 f7 53 fc") # post node+8==2 -> bl 0x43d0ce
++H264_DISPATCH_MALLOC_BL_SITE = (0x496886, "de f7 24 fa")   # field+24==0x4c, mode 1/2 -> malloc
++H264_DISPATCH_PREP2_BL_SITE = (0x4968ea, "4a f0 8f f9")    # mode 2 -> bl 0x4e0c0c
++H264_DISPATCH_PREP1_BL_SITE = (0x4968fa, "4a f0 9b f9")    # mode 1 -> bl 0x4e0c34
++H264_DISPATCH_FIELD_MISMATCH_BL_SITE = (0x496ab2, "a6 f7 0c fb") # field+24 != 0x4c -> bl 0x43d0ce
+ 
+ 
+ def enc_bl(pc, target):
+@@ -266,6 +275,13 @@
+     bridge_schedule_addr = base + _fn(built, "h264_bridge_schedule_probe")["offset"]
+     bridge_send_addr = base + _fn(built, "h264_bridge_send_probe")["offset"]
+     bridge_op3_addr = base + _fn(built, "h264_bridge_op3_probe")["offset"]
++    dispatch_type11_addr = base + _fn(built, "h264_dispatch_type11_probe")["offset"]
++    dispatch_lookup_addr = base + _fn(built, "h264_dispatch_lookup_probe")["offset"]
++    dispatch_subtype2_addr = base + _fn(built, "h264_dispatch_subtype2_probe")["offset"]
++    dispatch_malloc_addr = base + _fn(built, "h264_dispatch_malloc_probe")["offset"]
++    dispatch_prep2_addr = base + _fn(built, "h264_dispatch_prep2_probe")["offset"]
++    dispatch_prep1_addr = base + _fn(built, "h264_dispatch_prep1_probe")["offset"]
++    dispatch_field_mismatch_addr = base + _fn(built, "h264_dispatch_field_mismatch_probe")["offset"]
+ 
+     # --- assemble the appended payload bytes (old_ps .. end) ---
+     pad = blob_off - old_ps                     # alignment gap before the blob
+@@ -326,6 +342,27 @@
+         (g2f(H264_BRIDGE_OP3_BL_SITE[0]), H264_BRIDGE_OP3_BL_SITE[1],
+          enc_bl(H264_BRIDGE_OP3_BL_SITE[0], bridge_op3_addr),
+          "bl h264_bridge_op3_probe (E0 op=3 dispatch boundary)"),
++        (g2f(H264_DISPATCH_TYPE11_BL_SITE[0]), H264_DISPATCH_TYPE11_BL_SITE[1],
++         enc_bl(H264_DISPATCH_TYPE11_BL_SITE[0], dispatch_type11_addr),
++         "V3 dispatcher: type 11 + descriptor size 16 passed"),
++        (g2f(H264_DISPATCH_LOOKUP_BL_SITE[0]), H264_DISPATCH_LOOKUP_BL_SITE[1],
++         enc_bl(H264_DISPATCH_LOOKUP_BL_SITE[0], dispatch_lookup_addr),
++         "V3 dispatcher: wrap 0x493fa8 lookup"),
++        (g2f(H264_DISPATCH_SUBTYPE2_BL_SITE[0]), H264_DISPATCH_SUBTYPE2_BL_SITE[1],
++         enc_bl(H264_DISPATCH_SUBTYPE2_BL_SITE[0], dispatch_subtype2_addr),
++         "V3 dispatcher: lookup node subtype 2 passed"),
++        (g2f(H264_DISPATCH_MALLOC_BL_SITE[0]), H264_DISPATCH_MALLOC_BL_SITE[1],
++         enc_bl(H264_DISPATCH_MALLOC_BL_SITE[0], dispatch_malloc_addr),
++         "V3 dispatcher: field 0x4c + mode 1/2 allocation"),
++        (g2f(H264_DISPATCH_PREP2_BL_SITE[0]), H264_DISPATCH_PREP2_BL_SITE[1],
++         enc_bl(H264_DISPATCH_PREP2_BL_SITE[0], dispatch_prep2_addr),
++         "V3 dispatcher: mode 2 prep 0x4e0c0c"),
++        (g2f(H264_DISPATCH_PREP1_BL_SITE[0]), H264_DISPATCH_PREP1_BL_SITE[1],
++         enc_bl(H264_DISPATCH_PREP1_BL_SITE[0], dispatch_prep1_addr),
++         "V3 dispatcher: mode 1 prep 0x4e0c34"),
++        (g2f(H264_DISPATCH_FIELD_MISMATCH_BL_SITE[0]), H264_DISPATCH_FIELD_MISMATCH_BL_SITE[1],
++         enc_bl(H264_DISPATCH_FIELD_MISMATCH_BL_SITE[0], dispatch_field_mismatch_addr),
++         "V3 dispatcher: field+24 != 0x4c failure branch"),
+         # redirect the settings responder send -> settings_send_wrapper (caps field 100)
+         (g2f(SETTINGS_BL_SITE[0]), SETTINGS_BL_SITE[1], enc_bl(SETTINGS_BL_SITE[0], settings_addr),
+          "bl settings_send_wrapper (append caps field 100)"),

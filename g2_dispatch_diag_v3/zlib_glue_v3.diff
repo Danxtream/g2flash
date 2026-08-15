@@ -1,0 +1,160 @@
+--- v2/patches/zlib_glue.c	2026-08-12 02:24:19.000000000 +0000
++++ g2flash_re/g2flash/patches/zlib_glue.c	2026-08-12 03:23:40.148640133 +0000
+@@ -149,6 +149,9 @@
+ typedef int  (*async_schedule_fn)(uint32_t module_id, void *payload, uint32_t len, uint32_t delay_ms);
+ typedef int  (*transport_send_fn)(uint32_t module_id, void *payload, uint32_t len, uint32_t arg3);
+ typedef void (*e0_op3_fn)(void *e0_obj, void *payload, uint32_t len);
++typedef uint32_t (*dispatch_diag_fn)(void);
++typedef void *(*dispatch_lookup_fn)(void *dispatcher, uint32_t key);
++typedef void *(*dispatch_prep_fn)(void *a0, void *a1, void *a2, uint32_t a3);
+ typedef void (*display_gate_fn)(void);               /* display semaphore take/give */
+ typedef int  (*display_queue_fn)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
+ typedef void (*display_copy_fn)(void);               /* stock 576x288 -> 640x480 packed copy */
+@@ -185,6 +188,10 @@
+ #define FW_ASYNC_SCHEDULE ((async_schedule_fn)0x0045aacbU) /* FUN_0045aaca */
+ #define FW_TRANSPORT_SEND ((transport_send_fn)0x00464bb3U) /* FUN_00464bb2 */
+ #define FW_E0_OP3         ((e0_op3_fn)0x00496545U)        /* FUN_00496544 */
++#define FW_DISPATCH_DIAG   ((dispatch_diag_fn)0x0043d0cfU) /* FUN_0043d0ce: stock log-mask query */
++#define FW_DISPATCH_LOOKUP ((dispatch_lookup_fn)0x00493fa9U) /* FUN_00493fa8 */
++#define FW_DISPATCH_PREP2  ((dispatch_prep_fn)0x004e0c0dU) /* FUN_004e0c0c */
++#define FW_DISPATCH_PREP1  ((dispatch_prep_fn)0x004e0c35U) /* FUN_004e0c34 */
+ #define FW_DISPLAY_WAIT   ((display_gate_fn)0x0047381fU)  /* FUN_0047381e: take display semaphore */
+ #define FW_DISPLAY_SIGNAL ((display_gate_fn)0x0047386bU)  /* FUN_0047386a: give display semaphore */
+ #define FW_DISPLAY_QUEUE  ((display_queue_fn)0x00474067U) /* FUN_00474066: queue type-3 refresh */
+@@ -371,10 +378,12 @@
+     uint32_t h264_bridge_schedule_ok;
+     uint32_t h264_bridge_send_calls;
+     uint32_t h264_bridge_op3_calls;
++    uint32_t h264_dispatch_stage;
++    uint32_t h264_dispatch_detail;
+ } customCfwContext;
+ 
+ #define CFW_CTX_SLOT  0x20003ffcU    /* ble_msgrx context +0x0 (spare, never freed) */
+-#define CFW_CTX_MAGIC 0xC0FFEE66U    /* bumped for ordered H.264 snapshot state */
++#define CFW_CTX_MAGIC 0xC0FFEE67U    /* V3 dispatcher-probe context layout */
+ 
+ void *zwrap_alloc(void *opaque, uint32_t items, uint32_t size) {
+     (void)opaque;
+@@ -572,19 +581,16 @@
+     p[46] = (unsigned char)(queued_bytes >> 16);
+     p[47] = (unsigned char)(queued_bytes >> 24);
+ 
+-    /* Bridge diagnostic: diag[2] bytes = gate, emit, schedule, delayed-send;
+-     * diag[3] bytes = E0-op3, schedule-ok, legacy flags, last-deferred-snapshot. */
++    /* V3 dispatcher diagnostic. diag[0]/diag[1] remain snapshot/deferred counts.
++     * diag[2] is the latest 0x496544 checkpoint; diag[3] is checkpoint detail.
++     * Stage map: 0=snapshot reset, 1=E0 op3, 2=type11+size16, 3=lookup return,
++     * 4=subtype2, 5=field24!=0x4c, 6=malloc enter, 7=malloc return,
++     * 8=prep enter, 9=prep return, 10=image_deferred entry. */
+     const uint32_t diag[4] = {
+         ctx->h264_snapshot_count,
+         ctx->h264_deferred_count,
+-        (ctx->h264_bridge_gate_calls & 0xffu) |
+-        ((ctx->h264_bridge_emit_calls & 0xffu) << 8) |
+-        ((ctx->h264_bridge_schedule_calls & 0xffu) << 16) |
+-        ((ctx->h264_bridge_send_calls & 0xffu) << 24),
+-        (ctx->h264_bridge_op3_calls & 0xffu) |
+-        ((ctx->h264_bridge_schedule_ok & 0xffu) << 8) |
+-        ((ctx->h264_diag_flags & 0xffu) << 16) |
+-        ((ctx->h264_last_deferred_snapshot_count & 0xffu) << 24)
++        ctx->h264_dispatch_stage,
++        ctx->h264_dispatch_detail
+     };
+     for (unsigned i = 0; i < 4; i++) {
+         uint32_t v = diag[i];
+@@ -1689,15 +1695,73 @@
+     return FW_TRANSPORT_SEND(module_id, payload, len, arg3);
+ }
+ 
++static void h264_dispatch_mark(uint32_t stage, uint32_t detail) {
++    customCfwContext *ctx = peekCustomCfwContext();
++    if (ctx && ctx->h264_active) {
++        ctx->h264_dispatch_stage = stage;
++        ctx->h264_dispatch_detail = detail;
++        h264_send_telemetry(ctx);
++    }
++}
++
+ void h264_bridge_op3_probe(void *e0_obj, void *payload, uint32_t len) {
+     customCfwContext *ctx = peekCustomCfwContext();
+     if (ctx && ctx->h264_active) {
+         ctx->h264_bridge_op3_calls++;
++        ctx->h264_dispatch_stage = 1u;
++        ctx->h264_dispatch_detail = len;
+         h264_send_telemetry(ctx);
+     }
+     FW_E0_OP3(e0_obj, payload, len);
+ }
+ 
++/* V3 probes inside stock dispatcher FUN_00496544. Each replaces an existing BL,
++ * calls the exact stock callee, and returns its value unchanged. This avoids
++ * modifying any compare/branch instruction in the dispatcher. */
++uint32_t h264_dispatch_type11_probe(void) {
++    h264_dispatch_mark(2u, 16u);
++    return FW_DISPATCH_DIAG();
++}
++
++void *h264_dispatch_lookup_probe(void *dispatcher, uint32_t key) {
++    void *r = FW_DISPATCH_LOOKUP(dispatcher, key);
++    uint32_t subtype = r ? (uint32_t)*((uint8_t *)r + 8) : 0xffu;
++    uint32_t detail = (r ? 1u : 0u) | (subtype << 8) | ((key & 0xffffu) << 16);
++    h264_dispatch_mark(3u, detail);
++    return r;
++}
++
++uint32_t h264_dispatch_subtype2_probe(void) {
++    h264_dispatch_mark(4u, 2u);
++    return FW_DISPATCH_DIAG();
++}
++
++uint32_t h264_dispatch_field_mismatch_probe(void) {
++    h264_dispatch_mark(5u, 0x4cu);
++    return FW_DISPATCH_DIAG();
++}
++
++void *h264_dispatch_malloc_probe(uint32_t size) {
++    h264_dispatch_mark(6u, size);
++    void *r = FW_MALLOC(size);
++    h264_dispatch_mark(7u, (r ? 0x80000000u : 0u) | (size & 0x7fffffffu));
++    return r;
++}
++
++void *h264_dispatch_prep2_probe(void *a0, void *a1, void *a2, uint32_t a3) {
++    h264_dispatch_mark(8u, 0x20000000u | (a3 & 0x0fffffffu));
++    void *r = FW_DISPATCH_PREP2(a0, a1, a2, a3);
++    h264_dispatch_mark(9u, 0x20000000u | (r ? 1u : 0u));
++    return r;
++}
++
++void *h264_dispatch_prep1_probe(void *a0, void *a1, void *a2, uint32_t a3) {
++    h264_dispatch_mark(8u, 0x10000000u | (a3 & 0x0fffffffu));
++    void *r = FW_DISPATCH_PREP1(a0, a1, a2, a3);
++    h264_dispatch_mark(9u, 0x10000000u | (r ? 1u : 0u));
++    return r;
++}
++
+ /* Wrapper for the one global display-dispatch call handling sensor event 9 /
+  * UI event 0x41 (IMU_COMPASS_DIRECTION). The stock call is always preserved.
+  * Navigation normally consumes this event and invokes FW_COMPASS_NOTIFY itself,
+@@ -2417,6 +2481,8 @@
+             if (is_h264_sequence) {
+             ctx->h264_snapshot_count++;
+             ctx->h264_queue_full = 0;
++            ctx->h264_dispatch_stage = 0u;
++            ctx->h264_dispatch_detail = h264_sequence;
+ 
+                 /*
+                  * TEMP DIAGNOSTIC:
+@@ -2462,9 +2528,12 @@
+ int image_deferred(uint8_t *state, uint8_t *src, uint32_t len) {
+     customCfwContext *ctx = getCustomCfwContext();
+     if (ctx != 0) {
++    ctx->h264_dispatch_stage = 10u;
++    ctx->h264_dispatch_detail = len;
+     ctx->h264_deferred_count++;
+     ctx->h264_last_deferred_snapshot_count = ctx->h264_snapshot_count;
+     ctx->h264_diag_flags = 0;
++    if (ctx->h264_active) h264_send_telemetry(ctx);
+ }
+     if (ctx == 0) return image_worker(state, src, len);   /* no ctx (OOM): best-effort */
+     int r = 0;

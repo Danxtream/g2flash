@@ -1,0 +1,118 @@
+--- patches/zlib_glue.c
++++ patches/zlib_glue.c
+@@ -145,6 +145,10 @@
+ typedef void (*keepalive_reset_fn)(void);           /* zero the EvenHub keepalive counter */
+ typedef uint8_t *(*lookup_fn)(uint32_t container_id); /* container id -> spec-list node (or 0) */
+ typedef int  (*complete_emit_fn)(uint32_t id, void *hdr, int kind, uint32_t p4); /* completion emit */
++typedef int  (*module_gate_fn)(uint32_t module_id);
++typedef int  (*async_schedule_fn)(uint32_t module_id, void *payload, uint32_t len, uint32_t delay_ms);
++typedef int  (*transport_send_fn)(uint32_t module_id, void *payload, uint32_t len, uint32_t arg3);
++typedef void (*e0_op3_fn)(void *e0_obj, void *payload, uint32_t len);
+ typedef void (*display_gate_fn)(void);               /* display semaphore take/give */
+ typedef int  (*display_queue_fn)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
+ typedef void (*display_copy_fn)(void);               /* stock 576x288 -> 640x480 packed copy */
+@@ -177,6 +181,10 @@
+                                                      * the counter pointer from its own literal pool. */
+ #define FW_LOOKUP        ((lookup_fn)0x004e0ccfU)    /* FUN_004e0cce(id) -> spec node; state=*(node+0x10) */
+ #define FW_COMPLETE_EMIT ((complete_emit_fn)0x004da383U) /* FUN_004da382: stock image-complete emitter */
++#define FW_MODULE_GATE    ((module_gate_fn)0x004434d1U)   /* FUN_004434d0 */
++#define FW_ASYNC_SCHEDULE ((async_schedule_fn)0x0045aacbU) /* FUN_0045aaca */
++#define FW_TRANSPORT_SEND ((transport_send_fn)0x00464bb3U) /* FUN_00464bb2 */
++#define FW_E0_OP3         ((e0_op3_fn)0x00496545U)        /* FUN_00496544 */
+ #define FW_DISPLAY_WAIT   ((display_gate_fn)0x0047381fU)  /* FUN_0047381e: take display semaphore */
+ #define FW_DISPLAY_SIGNAL ((display_gate_fn)0x0047386bU)  /* FUN_0047386a: give display semaphore */
+ #define FW_DISPLAY_QUEUE  ((display_queue_fn)0x00474067U) /* FUN_00474066: queue type-3 refresh */
+@@ -357,6 +365,12 @@
+ uint32_t h264_deferred_count;
+     uint32_t h264_diag_flags;
+     uint32_t h264_last_deferred_snapshot_count;
++    uint32_t h264_bridge_gate_calls;
++    uint32_t h264_bridge_emit_calls;
++    uint32_t h264_bridge_schedule_calls;
++    uint32_t h264_bridge_schedule_ok;
++    uint32_t h264_bridge_send_calls;
++    uint32_t h264_bridge_op3_calls;
+ } customCfwContext;
+ 
+ #define CFW_CTX_SLOT  0x20003ffcU    /* ble_msgrx context +0x0 (spare, never freed) */
+@@ -558,12 +572,20 @@
+     p[46] = (unsigned char)(queued_bytes >> 16);
+     p[47] = (unsigned char)(queued_bytes >> 24);
+ 
++    /* Bridge diagnostic: diag[2] bytes = gate, emit, schedule, delayed-send;
++     * diag[3] bytes = E0-op3, schedule-ok, legacy flags, last-deferred-snapshot. */
+     const uint32_t diag[4] = {
+-    ctx->h264_snapshot_count,
+-    ctx->h264_deferred_count,
+-    ctx->h264_diag_flags,
+-    ctx->h264_last_deferred_snapshot_count
+-};
++        ctx->h264_snapshot_count,
++        ctx->h264_deferred_count,
++        (ctx->h264_bridge_gate_calls & 0xffu) |
++        ((ctx->h264_bridge_emit_calls & 0xffu) << 8) |
++        ((ctx->h264_bridge_schedule_calls & 0xffu) << 16) |
++        ((ctx->h264_bridge_send_calls & 0xffu) << 24),
++        (ctx->h264_bridge_op3_calls & 0xffu) |
++        ((ctx->h264_bridge_schedule_ok & 0xffu) << 8) |
++        ((ctx->h264_diag_flags & 0xffu) << 16) |
++        ((ctx->h264_last_deferred_snapshot_count & 0xffu) << 24)
++    };
+     for (unsigned i = 0; i < 4; i++) {
+         uint32_t v = diag[i];
+         unsigned o = 48u + i * 4u;
+@@ -715,6 +737,12 @@
+     ctx->h264_snapshot_oom = 0;
+     ctx->h264_reorder_wait = 0;
+     ctx->h264_queue_full = 0;
++    ctx->h264_bridge_gate_calls = 0;
++    ctx->h264_bridge_emit_calls = 0;
++    ctx->h264_bridge_schedule_calls = 0;
++    ctx->h264_bridge_schedule_ok = 0;
++    ctx->h264_bridge_send_calls = 0;
++    ctx->h264_bridge_op3_calls = 0;
+     if (ctx->h264_diag_saved) {
+         ctx->diag_hide = ctx->h264_prev_diag_hide;
+         ctx->h264_diag_saved = 0;
+@@ -1620,6 +1648,41 @@
+     return ctx;
+ }
+ 
++/* H.264 bridge probes. Preserve stock ABI/return values and only count while
++ * an H.264 session is active. The packed counters in telemetry identify the
++ * exact stage at which a completed RIGHT snapshot stops progressing. */
++int h264_bridge_gate_probe(uint32_t module_id) {
++    customCfwContext *ctx = peekCustomCfwContext();
++    if (ctx && ctx->h264_active) ctx->h264_bridge_gate_calls++;
++    return FW_MODULE_GATE(module_id);
++}
++
++int h264_bridge_emit_probe(uint32_t id, void *hdr, int kind, uint32_t p4) {
++    customCfwContext *ctx = peekCustomCfwContext();
++    if (ctx && ctx->h264_active) ctx->h264_bridge_emit_calls++;
++    return FW_COMPLETE_EMIT(id, hdr, kind, p4);
++}
++
++int h264_bridge_schedule_probe(uint32_t module_id, void *payload, uint32_t len, uint32_t delay_ms) {
++    customCfwContext *ctx = peekCustomCfwContext();
++    if (ctx && ctx->h264_active) ctx->h264_bridge_schedule_calls++;
++    int r = FW_ASYNC_SCHEDULE(module_id, payload, len, delay_ms);
++    if (ctx && ctx->h264_active && r == 0) ctx->h264_bridge_schedule_ok++;
++    return r;
++}
++
++int h264_bridge_send_probe(uint32_t module_id, void *payload, uint32_t len, uint32_t arg3) {
++    customCfwContext *ctx = peekCustomCfwContext();
++    if (ctx && ctx->h264_active) ctx->h264_bridge_send_calls++;
++    return FW_TRANSPORT_SEND(module_id, payload, len, arg3);
++}
++
++void h264_bridge_op3_probe(void *e0_obj, void *payload, uint32_t len) {
++    customCfwContext *ctx = peekCustomCfwContext();
++    if (ctx && ctx->h264_active) ctx->h264_bridge_op3_calls++;
++    FW_E0_OP3(e0_obj, payload, len);
++}
++
+ /* Wrapper for the one global display-dispatch call handling sensor event 9 /
+  * UI event 0x41 (IMU_COMPASS_DIRECTION). The stock call is always preserved.
+  * Navigation normally consumes this event and invokes FW_COMPASS_NOTIFY itself,

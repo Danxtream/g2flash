@@ -1,0 +1,68 @@
+﻿
+  stock_disasm.txt:60186:  45e73c:	2000      	movs	r0, #0
+  stock_disasm.txt:60187:  45e73e:	2000      	movs	r0, #0
+  stock_disasm.txt:60188:  45e740:	9803      	ldr	r0, [sp, #12]
+  stock_disasm.txt:60189:  45e742:	8880      	ldrh	r0, [r0, #4]
+  stock_disasm.txt:60190:  45e744:	2800      	cmp	r0, #0
+  stock_disasm.txt:60191:  45e746:	d03d      	beq.n	0x45e7c4
+  stock_disasm.txt:60192:  45e748:	2802      	cmp	r0, #2
+  stock_disasm.txt:60193:  45e74a:	d004      	beq.n	0x45e756
+  stock_disasm.txt:60194:  45e74c:	d33f      	bcc.n	0x45e7ce
+  stock_disasm.txt:60195:  45e74e:	2804      	cmp	r0, #4
+  stock_disasm.txt:60196:  45e750:	d047      	beq.n	0x45e7e2
+  stock_disasm.txt:60197:  45e752:	d341      	bcc.n	0x45e7d8
+  stock_disasm.txt:60198:  45e754:	e04a      	b.n	0x45e7ec
+  stock_disasm.txt:60199:  45e756:	f8df 247c 	ldr.w	r2, [pc, #1148]	@ 0x45ebd4
+  stock_disasm.txt:60200:  45e75a:	f8df 347c 	ldr.w	r3, [pc, #1148]	@ 0x45ebd8
+  stock_disasm.txt:60201:  45e75e:	f8df 447c 	ldr.w	r4, [pc, #1148]	@ 0x45ebdc
+  stock_disasm.txt:60202:  45e762:	2032      	movs	r0, #50	@ 0x32
+  stock_disasm.txt:60203:  45e764:	9000      	str	r0, [sp, #0]
+  stock_disasm.txt:60204:  45e766:	a904      	add	r1, sp, #16
+  stock_disasm.txt:60205:  45e768:	6820      	ldr	r0, [r4, #0]
+> stock_disasm.txt:60206:  45e76a:	f033 fd7c 	bl	0x492266
+  stock_disasm.txt:60207:  45e76e:	b2c0      	uxtb	r0, r0
+  stock_disasm.txt:60208:  45e770:	2800      	cmp	r0, #0
+  stock_disasm.txt:60209:  45e772:	d142      	bne.n	0x45e7fa
+  stock_disasm.txt:60210:  45e774:	f7de fcab 	bl	0x43d0ce
+  stock_disasm.txt:60211:  45e778:	0780      	lsls	r0, r0, #30
+  stock_disasm.txt:60212:  45e77a:	d50c      	bpl.n	0x45e796
+  stock_disasm.txt:60213:  45e77c:	f8df 0460 	ldr.w	r0, [pc, #1120]	@ 0x45ebe0
+  stock_disasm.txt:60214:  45e780:	9001      	str	r0, [sp, #4]
+  stock_disasm.txt:143003:  49222e:	f7ff ff71 	bl	0x492114
+  stock_disasm.txt:143004:  492232:	0020      	movs	r0, r4
+  stock_disasm.txt:143005:  492234:	f7ff ffb0 	bl	0x492198
+  stock_disasm.txt:143006:  492238:	2001      	movs	r0, #1
+  stock_disasm.txt:143007:  49223a:	bd32      	pop	{r1, r4, r5, pc}
+  stock_disasm.txt:143008:  49223c:	b580      	push	{r7, lr}
+  stock_disasm.txt:143009:  49223e:	2200      	movs	r2, #0
+  stock_disasm.txt:143010:  492240:	9200      	str	r2, [sp, #0]
+  stock_disasm.txt:143011:  492242:	2300      	movs	r3, #0
+  stock_disasm.txt:143012:  492244:	2200      	movs	r2, #0
+  stock_disasm.txt:143013:  492246:	f7ff ffdb 	bl	0x492200
+  stock_disasm.txt:143014:  49224a:	bd02      	pop	{r1, pc}
+  stock_disasm.txt:143015:  49224c:	b51c      	push	{r2, r3, r4, lr}
+  stock_disasm.txt:143016:  49224e:	f8bd 4010 	ldrh.w	r4, [sp, #16]
+  stock_disasm.txt:143017:  492252:	9400      	str	r4, [sp, #0]
+  stock_disasm.txt:143018:  492254:	f7ff ffd4 	bl	0x492200
+  stock_disasm.txt:143019:  492258:	bd16      	pop	{r1, r2, r4, pc}
+  stock_disasm.txt:143020:  49225a:	b580      	push	{r7, lr}
+  stock_disasm.txt:143021:  49225c:	2201      	movs	r2, #1
+  stock_disasm.txt:143022:  49225e:	708a      	strb	r2, [r1, #2]
+> stock_disasm.txt:143023:  492260:	f7ff ffec 	bl	0x49223c
+  stock_disasm.txt:143024:  492264:	bd02      	pop	{r1, pc}
+  stock_disasm.txt:143025:  492266:	b51c      	push	{r2, r3, r4, lr}
+  stock_disasm.txt:143026:  492268:	2400      	movs	r4, #0
+  stock_disasm.txt:143027:  49226a:	608c      	str	r4, [r1, #8]
+  stock_disasm.txt:143028:  49226c:	f8bd 4010 	ldrh.w	r4, [sp, #16]
+  stock_disasm.txt:143029:  492270:	9400      	str	r4, [sp, #0]
+> stock_disasm.txt:143030:  492272:	f7ff ffeb 	bl	0x49224c
+  stock_disasm.txt:143031:  492276:	bd16      	pop	{r1, r2, r4, pc}
+  stock_disasm.txt:143032:  492278:	b580      	push	{r7, lr}
+  stock_disasm.txt:143033:  49227a:	f7ff ff4b 	bl	0x492114
+  stock_disasm.txt:143034:  49227e:	bd01      	pop	{r0, pc}
+  stock_disasm.txt:143035:  492280:	b580      	push	{r7, lr}
+  stock_disasm.txt:143036:  492282:	f7ff ff89 	bl	0x492198
+  stock_disasm.txt:143037:  492286:	bd01      	pop	{r0, pc}
+  stock_disasm.txt:143038:  492288:	b570      	push	{r4, r5, r6, lr}
+
+
