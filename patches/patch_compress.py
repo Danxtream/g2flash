@@ -153,6 +153,10 @@ H264_BRIDGE_EMIT_BL_SITES = {
 H264_BRIDGE_SCHEDULE_BL_SITE = (0x4da498, "80 f7 17 fb") # field 0x4c -> bl 0x45aaca
 H264_BRIDGE_SEND_BL_SITE = (0x45aabc, "0a f0 79 f8")     # delayed callback -> bl 0x464bb2
 H264_BRIDGE_OP3_BL_SITE = (0x4e16ec, "b4 f7 2a ff")      # E0 op=3 -> bl 0x496544
+H264_PRE_T0_HELPER_BL_SITES = {
+    0x4db90c: "fe f7 ca fd",  # single completion -> bl 0x4da4a4
+    0x4dbd0c: "fe f7 ca fb",  # multi fragment completion -> bl 0x4da4a4
+}
 # V3: checkpoints inside stock FUN_00496544. Every site is an existing 4-byte BL,
 # so probes preserve the original callee/return ABI without touching branch flags.
 H264_DISPATCH_TYPE11_BL_SITE = (0x496720, "a6 f7 d5 fc")   # post type==11 && +2==16 -> bl 0x43d0ce
@@ -275,6 +279,7 @@ def layout(img):
     bridge_schedule_addr = base + _fn(built, "h264_bridge_schedule_probe")["offset"]
     bridge_send_addr = base + _fn(built, "h264_bridge_send_probe")["offset"]
     bridge_op3_addr = base + _fn(built, "h264_bridge_op3_probe")["offset"]
+    pre_t0_helper_addr = base + _fn(built, "h264_pre_t0_helper_probe")["offset"]
     dispatch_type11_addr = base + _fn(built, "h264_dispatch_type11_probe")["offset"]
     dispatch_lookup_addr = base + _fn(built, "h264_dispatch_lookup_probe")["offset"]
     dispatch_subtype2_addr = base + _fn(built, "h264_dispatch_subtype2_probe")["offset"]
@@ -342,6 +347,9 @@ def layout(img):
         (g2f(H264_BRIDGE_OP3_BL_SITE[0]), H264_BRIDGE_OP3_BL_SITE[1],
          enc_bl(H264_BRIDGE_OP3_BL_SITE[0], bridge_op3_addr),
          "bl h264_bridge_op3_probe (E0 op=3 dispatch boundary)"),
+        *[(g2f(site), orig, enc_bl(site, pre_t0_helper_addr),
+           f"bl h264_pre_t0_helper_probe @ {site:#x}")
+          for site, orig in H264_PRE_T0_HELPER_BL_SITES.items()],
         (g2f(H264_DISPATCH_TYPE11_BL_SITE[0]), H264_DISPATCH_TYPE11_BL_SITE[1],
          enc_bl(H264_DISPATCH_TYPE11_BL_SITE[0], dispatch_type11_addr),
          "V3 dispatcher: type 11 + descriptor size 16 passed"),
