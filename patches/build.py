@@ -159,7 +159,8 @@ def resolve_movwt(blob, off, sym_addr, high):
 
 CLANG = "clang"
 COMMON_FLAGS = [
-    "--target=thumbv7em-none-eabi",
+    "--target=arm-none-eabi",
+    "-mcpu=cortex-m55+nofp",
     "-mthumb",
     "-O2",
     "-fno-jump-tables",
