@@ -157,6 +157,42 @@ H264_PRE_T0_HELPER_BL_SITES = {
     0x4db90c: "fe f7 ca fd",  # single completion -> bl 0x4da4a4
     0x4dbd0c: "fe f7 ca fb",  # multi fragment completion -> bl 0x4da4a4
 }
+H264_BULK_PARSER_BL_SITE = (0x4da908, "b5 f7 0a fc") # bl 0x490120
+H264_BULK_LOOKUP_BL_SITE = (0x4db73a, "05 f0 c8 fa") # bl 0x4e0cce
+H264_BULK_COPY_BL_SITES = {
+    0x4db8e8: "5e f7 7c f9",  # single final copy -> bl 0x439be4
+    0x4dbce0: "5d f7 80 ff",  # multi final copy -> bl 0x439be4
+}
+
+# B5: exact SID-0xE0 protocol-ACK pipeline.
+# Each site replaces one existing 4-byte Thumb BL.
+H264_ACK_NOTIFY_BL_SITE = (
+    0x4da560,
+    "9b f7 d8 fa",  # bl 0x475b14
+)
+H264_ACK_QUEUE_PUT_BL_SITE = (
+    0x4759c4,
+    "d4 f7 7b f8",  # bl 0x449abe
+)
+H264_ACK_QUEUE_GET_BL_SITE = (
+    0x4753be,
+    "d4 f7 bd fb",  # bl 0x449b3c
+)
+H264_ACK_LOWER_SEND_BL_SITE = (
+    0x4753fa,
+    "44 f0 21 f9",  # bl 0x4b9640
+)
+
+# B6: deep outbound SID-0xE0 ACK transport path. Each site is an
+# existing four-byte Thumb BL and was resolved from stock disassembly.
+H264_B6_GATT_NOTIFY_BL_SITE = (0x4bdf18, "75 f0 de ff")     # bl 0x533ed8
+H264_B6_TYPE21_ENQUEUE_BL_SITE = (0x533d84, "8b f7 19 fe")  # bl 0x4bf9ba
+H264_B6_TYPE21_CONSUMER_BL_SITE = (0x533c1a, "ff f7 c7 fe") # bl 0x5339ac
+H264_B6_DEEP_ENQUEUE_BL_SITE = (0x530bf8, "fa f7 84 f8")    # bl 0x52ad04
+H264_B6_DEEP_DEQUEUE_BL_SITE = (0x52a800, "95 f7 fe f8")    # bl 0x4bfa00
+H264_B6_H4_SUBMIT_BL_SITE = (0x530150, "84 f7 57 fc")       # bl 0x4b4a02
+H264_B6_DRIVER_BL_SITE = (0x4b4c40, "79 f0 47 fa")          # bl 0x52e0d2
+
 # V3: checkpoints inside stock FUN_00496544. Every site is an existing 4-byte BL,
 # so probes preserve the original callee/return ABI without touching branch flags.
 H264_DISPATCH_TYPE11_BL_SITE = (0x496720, "a6 f7 d5 fc")   # post type==11 && +2==16 -> bl 0x43d0ce
@@ -280,6 +316,23 @@ def layout(img):
     bridge_send_addr = base + _fn(built, "h264_bridge_send_probe")["offset"]
     bridge_op3_addr = base + _fn(built, "h264_bridge_op3_probe")["offset"]
     pre_t0_helper_addr = base + _fn(built, "h264_pre_t0_helper_probe")["offset"]
+    bulk_parser_addr = base + _fn(built, "h264_bulk_parser_probe")["offset"]
+    bulk_lookup_addr = base + _fn(built, "h264_bulk_lookup_probe")["offset"]
+    bulk_copy_addr = base + _fn(built, "h264_bulk_copy_probe")["offset"]
+
+    ack_notify_addr = base + _fn(built, "h264_ack_notify_probe")["offset"]
+    ack_queue_put_addr = base + _fn(built, "h264_ack_queue_put_probe")["offset"]
+    ack_queue_get_addr = base + _fn(built, "h264_ack_queue_get_probe")["offset"]
+    ack_lower_send_addr = base + _fn(built, "h264_ack_lower_send_probe")["offset"]
+
+    b6_gatt_notify_addr = base + _fn(built, "h264_b6_gatt_notify_probe")["offset"]
+    b6_type21_enqueue_addr = base + _fn(built, "h264_b6_type21_enqueue_probe")["offset"]
+    b6_type21_consumer_addr = base + _fn(built, "h264_b6_type21_consumer_probe")["offset"]
+    b6_deep_enqueue_addr = base + _fn(built, "h264_b6_deep_enqueue_probe")["offset"]
+    b6_deep_dequeue_addr = base + _fn(built, "h264_b6_deep_dequeue_probe")["offset"]
+    b6_h4_submit_addr = base + _fn(built, "h264_b6_h4_submit_probe")["offset"]
+    b6_driver_addr = base + _fn(built, "h264_b6_driver_probe")["offset"]
+
     dispatch_type11_addr = base + _fn(built, "h264_dispatch_type11_probe")["offset"]
     dispatch_lookup_addr = base + _fn(built, "h264_dispatch_lookup_probe")["offset"]
     dispatch_subtype2_addr = base + _fn(built, "h264_dispatch_subtype2_probe")["offset"]
@@ -350,6 +403,65 @@ def layout(img):
         *[(g2f(site), orig, enc_bl(site, pre_t0_helper_addr),
            f"bl h264_pre_t0_helper_probe @ {site:#x}")
           for site, orig in H264_PRE_T0_HELPER_BL_SITES.items()],
+        (g2f(H264_BULK_PARSER_BL_SITE[0]), H264_BULK_PARSER_BL_SITE[1],
+         enc_bl(H264_BULK_PARSER_BL_SITE[0], bulk_parser_addr),
+         "bl h264_bulk_parser_probe (E0 parser return timestamp)"),
+        (g2f(H264_BULK_LOOKUP_BL_SITE[0]), H264_BULK_LOOKUP_BL_SITE[1],
+         enc_bl(H264_BULK_LOOKUP_BL_SITE[0], bulk_lookup_addr),
+         "bl h264_bulk_lookup_probe (reassembly lookup return timestamp)"),
+        *[(g2f(site), orig, enc_bl(site, bulk_copy_addr),
+           f"bl h264_bulk_copy_probe @ {site:#x} (final copy enter/return timestamps)")
+          for site, orig in H264_BULK_COPY_BL_SITES.items()],
+
+        (g2f(H264_ACK_NOTIFY_BL_SITE[0]),
+         H264_ACK_NOTIFY_BL_SITE[1],
+         enc_bl(H264_ACK_NOTIFY_BL_SITE[0], ack_notify_addr),
+         "bl h264_ack_notify_probe (exact SID-E0 ACK call)"),
+
+        (g2f(H264_ACK_QUEUE_PUT_BL_SITE[0]),
+         H264_ACK_QUEUE_PUT_BL_SITE[1],
+         enc_bl(H264_ACK_QUEUE_PUT_BL_SITE[0], ack_queue_put_addr),
+         "bl h264_ack_queue_put_probe (ACK RTOS queue put)"),
+
+        (g2f(H264_ACK_QUEUE_GET_BL_SITE[0]),
+         H264_ACK_QUEUE_GET_BL_SITE[1],
+         enc_bl(H264_ACK_QUEUE_GET_BL_SITE[0], ack_queue_get_addr),
+         "bl h264_ack_queue_get_probe (outbound worker dequeue)"),
+
+        (g2f(H264_ACK_LOWER_SEND_BL_SITE[0]),
+         H264_ACK_LOWER_SEND_BL_SITE[1],
+         enc_bl(H264_ACK_LOWER_SEND_BL_SITE[0], ack_lower_send_addr),
+         "bl h264_ack_lower_send_probe (worker lower BLE send)"),
+
+        (g2f(H264_B6_GATT_NOTIFY_BL_SITE[0]),
+         H264_B6_GATT_NOTIFY_BL_SITE[1],
+         enc_bl(H264_B6_GATT_NOTIFY_BL_SITE[0], b6_gatt_notify_addr),
+         "B6: GATT attr-0x0844 consumer"),
+        (g2f(H264_B6_TYPE21_ENQUEUE_BL_SITE[0]),
+         H264_B6_TYPE21_ENQUEUE_BL_SITE[1],
+         enc_bl(H264_B6_TYPE21_ENQUEUE_BL_SITE[0], b6_type21_enqueue_addr),
+         "B6: type-0x21 enqueue"),
+        (g2f(H264_B6_TYPE21_CONSUMER_BL_SITE[0]),
+         H264_B6_TYPE21_CONSUMER_BL_SITE[1],
+         enc_bl(H264_B6_TYPE21_CONSUMER_BL_SITE[0], b6_type21_consumer_addr),
+         "B6: type-0x21 payload consumer"),
+        (g2f(H264_B6_DEEP_ENQUEUE_BL_SITE[0]),
+         H264_B6_DEEP_ENQUEUE_BL_SITE[1],
+         enc_bl(H264_B6_DEEP_ENQUEUE_BL_SITE[0], b6_deep_enqueue_addr),
+         "B6: deep TX enqueue"),
+        (g2f(H264_B6_DEEP_DEQUEUE_BL_SITE[0]),
+         H264_B6_DEEP_DEQUEUE_BL_SITE[1],
+         enc_bl(H264_B6_DEEP_DEQUEUE_BL_SITE[0], b6_deep_dequeue_addr),
+         "B6: deep TX dequeue"),
+        (g2f(H264_B6_H4_SUBMIT_BL_SITE[0]),
+         H264_B6_H4_SUBMIT_BL_SITE[1],
+         enc_bl(H264_B6_H4_SUBMIT_BL_SITE[0], b6_h4_submit_addr),
+         "B6: H4 ACL ring submit"),
+        (g2f(H264_B6_DRIVER_BL_SITE[0]),
+         H264_B6_DRIVER_BL_SITE[1],
+         enc_bl(H264_B6_DRIVER_BL_SITE[0], b6_driver_addr),
+         "B6: H4 worker driver call"),
+
         (g2f(H264_DISPATCH_TYPE11_BL_SITE[0]), H264_DISPATCH_TYPE11_BL_SITE[1],
          enc_bl(H264_DISPATCH_TYPE11_BL_SITE[0], dispatch_type11_addr),
          "V3 dispatcher: type 11 + descriptor size 16 passed"),
