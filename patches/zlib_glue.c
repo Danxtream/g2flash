@@ -578,6 +578,13 @@ static int h264_present_status(
     customCfwContext *ctx,
     cfw_rectlist *rl
 );
+static int h264_present_pause_overlay(
+    customCfwContext *ctx,
+    uint8_t paused,
+    uint8_t selection,
+    uint32_t position_ms,
+    uint32_t duration_ms
+);
 static void draw_string(uint8_t *disp, uint32_t w, uint32_t h,
                         int x0, int y0, const char *s, uint8_t fg, int bg);
 static void u_to_dec(char *out, uint32_t v, uint32_t maxlen);
@@ -1297,6 +1304,12 @@ static int image_worker(void *state_, uint8_t *src, uint32_t srclen) {
  * only mutate the shadow) and then presents once, giving an atomic multi-op update
  * (e.g. scroll = rect-copy + delta). The high bit of the mode byte is the "lenses
  * differ" flag; most modes ignore it. */
+static uint32_t product_rd32le(const uint8_t *p) {
+    return (uint32_t)p[0]
+         | ((uint32_t)p[1] << 8)
+         | ((uint32_t)p[2] << 16)
+         | ((uint32_t)p[3] << 24);
+}
 static int image_dispatch(uint8_t *state, const uint8_t *src, uint32_t srclen,
                           int present, cfw_rectlist *rl) {
     if (src == 0 || srclen < 1) return load_bmp_fast(state, src, srclen);
@@ -1664,6 +1677,21 @@ static int image_dispatch(uint8_t *state, const uint8_t *src, uint32_t srclen,
             ctx->h264_pace_max_late_ms = 0;
             h264_send_telemetry(ctx);
             return 0;
+        }
+
+        /* Product playback controls.
+         * [11][11][paused][selection][position_ms32][duration_ms32]
+         * selection: 0=PLAY, 1=-10, 2=+10, 3=-30, 4=+30. */
+        if (sub == 11) {
+            if (!ctx->h264_active || srclen < 12 || src[2] > 1u || src[3] > 4u)
+                return -1;
+            return h264_present_pause_overlay(
+                ctx,
+                src[2],
+                src[3],
+                product_rd32le(src + 4),
+                product_rd32le(src + 8)
+            );
         }
 
         return -1;
@@ -2393,7 +2421,23 @@ static void h264_request_fast_conn_interval(
 ) {
     typedef uint16_t (*conn_handle_fn)(uint8_t);
     typedef void (*conn_param_req_fn)(uint16_t, const uint16_t *);
-    uint16_t params[4] = {6u, 6u, 0u, 500u};
+
+    /*
+     * Controlled asymmetric BLE scheduling experiment.
+     *
+     * FW_SIDE():
+     *   2 = LEFT  -- H264 payload ingress
+     *   1 = RIGHT -- ACK / telemetry side
+     *
+     * LEFT remains at 7.5 ms.
+     * RIGHT returns to 15 ms.
+     *
+     * BLE connection interval units are 1.25 ms:
+     *   6  = 7.5 ms
+     *   12 = 15 ms
+     */
+    uint16_t interval = FW_SIDE() == 2 ? 6u : 12u;
+    uint16_t params[4] = {interval, interval, 0u, 500u};
 
     if (ctx == 0 ||
         !ctx->h264_active ||
@@ -2947,6 +2991,86 @@ static int h264_present_orientation(uint8_t *state, cfw_rectlist *rl) {
     rl_add(rl, 0, 0, PANEL_W, PANEL_H);
     present_shadow(state, PANEL_W, PANEL_H, rl);
     h264_display_finish(rl);
+    return 0;
+}
+
+/* Format an elapsed media time as H:MM:SS. */
+static void h264_format_hms(char *out, uint32_t maxlen, uint32_t time_ms) {
+    uint32_t total = time_ms / 1000u;
+    uint32_t hours = total / 3600u;
+    uint32_t minutes = (total / 60u) % 60u;
+    uint32_t seconds = total % 60u;
+    char two[3];
+
+    if (maxlen == 0u) return;
+    out[0] = 0;
+    u_to_dec(out, hours, maxlen);
+    strlcat(out, ":", maxlen);
+    two[0] = (char)('0' + (minutes / 10u));
+    two[1] = (char)('0' + (minutes % 10u));
+    two[2] = 0;
+    strlcat(out, two, maxlen);
+    strlcat(out, ":", maxlen);
+    two[0] = (char)('0' + (seconds / 10u));
+    two[1] = (char)('0' + (seconds % 10u));
+    two[2] = 0;
+    strlcat(out, two, maxlen);
+}
+
+static int h264_present_pause_overlay(
+    customCfwContext *ctx,
+    uint8_t paused,
+    uint8_t selection,
+    uint32_t position_ms,
+    uint32_t duration_ms
+) {
+    if (ctx == 0 || !ctx->h264_active || selection > 4u)
+        return -1;
+    if (!h264_display_begin(ctx))
+        return -1;
+
+    uint8_t *fb = FW_DISPLAY_FB;
+    if (fb == 0) {
+        FW_DISPLAY_SIGNAL();
+        return -1;
+    }
+
+    const uint32_t strip_h = 48u;
+    const uint32_t strip_y = PANEL_H - strip_h;
+    uint8_t *strip = fb + strip_y * PANEL_STRIDE;
+    bzero(strip, strip_h * PANEL_STRIDE);
+
+    if (paused) {
+        char position[20];
+        char duration[20];
+        char line[64];
+        h264_format_hms(position, sizeof(position), position_ms);
+        h264_format_hms(duration, sizeof(duration), duration_ms);
+
+        strlcpy(line, "PAUSED  ", sizeof(line));
+        strlcat(line, position, sizeof(line));
+        strlcat(line, " / ", sizeof(line));
+        strlcat(line, duration, sizeof(line));
+        draw_string(fb, PANEL_W, PANEL_H, 20, (int)strip_y + 2, line, 15, -1);
+
+        const char *action =
+            selection == 0u ? "[PLAY]  -10  +10  -30  +30" :
+            selection == 1u ? " PLAY  [-10] +10  -30  +30" :
+            selection == 2u ? " PLAY   -10 [+10] -30  +30" :
+            selection == 3u ? " PLAY   -10  +10 [-30] +30" :
+                              " PLAY   -10  +10  -30 [+30]";
+        draw_string(fb, PANEL_W, PANEL_H, 20, (int)strip_y + 18, action, 15, -1);
+        draw_string(fb, PANEL_W, PANEL_H, 20, (int)strip_y + 34,
+                    "scroll select  tap apply  double exit", 9, -1);
+    }
+
+    uint32_t desc[2] = {
+        (uint32_t)(uintptr_t)strip,
+        strip_h * PANEL_STRIDE
+    };
+    FW_FLUSH(desc);
+    ctx->direct_active = 1;
+    FW_DISPLAY_SIGNAL();
     return 0;
 }
 
