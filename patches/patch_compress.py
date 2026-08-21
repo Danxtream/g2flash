@@ -319,6 +319,8 @@ def layout(img):
     bulk_parser_addr = base + _fn(built, "h264_bulk_parser_probe")["offset"]
     bulk_lookup_addr = base + _fn(built, "h264_bulk_lookup_probe")["offset"]
     bulk_copy_addr = base + _fn(built, "h264_bulk_copy_probe")["offset"]
+    phy_hci_wrapper_addr = base + _fn(built, "faceclaw_dm_phy_hci_handler")["offset"]
+    hci_evt_tap_addr = base + _fn(built, "faceclaw_hci_evt_tap")["offset"]
 
     ack_notify_addr = base + _fn(built, "h264_ack_notify_probe")["offset"]
     ack_queue_put_addr = base + _fn(built, "h264_ack_queue_put_probe")["offset"]
@@ -365,7 +367,20 @@ def layout(img):
           f"({(APP_MAX_END - prog_end) // 1024} KB under 0x{APP_MAX_END:08x})")
 
     # --- in-place live-code edits + bl retargets (targets are the appended addrs) ---
+
     in_place = [
+        (
+            g2f(0x00530CCE),
+            "3a f0 5f fb",
+            enc_bl(0x00530CCE, hci_evt_tap_addr),
+            "BLELAB: raw HCI ingress -> persistent transparent tap"
+        ),
+        (
+            g2f(0x78A860),
+            "35 57 4c 00",
+            struct.pack("<I", (phy_hci_wrapper_addr | 1)).hex(" "),
+            "dmPhyFcnIf.hciHandler -> Faceclaw transparent PHY-result wrapper"
+        ),
         # 576x288 image-container size lift, in common_image_create. Even did NOT raise
         # this cap in 2.2.6.10 (its clamp strings are byte-identical and the limit is
         # still parameterized), so the lift is still needed. These three sites are

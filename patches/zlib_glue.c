@@ -163,6 +163,35 @@ typedef void (*display_copy_fn)(void);               /* stock 576x288 -> 640x480
 typedef int (*compass_control_fn)(void);              /* stock Start/StopIMUCompassFunc */
 typedef int (*display_event_forward_fn)(uint32_t, uint32_t, void *); /* display event -> active UI */
 typedef int (*compass_notify_fn)(uint32_t);           /* stock sid-0x08 compass notifier */
+typedef uint8_t (*dm_conn_num_fn)(void);
+typedef uint8_t (*dm_conn_in_use_fn)(uint8_t conn_id);
+typedef void (*dm_set_phy_fn)(
+    uint8_t conn_id,
+    uint8_t all_phys,
+    uint8_t tx_phys,
+    uint8_t rx_phys,
+    uint16_t phy_options
+);
+
+
+typedef void (*dm_phy_hci_handler_fn)(void *event);
+typedef void (*hci_evt_process_msg_fn)(uint8_t *event);
+typedef uint8_t *(*hci_cmd_alloc_fn)(
+    uint16_t opcode,
+    uint16_t len
+);
+typedef void (*hci_cmd_send_fn)(uint8_t *p);
+typedef void (*dm_read_remote_features_fn)(
+    uint8_t conn_id
+);
+typedef void *(*dm_conn_ccb_by_id_fn)(
+    uint8_t conn_id
+);
+typedef void (*dm_conn_set_data_len_fn)(
+    uint8_t conn_id,
+    uint16_t tx_octets,
+    uint16_t tx_time
+);
 
 /* firmware entry points (Thumb bit set for blx via constant pointer) */
 #define FW_MALLOC  ((malloc_fn)0x00474cd3U)         /* FUN_00474cd2 malloc(size) */
@@ -208,6 +237,17 @@ typedef int (*compass_notify_fn)(uint32_t);           /* stock sid-0x08 compass 
 #define FW_COMPASS_STOP   ((compass_control_fn)0x0054566dU) /* FUN_0054566c StopIMUCompassFunc */
 #define FW_DISPLAY_EVENT_FORWARD ((display_event_forward_fn)0x0045f8fdU) /* FUN_0045f8fc */
 #define FW_COMPASS_NOTIFY ((compass_notify_fn)0x0058705dU) /* FUN_0058705c navigation_notify_compass_changed_cmd */
+#define FW_DM_CONN_NUM ((dm_conn_num_fn)0x004b62cbU)       /* DmConnNum */
+#define FW_DM_CONN_IN_USE ((dm_conn_in_use_fn)0x004b6ec7U) /* DmConnInUse */
+#define FW_DM_SET_PHY ((dm_set_phy_fn)0x004c5811U)         /* DmSetPhy */
+
+#define FW_DM_PHY_HCI_HANDLER ((dm_phy_hci_handler_fn)0x004c5735U) /* stock dmPhyHciHandler */
+#define FW_HCI_EVT_PROCESS_MSG ((hci_evt_process_msg_fn)0x0056b391U)
+#define FW_HCI_CMD_ALLOC ((hci_cmd_alloc_fn)0x0052ae39U)
+#define FW_HCI_CMD_SEND ((hci_cmd_send_fn)0x0052ae5fU)
+#define FW_DM_READ_REMOTE_FEATURES ((dm_read_remote_features_fn)0x004b6cb1U)
+#define FW_DM_CONN_CCB_BY_ID ((dm_conn_ccb_by_id_fn)0x004b62a9U)
+#define FW_DM_CONN_SET_DATA_LEN ((dm_conn_set_data_len_fn)0x004b6e6dU)
 #define FW_DISPLAY_FB     (*(uint8_t * volatile *)0x200007b8U) /* stock copier's 640x480 destination */
 #define BUZZ_TIMER_ADDR 0x20074504U                   /* RAM: buzzer osTimer handle (buzzer osTimer handle global) */
 #define ZLIB_VER   ((const char *)0x0078d654U)      /* "1.1.4" */
@@ -298,6 +338,16 @@ typedef struct {
     uint8_t is_h264_sequence;
     uint8_t h264_pool_slot; /* 0xff = firmware heap, otherwise fixed V9 pool */
 } cfw_snap;
+
+
+#define CFW_BLELAB_RING       16u
+#define CFW_BLELAB_EVT_BYTES  72u
+
+typedef struct {
+    uint32_t seq;
+    uint8_t used;
+    uint8_t data[CFW_BLELAB_EVT_BYTES];
+} cfw_blelab_evt;
 
 typedef struct {
     uint32_t magic;      /* CFW_CTX_MAGIC when valid */
@@ -496,7 +546,20 @@ uint32_t h264_deferred_count;
     uint32_t h264_b6_h4_sig;
     uint32_t h264_b6_trace_pending;
     uint32_t h264_b6_trace_ready;
+
     uint32_t h264_fast_conn_requested;
+
+    /* Persistent BLE/HCI laboratory state. */
+    uint32_t blelab_seq;
+    uint32_t blelab_capture_mask;
+    uint32_t blelab_telem[4];
+
+    uint8_t blelab_pos;
+    uint8_t blelab_count;
+    uint8_t blelab_telem_valid;
+    uint8_t blelab_reserved;
+
+    cfw_blelab_evt blelab_ring[CFW_BLELAB_RING];
 } customCfwContext;
 
 #define CFW_CTX_SLOT  0x20003ffcU    /* ble_msgrx context +0x0 (spare, never freed) */
@@ -794,6 +857,15 @@ static void h264_send_telemetry(customCfwContext *ctx) {
         ctx->h264_b6_trace_pending = 0u;
         ctx->h264_b6_trace_ready = 0u;
     }
+    if (ctx->blelab_telem_valid) {
+        diag[0] = ctx->blelab_telem[0];
+        diag[1] = ctx->blelab_telem[1];
+        diag[2] = ctx->blelab_telem[2];
+        diag[3] = ctx->blelab_telem[3];
+
+        ctx->blelab_telem_valid = 0u;
+    }
+
     for (unsigned i = 0; i < 4; i++) {
         uint32_t v = diag[i];
         unsigned o = 48u + i * 4u;
@@ -813,6 +885,740 @@ static void h264_send_telemetry(customCfwContext *ctx) {
 
 
 
+/* ============================================================
+ * Persistent Faceclaw BLE/HCI laboratory
+ * ============================================================ */
+
+#define BLELAB_TELEM_MAGIC 0x424c4100u
+
+typedef struct {
+    uint8_t peerAddr[6];
+    uint8_t localAddr[6];
+
+    uint16_t handle;
+    uint16_t idleMask;
+
+    uint8_t connId;
+    uint8_t updating;
+    uint8_t usingLtk;
+    uint8_t peerAddrType;
+    uint8_t localAddrType;
+    uint8_t state;
+    uint8_t inUse;
+    uint8_t secLevel;
+    uint8_t tmpSecLevel;
+    uint8_t role;
+
+    uint8_t localRpa[6];
+    uint8_t peerRpa[6];
+
+    uint32_t features;
+    uint8_t featuresPresent;
+} blelab_dm_conn_ccb;
+
+static void blelab_telem(
+    customCfwContext *ctx,
+    uint8_t tag,
+    uint32_t a,
+    uint32_t b0,
+    uint32_t b1
+) {
+    if (ctx == 0)
+        return;
+
+    ctx->blelab_telem[0] =
+        BLELAB_TELEM_MAGIC |
+        (uint32_t)tag;
+
+    ctx->blelab_telem[1] = a;
+    ctx->blelab_telem[2] = b0;
+    ctx->blelab_telem[3] = b1;
+    ctx->blelab_telem_valid = 1u;
+
+    ctx->h264_last_result = G2_H264_ERROR;
+
+    h264_send_telemetry(ctx);
+}
+
+static uint8_t blelab_live_conn_id(void) {
+    if (FW_DM_CONN_NUM() != 1u)
+        return 0u;
+
+    for (uint8_t id = 1u; id <= 3u; ++id) {
+        if (FW_DM_CONN_IN_USE(id))
+            return id;
+    }
+
+    return 0u;
+}
+
+static void blelab_clear(
+    customCfwContext *ctx
+) {
+    if (ctx == 0)
+        return;
+
+    ctx->blelab_seq = 0u;
+    ctx->blelab_pos = 0u;
+    ctx->blelab_count = 0u;
+
+    for (
+        uint32_t i = 0u;
+        i < CFW_BLELAB_RING;
+        ++i
+    ) {
+        ctx->blelab_ring[i].seq = 0u;
+        ctx->blelab_ring[i].used = 0u;
+    }
+}
+
+static int blelab_should_capture(
+    customCfwContext *ctx,
+    uint8_t evt
+) {
+    if (ctx == 0)
+        return 0;
+
+    /* Do not let packet-completion traffic flood the ring. */
+    if (evt == 0x13u)
+        return 0;
+
+    if (evt == 0x0fu)
+        return (
+            ctx->blelab_capture_mask &
+            0x01u
+        ) != 0u;
+
+    if (evt == 0x0eu)
+        return (
+            ctx->blelab_capture_mask &
+            0x02u
+        ) != 0u;
+
+    if (evt == 0x3eu)
+        return (
+            ctx->blelab_capture_mask &
+            0x04u
+        ) != 0u;
+
+    if (evt == 0x05u)
+        return (
+            ctx->blelab_capture_mask &
+            0x08u
+        ) != 0u;
+
+    return (
+        ctx->blelab_capture_mask &
+        0x10u
+    ) != 0u;
+}
+
+static void blelab_capture_hci(
+    uint8_t *event
+) {
+    customCfwContext *ctx =
+        peekCustomCfwContext();
+
+    if (ctx == 0 || event == 0)
+        return;
+
+    if (!blelab_should_capture(ctx, event[0]))
+        return;
+
+    uint32_t used =
+        (uint32_t)event[1] + 2u;
+
+    if (used > CFW_BLELAB_EVT_BYTES)
+        used = CFW_BLELAB_EVT_BYTES;
+
+    uint32_t slot = ctx->blelab_pos;
+
+    if (slot >= CFW_BLELAB_RING)
+        slot = 0u;
+
+    cfw_blelab_evt *e =
+        &ctx->blelab_ring[slot];
+
+    e->seq = ++ctx->blelab_seq;
+    e->used = (uint8_t)used;
+
+    for (uint32_t i = 0u; i < used; ++i)
+        e->data[i] = event[i];
+
+    for (
+        uint32_t i = used;
+        i < CFW_BLELAB_EVT_BYTES;
+        ++i
+    ) {
+        e->data[i] = 0u;
+    }
+
+    ctx->blelab_pos =
+        (uint8_t)(
+            (slot + 1u) %
+            CFW_BLELAB_RING
+        );
+
+    if (ctx->blelab_count < CFW_BLELAB_RING)
+        ctx->blelab_count++;
+}
+
+/*
+ * One permanent transparent hook:
+ *
+ * HCI transport
+ *     -> faceclaw_hci_evt_tap
+ *     -> stock hciEvtProcessMsg
+ */
+void faceclaw_hci_evt_tap(
+    uint8_t *event
+) {
+    blelab_capture_hci(event);
+    FW_HCI_EVT_PROCESS_MSG(event);
+}
+
+static cfw_blelab_evt *blelab_back(
+    customCfwContext *ctx,
+    uint8_t back
+) {
+    if (
+        ctx == 0 ||
+        back >= ctx->blelab_count
+    ) {
+        return 0;
+    }
+
+    uint32_t idx =
+        (
+            (uint32_t)ctx->blelab_pos +
+            CFW_BLELAB_RING -
+            1u -
+            (uint32_t)back
+        ) %
+        CFW_BLELAB_RING;
+
+    return &ctx->blelab_ring[idx];
+}
+
+static uint32_t blelab_word(
+    const cfw_blelab_evt *e,
+    uint32_t off
+) {
+    uint32_t v = 0u;
+
+    if (e == 0)
+        return 0u;
+
+    for (uint32_t i = 0u; i < 4u; ++i) {
+        if (off + i < e->used) {
+            v |=
+                ((uint32_t)e->data[off + i]) <<
+                (i * 8u);
+        }
+    }
+
+    return v;
+}
+
+static int blelab_match(
+    const cfw_blelab_evt *e,
+    uint8_t type,
+    uint16_t key
+) {
+    if (e == 0)
+        return 0;
+
+    if (type == 1u) {
+        /* Command Status:
+         * evt,len,status,numPkts,opcodeLE16
+         */
+        if (
+            e->used < 6u ||
+            e->data[0] != 0x0fu
+        ) {
+            return 0;
+        }
+
+        uint16_t opcode =
+            (uint16_t)e->data[4] |
+            ((uint16_t)e->data[5] << 8);
+
+        return opcode == key;
+    }
+
+    if (type == 2u) {
+        /* Command Complete:
+         * evt,len,numPkts,opcodeLE16,...
+         */
+        if (
+            e->used < 5u ||
+            e->data[0] != 0x0eu
+        ) {
+            return 0;
+        }
+
+        uint16_t opcode =
+            (uint16_t)e->data[3] |
+            ((uint16_t)e->data[4] << 8);
+
+        return opcode == key;
+    }
+
+    if (type == 3u) {
+        /* LE Meta:
+         * evt,len,subevent,...
+         */
+        if (
+            e->used < 3u ||
+            e->data[0] != 0x3eu
+        ) {
+            return 0;
+        }
+
+        return e->data[2] == (uint8_t)key;
+    }
+
+    return 0;
+}
+
+static cfw_blelab_evt *blelab_find(
+    customCfwContext *ctx,
+    uint8_t type,
+    uint16_t key
+) {
+    if (ctx == 0)
+        return 0;
+
+    for (
+        uint8_t back = 0u;
+        back < ctx->blelab_count;
+        ++back
+    ) {
+        cfw_blelab_evt *e =
+            blelab_back(ctx, back);
+
+        if (blelab_match(e, type, key))
+            return e;
+    }
+
+    return 0;
+}
+
+static void blelab_ring_status(
+    customCfwContext *ctx
+) {
+    uint32_t a = 0u;
+
+    if (ctx != 0) {
+        a =
+            ((uint32_t)ctx->blelab_count) |
+            ((uint32_t)ctx->blelab_pos << 8) |
+            (
+                (ctx->blelab_capture_mask & 0xffu)
+                << 16
+            );
+    }
+
+    blelab_telem(
+        ctx,
+        3u,
+        a,
+        ctx != 0 ? ctx->blelab_seq : 0u,
+        0u
+    );
+}
+
+static void blelab_send_back(
+    customCfwContext *ctx,
+    uint8_t back,
+    uint8_t chunk
+) {
+    cfw_blelab_evt *e =
+        blelab_back(ctx, back);
+
+    uint32_t used =
+        e != 0 ? e->used : 0u;
+
+    uint32_t header =
+        ((uint32_t)back) |
+        ((uint32_t)(chunk & 0x0fu) << 8) |
+        ((used & 0x7fu) << 16);
+
+    uint32_t off =
+        (uint32_t)chunk * 8u;
+
+    blelab_telem(
+        ctx,
+        8u,
+        header,
+        e != 0 ? blelab_word(e, off) : 0u,
+        e != 0 ? blelab_word(e, off + 4u) : 0u
+    );
+}
+
+static void blelab_send_match(
+    customCfwContext *ctx,
+    uint8_t type,
+    uint16_t key,
+    uint8_t chunk
+) {
+    cfw_blelab_evt *e =
+        blelab_find(
+            ctx,
+            type,
+            key
+        );
+
+    uint32_t found =
+        e != 0 ? 1u : 0u;
+
+    uint32_t used =
+        e != 0 ? e->used : 0u;
+
+    uint32_t header =
+        ((uint32_t)key) |
+        ((uint32_t)(type & 7u) << 16) |
+        (found << 19) |
+        ((uint32_t)(chunk & 0x0fu) << 20) |
+        ((used & 0x7fu) << 24);
+
+    uint32_t off =
+        (uint32_t)chunk * 8u;
+
+    blelab_telem(
+        ctx,
+        4u,
+        header,
+        e != 0 ? blelab_word(e, off) : 0u,
+        e != 0 ? blelab_word(e, off + 4u) : 0u
+    );
+}
+
+static int blelab_hci_allowed(
+    uint16_t opcode,
+    uint16_t len
+) {
+    switch (opcode) {
+        case 0x1001u: return len == 0u;
+        case 0x1002u: return len == 0u;
+        case 0x1003u: return len == 0u;
+
+        case 0x1405u: return len == 2u;
+
+        case 0x2002u: return len == 0u;
+        case 0x2003u: return len == 0u;
+        case 0x2015u: return len == 2u;
+        case 0x2016u: return len == 2u;
+        case 0x201cu: return len == 0u;
+
+        case 0x2022u: return len == 6u;
+        case 0x202fu: return len == 0u;
+
+        case 0x2030u: return len == 2u;
+        case 0x2031u: return len == 3u;
+        case 0x2032u: return len == 7u;
+
+        /*
+         * BLE-lab v2 controller configuration/read-only vendor lane.
+         *
+         * FC78:
+         *   Ambiq external-controller runtime Link Layer feature
+         *   configuration. Exactly 8 feature bytes only.
+         *
+         * FD01 / FC20:
+         *   EM9305 read-at-address commands. Read-only; included now
+         *   so controller RAM/config can be inspected later without
+         *   another glasses flash.
+         *
+         * No vendor write/erase/reset command is exposed.
+         */
+        case 0xfc78u: return len == 8u;
+        case 0xfd01u: return len == 5u;
+
+        /*
+         * BLE-lab v3 feature-control lane.
+         *
+         * FFF2 = Packetcraft Set Local Feature, exactly 8 bytes.
+         *
+         * FD03 = EM9305 Write At Address. Although the opcode is
+         * admitted here, blelab_send_hci() below additionally
+         * restricts it to one byte at 0x00805A95 and permits
+         * only 0x7C <-> 0x7D.
+         */
+        case 0xfff2u: return len == 8u;
+        case 0xfd03u: return len == 5u;
+        case 0xfc20u: return len == 5u;
+
+        default:
+            return 0;
+    }
+}
+
+static int blelab_send_hci(
+    uint16_t opcode,
+    const uint8_t *params,
+    uint16_t len
+) {
+    if (!blelab_hci_allowed(opcode, len))
+        return -3;
+
+    if (len > 16u)
+        return -4;
+
+    /*
+     * FD03 is intentionally NOT a general RAM-write lane.
+     *
+     * Only:
+     *   address 0x00805A95
+     *   data    0x7C or 0x7D
+     *
+     * is permitted.
+     */
+    if (opcode == 0xfd03u) {
+        if (params == 0 || len != 5u)
+            return -5;
+
+        if (params[0] != 0x95u ||
+            params[1] != 0x5au ||
+            params[2] != 0x80u ||
+            params[3] != 0x00u)
+            return -6;
+
+        if (params[4] != 0x7cu &&
+            params[4] != 0x7du)
+            return -7;
+    }
+
+    uint8_t *p =
+        FW_HCI_CMD_ALLOC(
+            opcode,
+            len
+        );
+
+    if (p == 0)
+        return -2;
+
+    for (uint16_t i = 0u; i < len; ++i)
+        p[3u + i] = params[i];
+
+    FW_HCI_CMD_SEND(p);
+
+    return 0;
+}
+
+static void blelab_conn_snapshot(
+    customCfwContext *ctx
+) {
+    uint8_t conn_id =
+        blelab_live_conn_id();
+
+    if (conn_id == 0u) {
+        blelab_telem(
+            ctx,
+            2u,
+            0u,
+            0u,
+            0u
+        );
+        return;
+    }
+
+    blelab_dm_conn_ccb *ccb =
+        (blelab_dm_conn_ccb *)
+        FW_DM_CONN_CCB_BY_ID(conn_id);
+
+    if (ccb == 0) {
+        blelab_telem(
+            ctx,
+            2u,
+            conn_id,
+            0u,
+            0u
+        );
+        return;
+    }
+
+    uint32_t a =
+        ((uint32_t)conn_id) |
+        ((uint32_t)ccb->role << 8) |
+        ((uint32_t)ccb->state << 16) |
+        ((uint32_t)ccb->inUse << 24);
+
+    uint32_t b0 =
+        ((uint32_t)ccb->handle) |
+        ((uint32_t)ccb->peerAddrType << 16) |
+        ((uint32_t)ccb->featuresPresent << 24);
+
+    blelab_telem(
+        ctx,
+        2u,
+        a,
+        b0,
+        ccb->features
+    );
+}
+
+static int blelab_request_phy(
+    customCfwContext *ctx,
+    uint8_t all_phys,
+    uint8_t tx_phys,
+    uint8_t rx_phys,
+    uint16_t options
+) {
+    uint8_t conn_id =
+        blelab_live_conn_id();
+
+    uint32_t a =
+        ((uint32_t)conn_id) |
+        ((uint32_t)all_phys << 8) |
+        ((uint32_t)tx_phys << 16) |
+        ((uint32_t)rx_phys << 24);
+
+    if (conn_id == 0u) {
+        blelab_telem(
+            ctx,
+            5u,
+            a,
+            options,
+            0xffffffffu
+        );
+        return -1;
+    }
+
+    FW_DM_SET_PHY(
+        conn_id,
+        all_phys,
+        tx_phys,
+        rx_phys,
+        options
+    );
+
+    blelab_telem(
+        ctx,
+        5u,
+        a,
+        options,
+        0u
+    );
+
+    return 0;
+}
+
+static int blelab_remote_features(
+    customCfwContext *ctx
+) {
+    uint8_t conn_id =
+        blelab_live_conn_id();
+
+    if (conn_id == 0u) {
+        blelab_telem(
+            ctx,
+            6u,
+            0u,
+            0u,
+            0xffffffffu
+        );
+        return -1;
+    }
+
+    FW_DM_READ_REMOTE_FEATURES(conn_id);
+
+    blelab_telem(
+        ctx,
+        6u,
+        conn_id,
+        0u,
+        0u
+    );
+
+    return 0;
+}
+
+static int blelab_set_data_len(
+    customCfwContext *ctx,
+    uint16_t tx_octets,
+    uint16_t tx_time
+) {
+    uint8_t conn_id =
+        blelab_live_conn_id();
+
+    uint32_t data =
+        ((uint32_t)tx_octets) |
+        ((uint32_t)tx_time << 16);
+
+    if (conn_id == 0u) {
+        blelab_telem(
+            ctx,
+            7u,
+            0u,
+            data,
+            0xffffffffu
+        );
+        return -1;
+    }
+
+    FW_DM_CONN_SET_DATA_LEN(
+        conn_id,
+        tx_octets,
+        tx_time
+    );
+
+    blelab_telem(
+        ctx,
+        7u,
+        conn_id,
+        data,
+        0u
+    );
+
+    return 0;
+}
+
+
+/*
+ * Transparent Cordio PHY-result tap.
+ *
+ * dmPhyFcnIf routes internal HCI callback event 43 here.
+ * The Packetcraft r20 event layout is:
+ *   +0 uint16 hdr.param
+ *   +2 uint8  hdr.event
+ *   +3 uint8  hdr.status
+ *   +4 uint8  lePhyUpdate.status
+ *   +5 padding
+ *   +6 uint16 lePhyUpdate.handle
+ *   +8 uint8  lePhyUpdate.txPhy
+ *   +9 uint8  lePhyUpdate.rxPhy
+ *
+ * We only observe event 43, store its exact result, then tail into
+ * the original stock dmPhyHciHandler so normal Cordio behavior is
+ * unchanged.
+ */
+void faceclaw_dm_phy_hci_handler(void *event_) {
+    const uint8_t *p = (const uint8_t *)event_;
+    customCfwContext *ctx = peekCustomCfwContext();
+
+    if (p != 0 && p[2] == 43u && ctx != 0) {
+        uint32_t detail =
+            ((uint32_t)p[4]) |
+            ((uint32_t)p[8] << 8) |
+            ((uint32_t)p[9] << 16) |
+            ((uint32_t)p[3] << 24);
+
+        /*
+         * stage 490 = LE PHY Update Complete observed.
+         * detail bytes:
+         *   [7:0]   controller status
+         *   [15:8]  txPhy
+         *   [23:16] rxPhy
+         *   [31:24] Cordio header status
+         */
+        ctx->h264_dispatch_stage = 490u;
+        ctx->h264_dispatch_detail = detail;
+        ctx->h264_last_result = G2_H264_ERROR;
+    }
+
+    FW_DM_PHY_HCI_HANDLER(event_);
+}
 /* Count service-0xE0 image ingress while preserving the stock call. V9 no
  * longer emits a diagnostic notification for every message: those packets
  * competed with video data and decoder completions on the BLE transport. */
@@ -1679,6 +2485,241 @@ static int image_dispatch(uint8_t *state, const uint8_t *src, uint32_t srclen,
             return 0;
         }
 
+        /* Faceclaw PHY diagnostic.
+         * [11][12] asks the G2 Cordio host itself to request LE 2M.
+         *
+         * Fail closed: because this command arrived from the phone,
+         * exactly one active Cordio connection means that connection
+         * is necessarily the phone link. If there is more than one
+         * live Cordio connection, touch none of them.
+         *
+         * LE PHY masks: 0x01=1M, 0x02=2M, 0x04=Coded.
+         */
+        if (sub == 12) {
+            uint8_t live = FW_DM_CONN_NUM();
+            uint8_t conn_id = 0u;
+
+            if (live == 1u) {
+                for (uint8_t id = 1u; id <= 3u; ++id) {
+                    if (FW_DM_CONN_IN_USE(id)) {
+                        conn_id = id;
+                        break;
+                    }
+                }
+
+                if (conn_id != 0u) {
+                    FW_DM_SET_PHY(
+                        conn_id,
+                        0u,
+                        0x02u,
+                        0x02u,
+                        0u
+                    );
+                }
+            }
+
+            /* Reuse raw diagnostic telemetry so Faceclaw can prove
+             * whether the request was actually issued.
+             * diag stage 480..483 = active connection count.
+             * detail = selected connection ID, or 0 if none.
+             */
+            ctx->h264_dispatch_stage =
+                480u + (uint32_t)live;
+            ctx->h264_dispatch_detail =
+                (uint32_t)conn_id;
+            ctx->h264_last_result =
+                G2_H264_ERROR;
+            h264_send_telemetry(ctx);
+
+            return (live == 1u && conn_id != 0u)
+                ? 0
+                : -1;
+        }
+        /*
+         * [11][13] returns the asynchronous result of the preceding
+         * G2-originated PHY request.
+         *
+         * stage 490 = LE PHY Update Complete was observed.
+         * stage 491 = no LE PHY Update Complete was observed before query.
+         */
+        if (sub == 13) {
+            if (ctx->h264_dispatch_stage != 490u) {
+                ctx->h264_dispatch_stage = 491u;
+                ctx->h264_dispatch_detail = 0u;
+                ctx->h264_last_result = G2_H264_ERROR;
+            }
+
+            h264_send_telemetry(ctx);
+            return 0;
+        }
+
+        /* ====================================================
+         * Persistent BLE/HCI laboratory.
+         *
+         * [11][20] clear HCI ring
+         * [11][21] connection snapshot
+         * [11][22][all][tx][rx][options16] request PHY
+         * [11][23] DmReadRemoteFeatures
+         * [11][24][opcode16][len][params...] raw whitelisted HCI
+         * [11][25] ring status
+         * [11][26][back][chunk] raw event
+         * [11][27][mask] capture mask
+         * [11][28][octets16][time16] data length
+         * [11][29][type][key16][chunk] find event
+         *
+         * type:
+         *   1 Command Status by opcode
+         *   2 Command Complete by opcode
+         *   3 LE Meta by subevent
+         * ==================================================== */
+
+        if (sub == 20) {
+            blelab_clear(ctx);
+            blelab_ring_status(ctx);
+            return 0;
+        }
+
+        if (sub == 21) {
+            blelab_conn_snapshot(ctx);
+            return 0;
+        }
+
+        if (sub == 22) {
+            if (srclen < 7u)
+                return -1;
+
+            uint16_t options =
+                (uint16_t)src[5] |
+                ((uint16_t)src[6] << 8);
+
+            return blelab_request_phy(
+                ctx,
+                src[2],
+                src[3],
+                src[4],
+                options
+            );
+        }
+
+        if (sub == 23)
+            return blelab_remote_features(ctx);
+
+        if (sub == 24) {
+            if (srclen < 5u)
+                return -1;
+
+            uint16_t opcode =
+                (uint16_t)src[2] |
+                ((uint16_t)src[3] << 8);
+
+            uint16_t plen = src[4];
+
+            if (
+                plen > 16u ||
+                srclen < 5u + plen
+            ) {
+                return -1;
+            }
+
+            int r =
+                blelab_send_hci(
+                    opcode,
+                    src + 5,
+                    plen
+                );
+
+            uint32_t a =
+                ((uint32_t)opcode) |
+                ((uint32_t)plen << 16) |
+                (
+                    (uint32_t)((uint8_t)r)
+                    << 24
+                );
+
+            blelab_telem(
+                ctx,
+                1u,
+                a,
+                0u,
+                0u
+            );
+
+            return r;
+        }
+
+        if (sub == 25) {
+            blelab_ring_status(ctx);
+            return 0;
+        }
+
+        if (sub == 26) {
+            if (srclen < 4u)
+                return -1;
+
+            blelab_send_back(
+                ctx,
+                src[2],
+                src[3]
+            );
+
+            return 0;
+        }
+
+        if (sub == 27) {
+            if (srclen < 3u)
+                return -1;
+
+            ctx->blelab_capture_mask =
+                (uint32_t)(src[2] & 0x1fu);
+
+            blelab_telem(
+                ctx,
+                9u,
+                ctx->blelab_capture_mask,
+                0u,
+                0u
+            );
+
+            return 0;
+        }
+
+        if (sub == 28) {
+            if (srclen < 6u)
+                return -1;
+
+            uint16_t tx_octets =
+                (uint16_t)src[2] |
+                ((uint16_t)src[3] << 8);
+
+            uint16_t tx_time =
+                (uint16_t)src[4] |
+                ((uint16_t)src[5] << 8);
+
+            return blelab_set_data_len(
+                ctx,
+                tx_octets,
+                tx_time
+            );
+        }
+
+        if (sub == 29) {
+            if (srclen < 6u)
+                return -1;
+
+            uint16_t key =
+                (uint16_t)src[3] |
+                ((uint16_t)src[4] << 8);
+
+            blelab_send_match(
+                ctx,
+                src[2],
+                key,
+                src[5]
+            );
+
+            return 0;
+        }
+
         /* Product playback controls.
          * [11][11][paused][selection][position_ms32][duration_ms32]
          * selection: 0=PLAY, 1=-10, 2=+10, 3=-30, 4=+30. */
@@ -2133,6 +3174,7 @@ static customCfwContext *getCustomCfwContext(void) {
         ctx->diag_hide = 1;    /* overlay off by default; mode 7 sub 2 turns it on */
         ctx->h264_start_result = -1;
         ctx->h264_last_result = G2_H264_NEED_MORE_DATA;
+        ctx->blelab_capture_mask = 0x0fu;
         for (uint32_t i = 0; i < CFW_FID_RING; i++) ctx->recent_fids[i] = 0xffff;  /* sentinel */
     }
     *(customCfwContext **)CFW_CTX_SLOT = ctx;      /* 0 on OOM: retried next message */
