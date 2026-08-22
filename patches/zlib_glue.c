@@ -176,6 +176,10 @@ typedef void (*dm_set_phy_fn)(
 
 typedef void (*dm_phy_hci_handler_fn)(void *event);
 typedef void (*hci_evt_process_msg_fn)(uint8_t *event);
+
+/* Stock inbound HCI ACL -> L2CAP reassembly path at 0x0052a962. */
+typedef void *(*hci_acl_rx_fn)(uint8_t *packet);
+
 typedef uint8_t *(*hci_cmd_alloc_fn)(
     uint16_t opcode,
     uint16_t len
@@ -243,6 +247,7 @@ typedef void (*dm_conn_set_data_len_fn)(
 
 #define FW_DM_PHY_HCI_HANDLER ((dm_phy_hci_handler_fn)0x004c5735U) /* stock dmPhyHciHandler */
 #define FW_HCI_EVT_PROCESS_MSG ((hci_evt_process_msg_fn)0x0056b391U)
+#define FW_HCI_ACL_RX ((hci_acl_rx_fn)0x0052a963U) /* stock 0x52a962, Thumb */
 #define FW_HCI_CMD_ALLOC ((hci_cmd_alloc_fn)0x0052ae39U)
 #define FW_HCI_CMD_SEND ((hci_cmd_send_fn)0x0052ae5fU)
 #define FW_DM_READ_REMOTE_FEATURES ((dm_read_remote_features_fn)0x004b6cb1U)
@@ -547,7 +552,52 @@ uint32_t h264_deferred_count;
     uint32_t h264_b6_trace_pending;
     uint32_t h264_b6_trace_ready;
 
+    /*
+     * RX1 lower-ingress cadence localization.
+     *
+     * Raw inbound HCI ACL packets are observed before stock
+     * 0x52a962 performs ACL/L2CAP reassembly.
+     */
+    uint32_t h264_rx_first_acl_cycles;
+    uint32_t h264_rx_last_acl_cycles;
+    uint32_t h264_rx_prev_e0_cycles;
+    uint32_t h264_rx_e0_to_first_us;
+    uint32_t h264_rx_acl_count;
+    uint32_t h264_rx_prev_e0_valid;
+
     uint32_t h264_fast_conn_requested;
+
+    /*
+     * H264_CADENCE_DIAG_V1
+     *
+     * Millisecond-resolution stage cadence only.  Reading FW_MS_TICK
+     * adds no BLE traffic and avoids running a DWT calibration/timer at
+     * every checkpoint.
+     *
+     * The service-E0 timestamp is a candidate until cfw_snapshot()
+     * confirms that the synchronous ingress completed a sequenced H264
+     * message.  This makes S0 the service entry for the FINAL fragment
+     * of a multi-fragment message rather than every partial fragment.
+     */
+    uint32_t h264_cadence_e0_candidate_tick;
+
+    uint32_t h264_cadence_prev_e0_tick;
+    uint32_t h264_cadence_prev_snapshot_tick;
+    uint32_t h264_cadence_prev_op3_tick;
+    uint32_t h264_cadence_prev_deferred_tick;
+    uint32_t h264_cadence_prev_decode_tick;
+    uint32_t h264_cadence_prev_present_tick;
+
+    uint32_t h264_cadence_e0_gap_ms;
+    uint32_t h264_cadence_snapshot_gap_ms;
+    uint32_t h264_cadence_op3_gap_ms;
+    uint32_t h264_cadence_deferred_gap_ms;
+    uint32_t h264_cadence_decode_gap_ms;
+    uint32_t h264_cadence_present_gap_ms;
+
+    uint32_t h264_cadence_snapshot_count;
+    uint32_t h264_cadence_op3_count;
+    uint32_t h264_cadence_deferred_count;
 
     /* Persistent BLE/HCI laboratory state. */
     uint32_t blelab_seq;
@@ -730,6 +780,27 @@ static void h264_display_finish(cfw_rectlist *rl) {
     if (rl == 0 || !rl->direct_submitted) FW_DISPLAY_SIGNAL();
 }
 
+/*
+ * H264_CADENCE_DIAG_V1 helper.
+ *
+ * FW_MS_TICK is uint32 and subtraction deliberately uses wrap-safe
+ * unsigned arithmetic.  A zero previous timestamp means "first sample".
+ */
+static uint32_t h264_cadence_gap_ms(
+    uint32_t now,
+    uint32_t *previous
+) {
+    uint32_t old = *previous;
+    *previous = now;
+    return old != 0u ? now - old : 0u;
+}
+
+static uint32_t h264_cadence_u16(
+    uint32_t value
+) {
+    return value > 0xfffeu ? 0xfffeu : value;
+}
+
 /* Compact private protobuf notification on sid 0x11. The stock notification
  * path is master/right-only, so Android treats this as decoder authority.
  * field 100 bytes payload:
@@ -800,17 +871,32 @@ static void h264_send_telemetry(customCfwContext *ctx) {
      * packs paced callbacks scheduled/fired (16 bits each), diag[1] packs
      * late callbacks/max lateness ms, and diag[2]/diag[3] report the latest
      * display-gate wait and framebuffer conversion/flush time in us. */
-    uint32_t pace_counts =
-        (ctx->h264_pace_scheduled_count & 0xffffu) |
-        ((ctx->h264_pace_fired_count & 0xffffu) << 16);
-    uint32_t pace_late =
-        (ctx->h264_pace_late_count & 0xffffu) |
-        ((ctx->h264_pace_max_late_ms & 0xffffu) << 16);
+    /* H264_CADENCE_DIAG_V1: packed stage-to-stage cadence.
+     * This REUSES the four existing diagnostic words.  Packet length and
+     * notification frequency are unchanged. */
+    uint32_t cadence_s0_s1 =
+        h264_cadence_u16(ctx->h264_cadence_e0_gap_ms) |
+        (h264_cadence_u16(ctx->h264_cadence_snapshot_gap_ms) << 16);
+
+    uint32_t cadence_s2_s3 =
+        h264_cadence_u16(ctx->h264_cadence_op3_gap_ms) |
+        (h264_cadence_u16(ctx->h264_cadence_deferred_gap_ms) << 16);
+
+    uint32_t cadence_s4_s5 =
+        h264_cadence_u16(ctx->h264_cadence_decode_gap_ms) |
+        (h264_cadence_u16(ctx->h264_cadence_present_gap_ms) << 16);
+
+    uint32_t cadence_counts =
+        0xca000000u |
+        (ctx->h264_cadence_snapshot_count & 0xffu) |
+        ((ctx->h264_cadence_op3_count & 0xffu) << 8) |
+        ((ctx->h264_cadence_deferred_count & 0xffu) << 16);
+
     uint32_t diag[4] = {
-        arena_failure ? arena0 : pace_counts,
-        arena_failure ? arena1 : pace_late,
-        arena_failure ? ctx->h264_dispatch_stage : ctx->h264_last_gate_wait_us,
-        arena_failure ? ctx->h264_dispatch_detail : ctx->last_present_us
+        arena_failure ? arena0 : cadence_s0_s1,
+        arena_failure ? arena1 : cadence_s2_s3,
+        arena_failure ? ctx->h264_dispatch_stage : cadence_s4_s5,
+        arena_failure ? ctx->h264_dispatch_detail : cadence_counts
     };
 
     /* B6 seq63 deep ACK transmit telemetry.
@@ -1075,6 +1161,140 @@ void faceclaw_hci_evt_tap(
 ) {
     blelab_capture_hci(event);
     FW_HCI_EVT_PROCESS_MSG(event);
+}
+
+
+/*
+ * RX1 transparent inbound ACL timing hook.
+ *
+ * Stock H4 dispatcher:
+ *
+ *   type 0x02
+ *       -> call site 0x530d08
+ *       -> stock 0x52a962
+ *
+ * Only Faceclaw ATT Write Command packets to value handle
+ * 0x0842 are timestamped. Packet contents and stock return
+ * value remain unchanged.
+ */
+void *faceclaw_hci_acl_rx_probe(uint8_t *packet) {
+    customCfwContext *ctx = peekCustomCfwContext();
+    int rx2_match = 0;
+
+    if (
+        ctx != 0 &&
+        ctx->h264_active &&
+        packet != 0
+    ) {
+        uint32_t handle_pb =
+            (uint32_t)packet[0] |
+            ((uint32_t)packet[1] << 8);
+
+        uint32_t pb =
+            handle_pb & 0x3000u;
+
+        uint32_t acl_len =
+            (uint32_t)packet[2] |
+            ((uint32_t)packet[3] << 8);
+
+        if (
+            pb == 0x2000u &&
+            acl_len >= 7u &&
+            packet[6] == 0x04u &&
+            packet[7] == 0x00u &&
+            packet[8] == 0x52u &&
+            packet[9] == 0x42u &&
+            packet[10] == 0x08u
+        ) {
+            rx2_match = 1;
+        }
+    }
+
+    if (!rx2_match) {
+        return FW_HCI_ACL_RX(packet);
+    }
+
+    /*
+     * RX2 reuses the six RX1 storage words.
+     *
+     * first_acl_cycles = previous stock-return timer
+     * last_acl_cycles  = previous stock duration
+     * prev_e0_cycles   = D accumulator
+     * e0_to_first_us   = E accumulator
+     * acl_count        = matching packet count
+     * prev_e0_valid    = train epoch
+     */
+
+    uint32_t epoch =
+        ctx->h264_rx_prev_e0_valid;
+
+    /*
+     * Close previous matching-packet transition.
+     *
+     * D = previous packet's execution inside stock 0x52A962.
+     * E = previous stock return -> current matching ACL entry.
+     *
+     * Across the packet train:
+     *
+     *     sum(D + E)
+     *
+     * reconstructs RX1 B:
+     *
+     *     first ACL entry -> last ACL entry
+     */
+
+    if (
+        ctx->h264_rx_acl_count != 0u
+    ) {
+        ctx->h264_rx_prev_e0_cycles +=
+            ctx->h264_rx_last_acl_cycles;
+
+        ctx->h264_rx_e0_to_first_us +=
+            cfw_time_end(
+                &ctx->h264_rx_first_acl_cycles
+            );
+    }
+
+    ctx->h264_rx_acl_count++;
+
+    uint32_t stock_cycles;
+
+    cfw_time_start(
+        &stock_cycles
+    );
+
+    void *result =
+        FW_HCI_ACL_RX(
+            packet
+        );
+
+    uint32_t stock_us =
+        cfw_time_end(
+            &stock_cycles
+        );
+
+    ctx =
+        peekCustomCfwContext();
+
+    /*
+     * If service-E0 ended the train while processing this
+     * packet, its epoch changed. Do not repopulate stale state.
+     */
+
+    if (
+        ctx != 0 &&
+        ctx->h264_active &&
+        ctx->h264_rx_prev_e0_valid == epoch
+    ) {
+        ctx->h264_rx_last_acl_cycles =
+            stock_us;
+
+        cfw_time_start(
+            &ctx->h264_rx_first_acl_cycles
+        );
+    }
+
+    return result;
 }
 
 static cfw_blelab_evt *blelab_back(
@@ -1626,7 +1846,67 @@ int image_ingress_probe(void *buf, uint32_t len) {
     typedef int (*image_ingress_fn)(void *, uint32_t);
 
     customCfwContext *ctx = peekCustomCfwContext();
-    int bulk_candidate =
+
+    /*
+     * RX2 freeze:
+     *
+     * diag0 = "RX2" | packet count
+     * diag1 = D
+     * diag2 = E
+     * diag3 = D + E = reconstructed RX1 B
+     */
+
+    if (
+        ctx != 0 &&
+        ctx->h264_active &&
+        ctx->h264_rx_acl_count >= 2u
+    ) {
+        uint32_t d_us =
+            ctx->h264_rx_prev_e0_cycles;
+
+        uint32_t e_us =
+            ctx->h264_rx_e0_to_first_us;
+
+        ctx->blelab_telem[0] =
+            0x52583200u |
+            (ctx->h264_rx_acl_count & 0xffu);
+
+        ctx->blelab_telem[1] =
+            d_us;
+
+        ctx->blelab_telem[2] =
+            e_us;
+
+        ctx->blelab_telem[3] =
+            d_us + e_us;
+
+        ctx->blelab_telem_valid =
+            1u;
+    }
+
+    if (ctx != 0) {
+        /*
+         * Advance epoch before clearing the completed train.
+         */
+        ctx->h264_rx_prev_e0_valid++;
+
+        ctx->h264_rx_acl_count =
+            0u;
+
+        ctx->h264_rx_last_acl_cycles =
+            0u;
+
+        ctx->h264_rx_prev_e0_cycles =
+            0u;
+
+        ctx->h264_rx_e0_to_first_us =
+            0u;
+
+        ctx->h264_rx_first_acl_cycles =
+            0u;
+    }
+
+int bulk_candidate =
         ctx != 0 &&
         ctx->h264_active &&
         ctx->h264_timing_sequence != 63u;
@@ -2004,6 +2284,14 @@ static int h264_start(uint8_t *state, customCfwContext *ctx, uint32_t stream_id)
     ctx->h264_last_result = G2_H264_NEED_MORE_DATA;
     ctx->h264_start_result = 0;
     ctx->h264_fast_conn_requested = 0u;
+
+    ctx->h264_rx_first_acl_cycles = 0u;
+    ctx->h264_rx_last_acl_cycles = 0u;
+    ctx->h264_rx_prev_e0_cycles = 0u;
+    ctx->h264_rx_e0_to_first_us = 0xffffffffu;
+    ctx->h264_rx_acl_count = 0u;
+    ctx->h264_rx_prev_e0_valid = 0u;
+
     ctx->h264_active = 1;
     return 0;
 }
@@ -2402,6 +2690,14 @@ static int image_dispatch(uint8_t *state, const uint8_t *src, uint32_t srclen,
             if (r != G2_H264_ERROR) {
                 if (nal_type == 7u) ctx->h264_sps_ok = 1;
                 if (nal_type == 8u) ctx->h264_pps_ok = 1;
+                if (nal_type == 1u || nal_type == 5u) {
+                    ctx->h264_cadence_decode_gap_ms =
+                        h264_cadence_gap_ms(
+                            FW_MS_TICK,
+                            &ctx->h264_cadence_prev_decode_tick
+                        );
+                }
+
                 ctx->h264_decoded_seq = sequence;
                 ctx->h264_expected_seq = sequence + 1u;
                 ctx->h264_sequence_error = 0;
@@ -3879,6 +4175,13 @@ void h264_bridge_op3_probe(void *e0_obj, void *payload, uint32_t len) {
     customCfwContext *ctx = peekCustomCfwContext();
     if (ctx && ctx->h264_active) {
         ctx->h264_bridge_op3_calls++;
+
+        ctx->h264_cadence_op3_gap_ms =
+            h264_cadence_gap_ms(
+                FW_MS_TICK,
+                &ctx->h264_cadence_prev_op3_tick
+            );
+        ctx->h264_cadence_op3_count++;
         if (ctx->h264_timing_sequence == 63u &&
             ctx->h264_timing_op3_us == 0xffffffffu)
             ctx->h264_timing_op3_us =
@@ -4408,8 +4711,15 @@ void display_copy_hook(void) {
         FW_FLUSH(desc);
         ctx->direct_active = 1;
         if (completed_full_refresh) ctx->h264_background_ready = 1;
-        if (presented_h264_seq != 0)
+        if (presented_h264_seq != 0) {
+            ctx->h264_cadence_present_gap_ms =
+                h264_cadence_gap_ms(
+                    FW_MS_TICK,
+                    &ctx->h264_cadence_prev_present_tick
+                );
+
             ctx->h264_presented_seq = presented_h264_seq;
+        }
     } else {
         ctx->h264_background_ready = 0;
         ctx->direct_active = 0;
@@ -4845,6 +5155,43 @@ int cfw_snapshot(uint8_t *state, uint32_t container_id) {
             }
 
             if (is_h264_sequence) {
+            /* H264_CADENCE_DIAG_V1: S0/S1. */
+            if (h264_sequence == 1u) {
+                ctx->h264_cadence_prev_e0_tick = 0u;
+                ctx->h264_cadence_prev_snapshot_tick = 0u;
+                ctx->h264_cadence_prev_op3_tick = 0u;
+                ctx->h264_cadence_prev_deferred_tick = 0u;
+                ctx->h264_cadence_prev_decode_tick = 0u;
+                ctx->h264_cadence_prev_present_tick = 0u;
+
+                ctx->h264_cadence_e0_gap_ms = 0u;
+                ctx->h264_cadence_snapshot_gap_ms = 0u;
+                ctx->h264_cadence_op3_gap_ms = 0u;
+                ctx->h264_cadence_deferred_gap_ms = 0u;
+                ctx->h264_cadence_decode_gap_ms = 0u;
+                ctx->h264_cadence_present_gap_ms = 0u;
+
+                ctx->h264_cadence_snapshot_count = 0u;
+                ctx->h264_cadence_op3_count = 0u;
+                ctx->h264_cadence_deferred_count = 0u;
+            }
+
+            if (ctx->h264_cadence_e0_candidate_tick != 0u) {
+                ctx->h264_cadence_e0_gap_ms =
+                    h264_cadence_gap_ms(
+                        ctx->h264_cadence_e0_candidate_tick,
+                        &ctx->h264_cadence_prev_e0_tick
+                    );
+            }
+
+            ctx->h264_cadence_snapshot_gap_ms =
+                h264_cadence_gap_ms(
+                    FW_MS_TICK,
+                    &ctx->h264_cadence_prev_snapshot_tick
+                );
+
+            ctx->h264_cadence_snapshot_count++;
+
             ctx->h264_snapshot_count++;
             ctx->h264_queue_full = 0;
             ctx->h264_dispatch_stage = 0u;
@@ -4987,6 +5334,15 @@ int image_deferred(uint8_t *state, uint8_t *src, uint32_t len) {
         uint8_t pool_slot = ctx->snaps[slot].h264_pool_slot;
         uint8_t was_h264_sequence = ctx->snaps[slot].is_h264_sequence;
         uint32_t h264_sequence = ctx->snaps[slot].h264_sequence;
+        if (was_h264_sequence) {
+            ctx->h264_cadence_deferred_gap_ms =
+                h264_cadence_gap_ms(
+                    FW_MS_TICK,
+                    &ctx->h264_cadence_prev_deferred_tick
+                );
+            ctx->h264_cadence_deferred_count++;
+        }
+
         if (was_h264_sequence &&
             h264_sequence == ctx->h264_timing_sequence &&
             ctx->h264_timing_deferred_us == 0xffffffffu)

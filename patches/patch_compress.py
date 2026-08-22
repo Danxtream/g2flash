@@ -183,6 +183,8 @@ H264_ACK_LOWER_SEND_BL_SITE = (
     "44 f0 21 f9",  # bl 0x4b9640
 )
 
+# RX1: raw inbound HCI ACL -> stock L2CAP reassembly.
+HCI_ACL_RX_BL_SITE = (0x530d08, "f9 f7 2b fe")  # bl 0x52a962
 # B6: deep outbound SID-0xE0 ACK transport path. Each site is an
 # existing four-byte Thumb BL and was resolved from stock disassembly.
 H264_B6_GATT_NOTIFY_BL_SITE = (0x4bdf18, "75 f0 de ff")     # bl 0x533ed8
@@ -321,6 +323,7 @@ def layout(img):
     bulk_copy_addr = base + _fn(built, "h264_bulk_copy_probe")["offset"]
     phy_hci_wrapper_addr = base + _fn(built, "faceclaw_dm_phy_hci_handler")["offset"]
     hci_evt_tap_addr = base + _fn(built, "faceclaw_hci_evt_tap")["offset"]
+    hci_acl_rx_addr = base + _fn(built, "faceclaw_hci_acl_rx_probe")["offset"]
 
     ack_notify_addr = base + _fn(built, "h264_ack_notify_probe")["offset"]
     ack_queue_put_addr = base + _fn(built, "h264_ack_queue_put_probe")["offset"]
@@ -369,6 +372,12 @@ def layout(img):
     # --- in-place live-code edits + bl retargets (targets are the appended addrs) ---
 
     in_place = [
+        (
+            g2f(HCI_ACL_RX_BL_SITE[0]),
+            HCI_ACL_RX_BL_SITE[1],
+            enc_bl(HCI_ACL_RX_BL_SITE[0], hci_acl_rx_addr),
+            "RX2: split 0x0842 ACL stock-processing vs inter-delivery wait"
+        ),
         (
             g2f(0x00530CCE),
             "3a f0 5f fb",
