@@ -323,7 +323,7 @@ def layout(img):
     bulk_copy_addr = base + _fn(built, "h264_bulk_copy_probe")["offset"]
     phy_hci_wrapper_addr = base + _fn(built, "faceclaw_dm_phy_hci_handler")["offset"]
     hci_evt_tap_addr = base + _fn(built, "faceclaw_hci_evt_tap")["offset"]
-    hci_acl_rx_addr = base + _fn(built, "faceclaw_hci_acl_rx_probe")["offset"]
+    h4_dequeue_addr = base + _fn(built, "faceclaw_h4_dequeue_probe")["offset"]
 
     ack_notify_addr = base + _fn(built, "h264_ack_notify_probe")["offset"]
     ack_queue_put_addr = base + _fn(built, "h264_ack_queue_put_probe")["offset"]
@@ -373,10 +373,10 @@ def layout(img):
 
     in_place = [
         (
-            g2f(HCI_ACL_RX_BL_SITE[0]),
-            HCI_ACL_RX_BL_SITE[1],
-            enc_bl(HCI_ACL_RX_BL_SITE[0], hci_acl_rx_addr),
-            "RX2: split 0x0842 ACL stock-processing vs inter-delivery wait"
+            g2f(0x00530CEC),
+            "8e f7 7e fe",
+            enc_bl(0x00530CEC, h4_dequeue_addr),
+            "RX4: split RX3 G into packet-work vs queue-empty idle/reentry"
         ),
         (
             g2f(0x00530CCE),

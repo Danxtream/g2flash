@@ -1177,124 +1177,217 @@ void faceclaw_hci_evt_tap(
  * 0x0842 are timestamped. Packet contents and stock return
  * value remain unchanged.
  */
-void *faceclaw_hci_acl_rx_probe(uint8_t *packet) {
-    customCfwContext *ctx = peekCustomCfwContext();
-    int rx2_match = 0;
+void *faceclaw_h4_dequeue_probe(void *queue, uint8_t *type_out) {
+    typedef void *(*rx4_h4_dequeue_fn)(
+        void *queue_arg,
+        uint8_t *type_out_arg
+    );
 
+    /*
+     * RX4 reuses the existing RX3 0x530CEC hook.
+     *
+     * RX3 proved that the long first->last 0x0842 interval lives
+     * OUTSIDE stock 0x4BF9EC rather than inside the dequeue body.
+     *
+     * The stock caller gives us a stronger split without another
+     * live-code hook:
+     *
+     *   dequeue returns NULL
+     *       -> 0x530CF4 branches straight to 0x530CC4 function exit
+     *
+     *   dequeue returns NON-NULL
+     *       -> packet is dispatched/processed
+     *       -> all continuing paths loop to 0x530CE6
+     *       -> next dequeue at 0x530CEC
+     *
+     * Therefore every outside-dequeue slice is classified by the
+     * PREVIOUS dequeue return:
+     *
+     *   h264_rx_prev_e0_cycles = G_WORK
+     *       previous dequeue was NON-NULL
+     *
+     *   h264_rx_e0_to_first_us = G_IDLE
+     *       previous dequeue was NULL
+     *
+     * h264_rx_first_acl_cycles remains the timer anchor.
+     *
+     * Bit 31 of h264_rx_acl_count is used only as the transient
+     * previous-return-was-NULL flag.  Low 31 bits remain the
+     * matching-0x0842 packet count.
+     */
+    const uint32_t RX4_IDLE_FLAG =
+        0x80000000u;
+
+    const uint32_t RX4_COUNT_MASK =
+        0x7fffffffu;
+
+    rx4_h4_dequeue_fn fw_h4_dequeue =
+        (rx4_h4_dequeue_fn)0x004bf9edU;
+
+    customCfwContext *ctx =
+        peekCustomCfwContext();
+
+    int was_active = 0;
+
+    /*
+     * End the outside-dequeue slice that started at the previous
+     * dequeue return.
+     */
     if (
         ctx != 0 &&
         ctx->h264_active &&
-        packet != 0
+        ctx->h264_rx_prev_e0_valid
     ) {
+        was_active = 1;
+
+        uint32_t outside_us =
+            cfw_time_end(
+                &ctx->h264_rx_first_acl_cycles
+            );
+
+        if (
+            (
+                ctx->h264_rx_acl_count &
+                RX4_IDLE_FLAG
+            ) != 0u
+        ) {
+            ctx->h264_rx_e0_to_first_us +=
+                outside_us;
+        }
+        else {
+            ctx->h264_rx_prev_e0_cycles +=
+                outside_us;
+        }
+    }
+
+    /*
+     * Stock dequeue itself is deliberately NOT included in either
+     * RX4 bucket. RX3 already measured that body separately as F.
+     */
+    void *packet =
+        fw_h4_dequeue(
+            queue,
+            type_out
+        );
+
+    int rx4_match = 0;
+
+    /*
+     * Match the same physical Faceclaw write signature as RX1-3:
+     *
+     *   ACL start packet
+     *   L2CAP CID 0x0004
+     *   ATT opcode 0x52
+     *   ATT value handle 0x0842
+     */
+    if (
+        packet != 0 &&
+        type_out != 0 &&
+        *type_out == 2u
+    ) {
+        uint8_t *p =
+            (uint8_t *)packet;
+
         uint32_t handle_pb =
-            (uint32_t)packet[0] |
-            ((uint32_t)packet[1] << 8);
+            (uint32_t)p[0] |
+            ((uint32_t)p[1] << 8);
 
         uint32_t pb =
             handle_pb & 0x3000u;
 
         uint32_t acl_len =
-            (uint32_t)packet[2] |
-            ((uint32_t)packet[3] << 8);
+            (uint32_t)p[2] |
+            ((uint32_t)p[3] << 8);
 
         if (
             pb == 0x2000u &&
             acl_len >= 7u &&
-            packet[6] == 0x04u &&
-            packet[7] == 0x00u &&
-            packet[8] == 0x52u &&
-            packet[9] == 0x42u &&
-            packet[10] == 0x08u
+            p[6] == 0x04u &&
+            p[7] == 0x00u &&
+            p[8] == 0x52u &&
+            p[9] == 0x42u &&
+            p[10] == 0x08u
         ) {
-            rx2_match = 1;
+            rx4_match = 1;
         }
     }
-
-    if (!rx2_match) {
-        return FW_HCI_ACL_RX(packet);
-    }
-
-    /*
-     * RX2 reuses the six RX1 storage words.
-     *
-     * first_acl_cycles = previous stock-return timer
-     * last_acl_cycles  = previous stock duration
-     * prev_e0_cycles   = D accumulator
-     * e0_to_first_us   = E accumulator
-     * acl_count        = matching packet count
-     * prev_e0_valid    = train epoch
-     */
-
-    uint32_t epoch =
-        ctx->h264_rx_prev_e0_valid;
-
-    /*
-     * Close previous matching-packet transition.
-     *
-     * D = previous packet's execution inside stock 0x52A962.
-     * E = previous stock return -> current matching ACL entry.
-     *
-     * Across the packet train:
-     *
-     *     sum(D + E)
-     *
-     * reconstructs RX1 B:
-     *
-     *     first ACL entry -> last ACL entry
-     */
-
-    if (
-        ctx->h264_rx_acl_count != 0u
-    ) {
-        ctx->h264_rx_prev_e0_cycles +=
-            ctx->h264_rx_last_acl_cycles;
-
-        ctx->h264_rx_e0_to_first_us +=
-            cfw_time_end(
-                &ctx->h264_rx_first_acl_cycles
-            );
-    }
-
-    ctx->h264_rx_acl_count++;
-
-    uint32_t stock_cycles;
-
-    cfw_time_start(
-        &stock_cycles
-    );
-
-    void *result =
-        FW_HCI_ACL_RX(
-            packet
-        );
-
-    uint32_t stock_us =
-        cfw_time_end(
-            &stock_cycles
-        );
 
     ctx =
         peekCustomCfwContext();
 
-    /*
-     * If service-E0 ended the train while processing this
-     * packet, its epoch changed. Do not repopulate stale state.
-     */
-
     if (
         ctx != 0 &&
-        ctx->h264_active &&
-        ctx->h264_rx_prev_e0_valid == epoch
+        ctx->h264_active
     ) {
-        ctx->h264_rx_last_acl_cycles =
-            stock_us;
+        /*
+         * If service-E0 ended the old train while stock dequeue was
+         * running, h264_rx_prev_e0_valid was cleared. A matching
+         * packet returned now may therefore begin the next train.
+         */
+        int same_train =
+            was_active &&
+            ctx->h264_rx_prev_e0_valid;
 
-        cfw_time_start(
-            &ctx->h264_rx_first_acl_cycles
-        );
+        uint32_t count =
+            ctx->h264_rx_acl_count &
+            RX4_COUNT_MASK;
+
+        if (rx4_match) {
+            if (same_train) {
+                if (
+                    count <
+                    RX4_COUNT_MASK
+                ) {
+                    count++;
+                }
+            }
+            else if (
+                !ctx->h264_rx_prev_e0_valid
+            ) {
+                /*
+                 * First matching 0x0842 packet of a new frame train.
+                 * Its preceding interval is outside this train.
+                 */
+                ctx->h264_rx_prev_e0_cycles =
+                    0u;
+
+                ctx->h264_rx_e0_to_first_us =
+                    0u;
+
+                count =
+                    1u;
+
+                ctx->h264_rx_prev_e0_valid =
+                    1u;
+            }
+        }
+
+        if (
+            ctx->h264_rx_prev_e0_valid
+        ) {
+            /*
+             * The packet returned by THIS dequeue determines how the
+             * next outside-dequeue interval is classified.
+             *
+             * NULL means stock immediately exits the dispatcher.
+             * NON-NULL means stock processes this packet before the
+             * next dequeue.
+             */
+            ctx->h264_rx_acl_count =
+                count |
+                (
+                    packet == 0
+                    ? RX4_IDLE_FLAG
+                    : 0u
+                );
+
+            cfw_time_start(
+                &ctx->h264_rx_first_acl_cycles
+            );
+        }
     }
 
-    return result;
+    return packet;
 }
 
 static cfw_blelab_evt *blelab_back(
@@ -1519,6 +1612,9 @@ static int blelab_hci_allowed(
     uint16_t len
 ) {
     switch (opcode) {
+        /* RX3-TCI1: LE Connection Update. */
+        case 0x2013u: return len == 14u;
+
         case 0x1001u: return len == 0u;
         case 0x1002u: return len == 0u;
         case 0x1003u: return len == 0u;
@@ -1848,37 +1944,51 @@ int image_ingress_probe(void *buf, uint32_t len) {
     customCfwContext *ctx = peekCustomCfwContext();
 
     /*
-     * RX2 freeze:
+     * RX4 freezes at service-E0.
      *
-     * diag0 = "RX2" | packet count
-     * diag1 = D
-     * diag2 = E
-     * diag3 = D + E = reconstructed RX1 B
+     * h264_rx_prev_e0_cycles = G_WORK:
+     *   outside-dequeue slices whose previous dequeue returned
+     *   a real packet.
+     *
+     * h264_rx_e0_to_first_us = G_IDLE:
+     *   outside-dequeue slices whose previous dequeue returned
+     *   NULL, causing the stock dispatcher to exit immediately.
+     *
+     * G_WORK + G_IDLE partitions the old RX3 G measurement for
+     * completed slices between the first and last matching 0x0842
+     * H4 dequeue returns.
      */
-
     if (
         ctx != 0 &&
         ctx->h264_active &&
-        ctx->h264_rx_acl_count >= 2u
+        ctx->h264_rx_prev_e0_valid &&
+        (
+            ctx->h264_rx_acl_count &
+            0x7fffffffu
+        ) >= 2u
     ) {
-        uint32_t d_us =
+        uint32_t rx4_count =
+            ctx->h264_rx_acl_count &
+            0x7fffffffu;
+
+        uint32_t work_us =
             ctx->h264_rx_prev_e0_cycles;
 
-        uint32_t e_us =
+        uint32_t idle_us =
             ctx->h264_rx_e0_to_first_us;
 
         ctx->blelab_telem[0] =
-            0x52583200u |
-            (ctx->h264_rx_acl_count & 0xffu);
+            0x52583400u |
+            (rx4_count & 0xffu);
 
         ctx->blelab_telem[1] =
-            d_us;
+            work_us;
 
         ctx->blelab_telem[2] =
-            e_us;
+            idle_us;
 
         ctx->blelab_telem[3] =
-            d_us + e_us;
+            work_us + idle_us;
 
         ctx->blelab_telem_valid =
             1u;
@@ -1886,14 +1996,16 @@ int image_ingress_probe(void *buf, uint32_t len) {
 
     if (ctx != 0) {
         /*
-         * Advance epoch before clearing the completed train.
+         * Preserve the existing RX epoch counter for compatibility
+         * with the surrounding diagnostic state, although RX4 no
+         * longer needs it to classify the slices.
          */
-        ctx->h264_rx_prev_e0_valid++;
+        ctx->h264_rx_last_acl_cycles++;
 
-        ctx->h264_rx_acl_count =
+        ctx->h264_rx_prev_e0_valid =
             0u;
 
-        ctx->h264_rx_last_acl_cycles =
+        ctx->h264_rx_acl_count =
             0u;
 
         ctx->h264_rx_prev_e0_cycles =
@@ -2899,6 +3011,40 @@ static int image_dispatch(uint8_t *state, const uint8_t *src, uint32_t srclen,
 
         if (sub == 23)
             return blelab_remote_features(ctx);
+
+        /* BLELAB_TARGET_HCI_V1
+         * [11][30][side][opcode16][len][params...]
+         * side: 1=RIGHT, 2=LEFT.
+         * Mirrored peer receives the command but does not execute HCI.
+         */
+        if (sub == 30) {
+            if (srclen < 6u) return 0;
+        
+            uint8_t target_side = src[2];
+            uint16_t opcode =
+                (uint16_t)src[3] |
+                ((uint16_t)src[4] << 8);
+            uint8_t plen = src[5];
+        
+            if (
+                (target_side != 1u && target_side != 2u) ||
+                srclen < (uint32_t)(6u + plen)
+            ) {
+                return 0;
+            }
+        
+            if ((uint8_t)FW_SIDE() != target_side) {
+                return 0;
+            }
+        
+            (void)blelab_send_hci(
+                opcode,
+                src + 6,
+                plen
+            );
+        
+            return 0;
+        }
 
         if (sub == 24) {
             if (srclen < 5u)
