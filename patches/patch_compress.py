@@ -185,6 +185,10 @@ H264_ACK_LOWER_SEND_BL_SITE = (
 
 # RX1: raw inbound HCI ACL -> stock L2CAP reassembly.
 HCI_ACL_RX_BL_SITE = (0x530d08, "f9 f7 2b fe")  # bl 0x52a962
+# RX5: H4 producer enqueue immediately before stock wake at 0x530CAC.
+H4_IRQ59_CLEAR_BL_SITE = (0x4b80da, "c9 f7 8a fa")  # bl 0x4815f2
+H4_LOWER_RX_WAKE_BL_SITE = (0x4b4aac, "76 f0 37 ff")  # bl 0x52b91e
+H4_ENQUEUE_BL_SITE = (0x530ca2, "8e f7 9c fe")  # bl 0x4bf9de
 # B6: deep outbound SID-0xE0 ACK transport path. Each site is an
 # existing four-byte Thumb BL and was resolved from stock disassembly.
 H264_B6_GATT_NOTIFY_BL_SITE = (0x4bdf18, "75 f0 de ff")     # bl 0x533ed8
@@ -323,6 +327,9 @@ def layout(img):
     bulk_copy_addr = base + _fn(built, "h264_bulk_copy_probe")["offset"]
     phy_hci_wrapper_addr = base + _fn(built, "faceclaw_dm_phy_hci_handler")["offset"]
     hci_evt_tap_addr = base + _fn(built, "faceclaw_hci_evt_tap")["offset"]
+    irq59_clear_addr = base + _fn(built, "faceclaw_irq59_clear_probe")["offset"]
+    h4_lower_rx_wake_addr = base + _fn(built, "faceclaw_h4_lower_rx_wake_probe")["offset"]
+    h4_enqueue_addr = base + _fn(built, "faceclaw_h4_enqueue_probe")["offset"]
     h4_dequeue_addr = base + _fn(built, "faceclaw_h4_dequeue_probe")["offset"]
 
     ack_notify_addr = base + _fn(built, "h264_ack_notify_probe")["offset"]
@@ -373,10 +380,28 @@ def layout(img):
 
     in_place = [
         (
+            g2f(H4_IRQ59_CLEAR_BL_SITE[0]),
+            H4_IRQ59_CLEAR_BL_SITE[1],
+            enc_bl(H4_IRQ59_CLEAR_BL_SITE[0], irq59_clear_addr),
+            "RX7: confirmed IRQ59 bit-21 pending boundary"
+        ),
+        (
+            g2f(H4_LOWER_RX_WAKE_BL_SITE[0]),
+            H4_LOWER_RX_WAKE_BL_SITE[1],
+            enc_bl(H4_LOWER_RX_WAKE_BL_SITE[0], h4_lower_rx_wake_addr),
+            "RX7: lower-transport callback after IRQ59 dispatch"
+        ),
+        (
+            g2f(H4_ENQUEUE_BL_SITE[0]),
+            H4_ENQUEUE_BL_SITE[1],
+            enc_bl(H4_ENQUEUE_BL_SITE[0], h4_enqueue_addr),
+            "RX7: H4 enqueue after lower-transport callback"
+        ),
+        (
             g2f(0x00530CEC),
             "8e f7 7e fe",
             enc_bl(0x00530CEC, h4_dequeue_addr),
-            "RX4: split RX3 G into packet-work vs queue-empty idle/reentry"
+            "RX7: arm/filter H4 queue-empty receive phases"
         ),
         (
             g2f(0x00530CCE),

@@ -317,12 +317,19 @@ typedef void (*dm_conn_set_data_len_fn)(
  * guards against warm-reset garbage; the slot ptr is range-checked before deref. */
 #define CFW_FID_RING  16     /* recent mode-3 frame ids kept for duplicate detection */
 #define CFW_SNAP_RING 12     /* in-flight compressed-message snapshots (per producer race depth) */
-#define CFW_H264_QUEUE_CAPACITY 4
-#define CFW_H264_QUEUE_BYTES    (16u * 1024u)
-#define CFW_H264_SNAPSHOT_SLOTS 4u
-#define CFW_H264_SNAPSHOT_BYTES 4096u
-#define CFW_H264_SNAPSHOT_POOL_BYTES \
-    (CFW_H264_SNAPSHOT_SLOTS * CFW_H264_SNAPSHOT_BYTES)
+/* RX8 / PIPE6: preserve RX7's proven 4-slot fixed pool in buffer A.
+ * Two optional extension slots are allocated from the firmware heap only after
+ * the decoder has produced a frame and reports its DPB fully allocated.  The
+ * extension is fail-closed: if the 8 KB allocation fails, runtime capacity
+ * remains exactly four and no existing pool or decoder arena moves. */
+#define CFW_H264_SNAPSHOT_SLOTS_BASE 4u
+#define CFW_H264_SNAPSHOT_SLOTS_MAX  6u
+#define CFW_H264_SNAPSHOT_BYTES      4096u
+#define CFW_H264_SNAPSHOT_POOL_BYTES_BASE \
+    (CFW_H264_SNAPSHOT_SLOTS_BASE * CFW_H264_SNAPSHOT_BYTES)
+#define CFW_H264_SNAPSHOT_POOL_BYTES_EXTRA \
+    ((CFW_H264_SNAPSHOT_SLOTS_MAX - CFW_H264_SNAPSHOT_SLOTS_BASE) * \
+     CFW_H264_SNAPSHOT_BYTES)
 #define CFW_H264_MAX_W          320u
 #define CFW_H264_MAX_H          192u
 #define CFW_H264_FRAME_BYTES    (CFW_H264_MAX_W * CFW_H264_MAX_H * 3u / 2u)
@@ -452,7 +459,11 @@ typedef struct {
     uint32_t h264_arena_used[2];
     uint8_t h264_arena_rebind_result;
     uint8_t *h264_snapshot_pool;
-    uint8_t h264_snapshot_pool_used[CFW_H264_SNAPSHOT_SLOTS];
+    uint8_t *h264_snapshot_extra_pool;
+    uint8_t h264_snapshot_slots;
+    uint8_t h264_pipeline_expand_attempted;
+    uint8_t h264_pipeline_expand_result;
+    uint8_t h264_snapshot_pool_used[CFW_H264_SNAPSHOT_SLOTS_MAX];
     uint8_t h264_diag_saved;
     uint8_t h264_prev_diag_hide;
     uint8_t h264_notify_buf[64];
@@ -716,6 +727,29 @@ static void h264_send_telemetry(customCfwContext *ctx);
 static void cfw_time_start(uint32_t *t);
 static uint32_t cfw_time_end(const uint32_t *t);
 
+static uint32_t h264_snapshot_slot_capacity(const customCfwContext *ctx) {
+    uint32_t slots = ctx ? (uint32_t)ctx->h264_snapshot_slots : 0u;
+    if (slots < CFW_H264_SNAPSHOT_SLOTS_BASE ||
+        slots > CFW_H264_SNAPSHOT_SLOTS_MAX)
+        slots = CFW_H264_SNAPSHOT_SLOTS_BASE;
+    return slots;
+}
+
+static uint32_t h264_queue_byte_capacity(const customCfwContext *ctx) {
+    return h264_snapshot_slot_capacity(ctx) * CFW_H264_SNAPSHOT_BYTES;
+}
+
+static uint8_t *h264_snapshot_slot_ptr(customCfwContext *ctx, uint32_t slot) {
+    if (ctx == 0 || slot >= h264_snapshot_slot_capacity(ctx)) return 0;
+    if (slot < CFW_H264_SNAPSHOT_SLOTS_BASE) {
+        if (ctx->h264_snapshot_pool == 0) return 0;
+        return ctx->h264_snapshot_pool + slot * CFW_H264_SNAPSHOT_BYTES;
+    }
+    if (ctx->h264_snapshot_extra_pool == 0) return 0;
+    return ctx->h264_snapshot_extra_pool +
+           (slot - CFW_H264_SNAPSHOT_SLOTS_BASE) * CFW_H264_SNAPSHOT_BYTES;
+}
+
 static void cfw_release_snapshot(customCfwContext *ctx, int slot) {
     uint8_t *buf = ctx->snaps[slot].buf;
     uint8_t pool_slot = ctx->snaps[slot].h264_pool_slot;
@@ -726,7 +760,8 @@ static void cfw_release_snapshot(customCfwContext *ctx, int slot) {
     ctx->snaps[slot].h264_stream_id = 0;
     ctx->snaps[slot].h264_sequence = 0;
     ctx->snaps[slot].h264_pool_slot = 0xffu;
-    if (pool_slot < CFW_H264_SNAPSHOT_SLOTS && ctx->h264_snapshot_pool != 0) {
+    if (pool_slot < CFW_H264_SNAPSHOT_SLOTS_MAX &&
+        h264_snapshot_slot_ptr(ctx, pool_slot) != 0) {
         ctx->h264_snapshot_pool_used[pool_slot] = 0;
     } else if (buf) {
         FW_FREE(buf);
@@ -844,7 +879,7 @@ static void h264_send_telemetry(customCfwContext *ctx) {
         p[o] = (unsigned char)v; p[o + 1] = (unsigned char)(v >> 8);
         p[o + 2] = (unsigned char)(v >> 16); p[o + 3] = (unsigned char)(v >> 24);
     }
-    p[43] = CFW_H264_QUEUE_CAPACITY;
+    p[43] = (unsigned char)h264_snapshot_slot_capacity(ctx);
     p[44] = (unsigned char)queued_bytes;
     p[45] = (unsigned char)(queued_bytes >> 8);
     p[46] = (unsigned char)(queued_bytes >> 16);
@@ -1165,82 +1200,148 @@ void faceclaw_hci_evt_tap(
 
 
 /*
- * RX1 transparent inbound ACL timing hook.
+ * RX7 hardware IRQ59 -> H4 queue split.
  *
- * Stock H4 dispatcher:
+ * F = queue-empty dequeue -> first confirmed IRQ59 pending bit 21.
+ * G = IRQ59 bit 21 -> registered lower-transport RX callback.
+ * H = lower callback -> first H4 enqueue completion.
  *
- *   type 0x02
- *       -> call site 0x530d08
- *       -> stock 0x52a962
+ * IRQ59 is the hardware vector at main-app vector index 75 (16 + 59).
+ * Its common dispatcher maps group 59 to callback-bank 3; bit 21 is
+ * flat callback slot 0x75, registered to 0x4B4A98.
  *
- * Only Faceclaw ATT Write Command packets to value handle
- * 0x0842 are timestamped. Packet contents and stock return
- * value remain unchanged.
+ * No context enlargement:
+ *   h264_rx_prev_e0_cycles = accumulated F
+ *   h264_rx_e0_to_first_us = accumulated G
+ *   h264_rx_last_acl_cycles = accumulated H
+ *   h264_rx_first_acl_cycles = current phase timer anchor
+ *
+ * h264_rx_acl_count transient flags:
+ *   bit31 = previous H4 dequeue returned NULL
+ *   bit30 = first IRQ59 bit-21 pending event observed
+ *   bit29 = first lower RX callback observed
+ *   bit28 = first H4 enqueue observed
+ *   low28 = matching H264 ACL packet count
  */
-void *faceclaw_h4_dequeue_probe(void *queue, uint8_t *type_out) {
-    typedef void *(*rx4_h4_dequeue_fn)(
-        void *queue_arg,
-        uint8_t *type_out_arg
+
+uint32_t faceclaw_irq59_clear_probe(
+    uint32_t group,
+    uint32_t pending
+) {
+    typedef uint32_t (*rx7_irq59_clear_fn)(
+        uint32_t,
+        uint32_t
     );
 
-    /*
-     * RX4 reuses the existing RX3 0x530CEC hook.
-     *
-     * RX3 proved that the long first->last 0x0842 interval lives
-     * OUTSIDE stock 0x4BF9EC rather than inside the dequeue body.
-     *
-     * The stock caller gives us a stronger split without another
-     * live-code hook:
-     *
-     *   dequeue returns NULL
-     *       -> 0x530CF4 branches straight to 0x530CC4 function exit
-     *
-     *   dequeue returns NON-NULL
-     *       -> packet is dispatched/processed
-     *       -> all continuing paths loop to 0x530CE6
-     *       -> next dequeue at 0x530CEC
-     *
-     * Therefore every outside-dequeue slice is classified by the
-     * PREVIOUS dequeue return:
-     *
-     *   h264_rx_prev_e0_cycles = G_WORK
-     *       previous dequeue was NON-NULL
-     *
-     *   h264_rx_e0_to_first_us = G_IDLE
-     *       previous dequeue was NULL
-     *
-     * h264_rx_first_acl_cycles remains the timer anchor.
-     *
-     * Bit 31 of h264_rx_acl_count is used only as the transient
-     * previous-return-was-NULL flag.  Low 31 bits remain the
-     * matching-0x0842 packet count.
-     */
-    const uint32_t RX4_IDLE_FLAG =
+    const uint32_t RX7_IDLE_FLAG =
         0x80000000u;
 
-    const uint32_t RX4_COUNT_MASK =
-        0x7fffffffu;
+    const uint32_t RX7_IRQ_SEEN_FLAG =
+        0x40000000u;
 
-    rx4_h4_dequeue_fn fw_h4_dequeue =
-        (rx4_h4_dequeue_fn)0x004bf9edU;
+    const uint32_t RX7_IRQ59_RX_BIT =
+        1u << 21;
+
+    rx7_irq59_clear_fn fw_irq59_clear =
+        (rx7_irq59_clear_fn)0x004815f3U;
 
     customCfwContext *ctx =
         peekCustomCfwContext();
 
-    int was_active = 0;
+    /*
+     * 0x4B80DA is inside the IRQ59 vector handler after the
+     * hardware pending mask has been read and immediately before
+     * that mask is acknowledged/cleared.  Bit 21 is the exact
+     * source that dispatches callback slot 0x75 -> 0x4B4A98.
+     *
+     * This is therefore an earlier and more specific boundary than
+     * RX6's callback-entry timestamp: unrelated IRQ59 sources are
+     * ignored.
+     */
+    if (
+        group == 59u &&
+        (pending & RX7_IRQ59_RX_BIT) != 0u &&
+        ctx != 0 &&
+        ctx->h264_active &&
+        ctx->h264_rx_prev_e0_valid &&
+        (
+            ctx->h264_rx_acl_count &
+            RX7_IDLE_FLAG
+        ) != 0u &&
+        (
+            ctx->h264_rx_acl_count &
+            RX7_IRQ_SEEN_FLAG
+        ) == 0u
+    ) {
+        uint32_t irq_us =
+            cfw_time_end(
+                &ctx->h264_rx_first_acl_cycles
+            );
+
+        ctx->h264_rx_prev_e0_cycles +=
+            irq_us;
+
+        ctx->h264_rx_acl_count |=
+            RX7_IRQ_SEEN_FLAG;
+
+        /*
+         * G starts at the confirmed IRQ59 bit-21 boundary.
+         */
+        cfw_time_start(
+            &ctx->h264_rx_first_acl_cycles
+        );
+    }
+
+    /* Preserve the stock pending-mask acknowledge/clear write. */
+    return fw_irq59_clear(
+        group,
+        pending
+    );
+}
+
+
+void faceclaw_h4_lower_rx_wake_probe(
+    uint32_t event_id,
+    uint32_t bits
+) {
+    typedef void (*rx7_lower_wake_fn)(
+        uint32_t,
+        uint32_t
+    );
+
+    const uint32_t RX7_IDLE_FLAG =
+        0x80000000u;
+
+    const uint32_t RX7_IRQ_SEEN_FLAG =
+        0x40000000u;
+
+    const uint32_t RX7_LOWER_SEEN_FLAG =
+        0x20000000u;
+
+    rx7_lower_wake_fn fw_lower_wake =
+        (rx7_lower_wake_fn)0x0052b91fU;
+
+    customCfwContext *ctx =
+        peekCustomCfwContext();
 
     /*
-     * End the outside-dequeue slice that started at the previous
-     * dequeue return.
+     * 0x4B4AAC is inside registered callback 0x4B4A98,
+     * immediately before its stock lower-transport event/wakeup.
      */
     if (
         ctx != 0 &&
         ctx->h264_active &&
-        ctx->h264_rx_prev_e0_valid
+        ctx->h264_rx_prev_e0_valid &&
+        (
+            ctx->h264_rx_acl_count &
+            RX7_IDLE_FLAG
+        ) != 0u &&
+        (
+            ctx->h264_rx_acl_count &
+            RX7_LOWER_SEEN_FLAG
+        ) == 0u
     ) {
-        was_active = 1;
-
-        uint32_t outside_us =
+        uint32_t phase_us =
             cfw_time_end(
                 &ctx->h264_rx_first_acl_cycles
             );
@@ -1248,37 +1349,244 @@ void *faceclaw_h4_dequeue_probe(void *queue, uint8_t *type_out) {
         if (
             (
                 ctx->h264_rx_acl_count &
-                RX4_IDLE_FLAG
+                RX7_IRQ_SEEN_FLAG
             ) != 0u
         ) {
+            /* G: confirmed IRQ59 bit21 -> registered callback. */
             ctx->h264_rx_e0_to_first_us +=
-                outside_us;
+                phase_us;
         }
         else {
+            /*
+             * Defensive fallback: if the callback is reached without
+             * our confirmed IRQ boundary, keep the elapsed time on F.
+             */
             ctx->h264_rx_prev_e0_cycles +=
-                outside_us;
+                phase_us;
+
+            ctx->h264_rx_acl_count |=
+                RX7_IRQ_SEEN_FLAG;
+        }
+
+        ctx->h264_rx_acl_count |=
+            RX7_LOWER_SEEN_FLAG;
+
+        /* H starts at the registered lower callback boundary. */
+        cfw_time_start(
+            &ctx->h264_rx_first_acl_cycles
+        );
+    }
+
+    fw_lower_wake(
+        event_id,
+        bits
+    );
+}
+
+
+void faceclaw_h4_enqueue_probe(
+    void *queue,
+    uint8_t type,
+    void *packet
+) {
+    typedef void (*rx7_h4_enqueue_fn)(
+        void *,
+        uint8_t,
+        void *
+    );
+
+    const uint32_t RX7_IDLE_FLAG =
+        0x80000000u;
+
+    const uint32_t RX7_IRQ_SEEN_FLAG =
+        0x40000000u;
+
+    const uint32_t RX7_LOWER_SEEN_FLAG =
+        0x20000000u;
+
+    const uint32_t RX7_ENQUEUE_SEEN_FLAG =
+        0x10000000u;
+
+    rx7_h4_enqueue_fn fw_h4_enqueue =
+        (rx7_h4_enqueue_fn)0x004bf9dfU;
+
+    /* Preserve stock H4 queue insertion first. */
+    fw_h4_enqueue(
+        queue,
+        type,
+        packet
+    );
+
+    customCfwContext *ctx =
+        peekCustomCfwContext();
+
+    if (
+        ctx != 0 &&
+        ctx->h264_active &&
+        ctx->h264_rx_prev_e0_valid &&
+        (
+            ctx->h264_rx_acl_count &
+            RX7_IDLE_FLAG
+        ) != 0u &&
+        (
+            ctx->h264_rx_acl_count &
+            RX7_ENQUEUE_SEEN_FLAG
+        ) == 0u
+    ) {
+        uint32_t phase_us =
+            cfw_time_end(
+                &ctx->h264_rx_first_acl_cycles
+            );
+
+        if (
+            (
+                ctx->h264_rx_acl_count &
+                RX7_LOWER_SEEN_FLAG
+            ) != 0u
+        ) {
+            /* H: lower callback -> H4 enqueue completion. */
+            ctx->h264_rx_last_acl_cycles +=
+                phase_us;
+        }
+        else if (
+            (
+                ctx->h264_rx_acl_count &
+                RX7_IRQ_SEEN_FLAG
+            ) != 0u
+        ) {
+            /*
+             * Confirmed IRQ but callback hook missing: retain elapsed
+             * time on G rather than mislabeling it as H.
+             */
+            ctx->h264_rx_e0_to_first_us +=
+                phase_us;
+
+            ctx->h264_rx_acl_count |=
+                RX7_LOWER_SEEN_FLAG;
+        }
+        else {
+            /* No earlier RX7 boundary was observed. Keep it on F. */
+            ctx->h264_rx_prev_e0_cycles +=
+                phase_us;
+
+            ctx->h264_rx_acl_count |=
+                RX7_IRQ_SEEN_FLAG |
+                RX7_LOWER_SEEN_FLAG;
+        }
+
+        ctx->h264_rx_acl_count |=
+            RX7_ENQUEUE_SEEN_FLAG;
+
+        /*
+         * RX6 already proved enqueue -> dequeue/re-entry is ~0.09 ms,
+         * so RX7 intentionally spends diag[3] on H instead of E.
+         */
+    }
+}
+
+
+void *faceclaw_h4_dequeue_probe(
+    void *queue,
+    uint8_t *type_out
+) {
+    typedef void *(*rx7_h4_dequeue_fn)(
+        void *,
+        uint8_t *
+    );
+
+    const uint32_t RX7_IDLE_FLAG =
+        0x80000000u;
+
+    const uint32_t RX7_IRQ_SEEN_FLAG =
+        0x40000000u;
+
+    const uint32_t RX7_LOWER_SEEN_FLAG =
+        0x20000000u;
+
+    const uint32_t RX7_ENQUEUE_SEEN_FLAG =
+        0x10000000u;
+
+    const uint32_t RX7_COUNT_MASK =
+        0x0fffffffu;
+
+    rx7_h4_dequeue_fn fw_h4_dequeue =
+        (rx7_h4_dequeue_fn)0x004bf9edU;
+
+    customCfwContext *ctx =
+        peekCustomCfwContext();
+
+    int was_active =
+        0;
+
+    /*
+     * If the dispatcher re-enters before enqueue, close whichever
+     * RX7 phase is still open. After enqueue there is deliberately
+     * no running RX7 timer: RX6 already measured E.
+     */
+    if (
+        ctx != 0 &&
+        ctx->h264_active &&
+        ctx->h264_rx_prev_e0_valid
+    ) {
+        was_active =
+            1;
+
+        if (
+            (
+                ctx->h264_rx_acl_count &
+                RX7_IDLE_FLAG
+            ) != 0u &&
+            (
+                ctx->h264_rx_acl_count &
+                RX7_ENQUEUE_SEEN_FLAG
+            ) == 0u
+        ) {
+            uint32_t phase_us =
+                cfw_time_end(
+                    &ctx->h264_rx_first_acl_cycles
+                );
+
+            if (
+                (
+                    ctx->h264_rx_acl_count &
+                    RX7_LOWER_SEEN_FLAG
+                ) != 0u
+            ) {
+                ctx->h264_rx_last_acl_cycles +=
+                    phase_us;
+            }
+            else if (
+                (
+                    ctx->h264_rx_acl_count &
+                    RX7_IRQ_SEEN_FLAG
+                ) != 0u
+            ) {
+                ctx->h264_rx_e0_to_first_us +=
+                    phase_us;
+            }
+            else {
+                ctx->h264_rx_prev_e0_cycles +=
+                    phase_us;
+            }
         }
     }
 
-    /*
-     * Stock dequeue itself is deliberately NOT included in either
-     * RX4 bucket. RX3 already measured that body separately as F.
-     */
+    /* RX3 already proved the stock dequeue primitive itself is tiny. */
     void *packet =
         fw_h4_dequeue(
             queue,
             type_out
         );
 
-    int rx4_match = 0;
+    int rx7_match =
+        0;
 
     /*
-     * Match the same physical Faceclaw write signature as RX1-3:
-     *
-     *   ACL start packet
+     * Faceclaw H264 ATT Write Command:
+     *   ACL start
      *   L2CAP CID 0x0004
      *   ATT opcode 0x52
-     *   ATT value handle 0x0842
+     *   value handle 0x0842
      */
     if (
         packet != 0 &&
@@ -1293,7 +1601,8 @@ void *faceclaw_h4_dequeue_probe(void *queue, uint8_t *type_out) {
             ((uint32_t)p[1] << 8);
 
         uint32_t pb =
-            handle_pb & 0x3000u;
+            handle_pb &
+            0x3000u;
 
         uint32_t acl_len =
             (uint32_t)p[2] |
@@ -1308,7 +1617,8 @@ void *faceclaw_h4_dequeue_probe(void *queue, uint8_t *type_out) {
             p[9] == 0x42u &&
             p[10] == 0x08u
         ) {
-            rx4_match = 1;
+            rx7_match =
+                1;
         }
     }
 
@@ -1319,24 +1629,18 @@ void *faceclaw_h4_dequeue_probe(void *queue, uint8_t *type_out) {
         ctx != 0 &&
         ctx->h264_active
     ) {
-        /*
-         * If service-E0 ended the old train while stock dequeue was
-         * running, h264_rx_prev_e0_valid was cleared. A matching
-         * packet returned now may therefore begin the next train.
-         */
-        int same_train =
-            was_active &&
-            ctx->h264_rx_prev_e0_valid;
-
         uint32_t count =
             ctx->h264_rx_acl_count &
-            RX4_COUNT_MASK;
+            RX7_COUNT_MASK;
 
-        if (rx4_match) {
-            if (same_train) {
+        if (rx7_match) {
+            if (
+                was_active &&
+                ctx->h264_rx_prev_e0_valid
+            ) {
                 if (
                     count <
-                    RX4_COUNT_MASK
+                    RX7_COUNT_MASK
                 ) {
                     count++;
                 }
@@ -1344,14 +1648,14 @@ void *faceclaw_h4_dequeue_probe(void *queue, uint8_t *type_out) {
             else if (
                 !ctx->h264_rx_prev_e0_valid
             ) {
-                /*
-                 * First matching 0x0842 packet of a new frame train.
-                 * Its preceding interval is outside this train.
-                 */
+                /* First matching 0x0842 packet begins a new train. */
                 ctx->h264_rx_prev_e0_cycles =
                     0u;
 
                 ctx->h264_rx_e0_to_first_us =
+                    0u;
+
+                ctx->h264_rx_last_acl_cycles =
                     0u;
 
                 count =
@@ -1366,24 +1670,22 @@ void *faceclaw_h4_dequeue_probe(void *queue, uint8_t *type_out) {
             ctx->h264_rx_prev_e0_valid
         ) {
             /*
-             * The packet returned by THIS dequeue determines how the
-             * next outside-dequeue interval is classified.
-             *
-             * NULL means stock immediately exits the dispatcher.
-             * NON-NULL means stock processes this packet before the
-             * next dequeue.
+             * Clear transient RX7 flags after every dequeue.
+             * Only NULL arms a new queue-empty interval.
              */
             ctx->h264_rx_acl_count =
-                count |
-                (
-                    packet == 0
-                    ? RX4_IDLE_FLAG
-                    : 0u
-                );
+                count;
 
-            cfw_time_start(
-                &ctx->h264_rx_first_acl_cycles
-            );
+            if (
+                packet == 0
+            ) {
+                ctx->h264_rx_acl_count |=
+                    RX7_IDLE_FLAG;
+
+                cfw_time_start(
+                    &ctx->h264_rx_first_acl_cycles
+                );
+            }
         }
     }
 
@@ -1944,19 +2246,19 @@ int image_ingress_probe(void *buf, uint32_t len) {
     customCfwContext *ctx = peekCustomCfwContext();
 
     /*
-     * RX4 freezes at service-E0.
+     * RX7 freezes the hardware-IRQ split at service-E0.
      *
-     * h264_rx_prev_e0_cycles = G_WORK:
-     *   outside-dequeue slices whose previous dequeue returned
-     *   a real packet.
+     * diag[1] = F:
+     *   queue-empty H4 dequeue -> confirmed IRQ59 pending bit 21.
      *
-     * h264_rx_e0_to_first_us = G_IDLE:
-     *   outside-dequeue slices whose previous dequeue returned
-     *   NULL, causing the stock dispatcher to exit immediately.
+     * diag[2] = G:
+     *   IRQ59 bit 21 -> registered lower RX callback 0x4B4A98.
      *
-     * G_WORK + G_IDLE partitions the old RX3 G measurement for
-     * completed slices between the first and last matching 0x0842
-     * H4 dequeue returns.
+     * diag[3] = H:
+     *   lower RX callback -> first H4 enqueue completion.
+     *
+     * RX6 already proved enqueue -> H4 dequeue/re-entry is ~0.09 ms,
+     * so that closed phase is intentionally not re-measured here.
      */
     if (
         ctx != 0 &&
@@ -1964,44 +2266,40 @@ int image_ingress_probe(void *buf, uint32_t len) {
         ctx->h264_rx_prev_e0_valid &&
         (
             ctx->h264_rx_acl_count &
-            0x7fffffffu
+            0x0fffffffu
         ) >= 2u
     ) {
-        uint32_t rx4_count =
+        uint32_t rx7_count =
             ctx->h264_rx_acl_count &
-            0x7fffffffu;
+            0x0fffffffu;
 
-        uint32_t work_us =
+        uint32_t pre_irq_us =
             ctx->h264_rx_prev_e0_cycles;
 
-        uint32_t idle_us =
+        uint32_t irq_dispatch_us =
             ctx->h264_rx_e0_to_first_us;
 
+        uint32_t lower_to_enqueue_us =
+            ctx->h264_rx_last_acl_cycles;
+
         ctx->blelab_telem[0] =
-            0x52583400u |
-            (rx4_count & 0xffu);
+            0x52583700u |
+            (rx7_count & 0xffu);
 
         ctx->blelab_telem[1] =
-            work_us;
+            pre_irq_us;
 
         ctx->blelab_telem[2] =
-            idle_us;
+            irq_dispatch_us;
 
         ctx->blelab_telem[3] =
-            work_us + idle_us;
+            lower_to_enqueue_us;
 
         ctx->blelab_telem_valid =
             1u;
     }
 
     if (ctx != 0) {
-        /*
-         * Preserve the existing RX epoch counter for compatibility
-         * with the surrounding diagnostic state, although RX4 no
-         * longer needs it to classify the slices.
-         */
-        ctx->h264_rx_last_acl_cycles++;
-
         ctx->h264_rx_prev_e0_valid =
             0u;
 
@@ -2014,11 +2312,14 @@ int image_ingress_probe(void *buf, uint32_t len) {
         ctx->h264_rx_e0_to_first_us =
             0u;
 
+        ctx->h264_rx_last_acl_cycles =
+            0u;
+
         ctx->h264_rx_first_acl_cycles =
             0u;
     }
 
-int bulk_candidate =
+    int bulk_candidate =
         ctx != 0 &&
         ctx->h264_active &&
         ctx->h264_timing_sequence != 63u;
@@ -2155,8 +2456,15 @@ static int h264_stop(customCfwContext *ctx) {
     ctx->h264_arena_used[0] = 0;
     ctx->h264_arena_used[1] = 0;
     ctx->h264_arena_rebind_result = G2_H264_REBIND_INVALID_ARGUMENT;
+    if (ctx->h264_snapshot_extra_pool != 0) {
+        FW_FREE(ctx->h264_snapshot_extra_pool);
+        ctx->h264_snapshot_extra_pool = 0;
+    }
     ctx->h264_snapshot_pool = 0;
-    for (uint32_t i = 0; i < CFW_H264_SNAPSHOT_SLOTS; i++)
+    ctx->h264_snapshot_slots = CFW_H264_SNAPSHOT_SLOTS_BASE;
+    ctx->h264_pipeline_expand_attempted = 0u;
+    ctx->h264_pipeline_expand_result = 0xffu;
+    for (uint32_t i = 0; i < CFW_H264_SNAPSHOT_SLOTS_MAX; i++)
         ctx->h264_snapshot_pool_used[i] = 0;
     ctx->h264_active = 0;
     ctx->h264_scale_2x = 0;
@@ -2283,7 +2591,7 @@ static g2_h264_rebind_result_t h264_rebind_runtime(
     uintptr_t a_end = a_begin + capacity;
     uintptr_t aligned = (a_begin + alignment - 1u) & ~(alignment - 1u);
     uintptr_t workspace_begin = (aligned + obj_size + 7u) & ~(uintptr_t)7u;
-    uintptr_t snapshot_pool_begin = a_end - CFW_H264_SNAPSHOT_POOL_BYTES;
+    uintptr_t snapshot_pool_begin = a_end - CFW_H264_SNAPSHOT_POOL_BYTES_BASE;
     if (workspace_begin >= snapshot_pool_begin ||
         (void *)aligned != ctx->h264_decoder ||
         (uint8_t *)snapshot_pool_begin != ctx->h264_snapshot_pool)
@@ -2310,6 +2618,51 @@ static void h264_capture_arena_usage(customCfwContext *ctx) {
         (uint32_t)ctx->h264_runtime.spans[0].used;
     ctx->h264_arena_used[1] =
         (uint32_t)ctx->h264_runtime.spans[1].used;
+}
+
+/* RX8 / PIPE6 extension.  Do not touch the decoder arena or the RX7 fixed pool.
+ * The two extra snapshot buffers are committed only after the decoder has
+ * produced at least one frame and reports every DPB slot allocated.  Publish
+ * h264_snapshot_slots LAST so the producer cannot observe capacity six before
+ * h264_snapshot_extra_pool is valid. */
+static void h264_try_expand_pipeline(customCfwContext *ctx) {
+    if (ctx == 0 || !ctx->h264_active || ctx->h264_decoder == 0 ||
+        ctx->h264_snapshot_slots != CFW_H264_SNAPSHOT_SLOTS_BASE ||
+        ctx->h264_pipeline_expand_attempted)
+        return;
+
+    if (!ctx->h264_sps_ok || !ctx->h264_pps_ok || ctx->h264_frames == 0u)
+        return;
+
+    uint32_t dpb_capacity =
+        (uint32_t)g2_h264_dpb_frame_capacity(ctx->h264_decoder);
+    uint32_t dpb_allocated =
+        (uint32_t)g2_h264_dpb_allocated_frames(ctx->h264_decoder);
+
+    if (dpb_capacity == 0u || dpb_allocated < dpb_capacity)
+        return;
+
+    ctx->h264_pipeline_expand_attempted = 1u;
+
+    uint8_t *extra =
+        (uint8_t *)FW_MALLOC(CFW_H264_SNAPSHOT_POOL_BYTES_EXTRA);
+
+    if (extra == 0) {
+        ctx->h264_pipeline_expand_result = 1u;
+        return;
+    }
+
+    for (uint32_t i = CFW_H264_SNAPSHOT_SLOTS_BASE;
+         i < CFW_H264_SNAPSHOT_SLOTS_MAX; i++)
+        ctx->h264_snapshot_pool_used[i] = 0u;
+
+    ctx->h264_snapshot_extra_pool = extra;
+    ctx->h264_pipeline_expand_result = 0u;
+
+    /* Commit marker - publish capacity six only after all backing storage exists. */
+    ctx->h264_snapshot_slots = CFW_H264_SNAPSHOT_SLOTS_MAX;
+
+    h264_send_telemetry(ctx);
 }
 
 
@@ -2359,7 +2712,7 @@ static int h264_start(uint8_t *state, customCfwContext *ctx, uint32_t stream_id)
     uintptr_t a_end = a_begin + capacity;
     uintptr_t aligned = (a_begin + alignment - 1u) & ~(alignment - 1u);
     uintptr_t workspace_begin = (aligned + obj_size + 7u) & ~(uintptr_t)7u;
-    uintptr_t snapshot_pool_begin = a_end - CFW_H264_SNAPSHOT_POOL_BYTES;
+    uintptr_t snapshot_pool_begin = a_end - CFW_H264_SNAPSHOT_POOL_BYTES_BASE;
     if (workspace_begin >= snapshot_pool_begin) {
         ctx->h264_start_result = -4;
         return -1;
@@ -2383,13 +2736,17 @@ static int h264_start(uint8_t *state, customCfwContext *ctx, uint32_t stream_id)
     ctx->h264_decoder = decoder;
     ctx->h264_alloc_size =
         (uint32_t)(obj_size + external_memory.first_size + external_memory.second_size +
-                   CFW_H264_SNAPSHOT_POOL_BYTES);
+                   CFW_H264_SNAPSHOT_POOL_BYTES_BASE);
     ctx->h264_external_memory = 1;
     ctx->h264_arena_used[0] = 0;
     ctx->h264_arena_used[1] = 0;
     ctx->h264_arena_rebind_result = G2_H264_REBIND_OK;
     ctx->h264_snapshot_pool = (uint8_t *)snapshot_pool_begin;
-    for (uint32_t i = 0; i < CFW_H264_SNAPSHOT_SLOTS; i++)
+    ctx->h264_snapshot_extra_pool = 0;
+    ctx->h264_snapshot_slots = CFW_H264_SNAPSHOT_SLOTS_BASE;
+    ctx->h264_pipeline_expand_attempted = 0u;
+    ctx->h264_pipeline_expand_result = 0xffu;
+    for (uint32_t i = 0; i < CFW_H264_SNAPSHOT_SLOTS_MAX; i++)
         ctx->h264_snapshot_pool_used[i] = 0;
     ctx->h264_last_us = 0;
     ctx->h264_frames = 0;
@@ -2400,7 +2757,7 @@ static int h264_start(uint8_t *state, customCfwContext *ctx, uint32_t stream_id)
     ctx->h264_rx_first_acl_cycles = 0u;
     ctx->h264_rx_last_acl_cycles = 0u;
     ctx->h264_rx_prev_e0_cycles = 0u;
-    ctx->h264_rx_e0_to_first_us = 0xffffffffu;
+    ctx->h264_rx_e0_to_first_us = 0u;
     ctx->h264_rx_acl_count = 0u;
     ctx->h264_rx_prev_e0_valid = 0u;
 
@@ -5201,11 +5558,13 @@ int cfw_snapshot(uint8_t *state, uint32_t container_id) {
             unsigned h264_depth = 0;
             uint32_t h264_bytes = 0;
             h264_queue_stats(ctx, &h264_depth, &h264_bytes);
+            uint32_t h264_capacity = h264_snapshot_slot_capacity(ctx);
+            uint32_t h264_byte_capacity = h264_queue_byte_capacity(ctx);
             if (is_h264_sequence &&
-                (h264_depth >= CFW_H264_QUEUE_CAPACITY ||
+                (h264_depth >= h264_capacity ||
                  (h264_depth != 0u &&
-                  (len > CFW_H264_QUEUE_BYTES ||
-                   h264_bytes > CFW_H264_QUEUE_BYTES - len)))) {
+                  (len > h264_byte_capacity ||
+                   h264_bytes > h264_byte_capacity - len)))) {
                 /* Report the rejected sequence explicitly. The phone retains its
                  * payload and retries it when it reaches the head of the stream. */
                 ctx->h264_received_seq = h264_sequence;
@@ -5245,12 +5604,14 @@ int cfw_snapshot(uint8_t *state, uint32_t container_id) {
             uint8_t *copy = 0;
             if (is_h264_sequence && ctx->h264_snapshot_pool != 0 &&
                 len <= CFW_H264_SNAPSHOT_BYTES) {
-                for (uint8_t i = 0; i < CFW_H264_SNAPSHOT_SLOTS; i++) {
+                uint32_t slots = h264_snapshot_slot_capacity(ctx);
+                for (uint8_t i = 0; i < slots; i++) {
                     if (!ctx->h264_snapshot_pool_used[i]) {
+                        uint8_t *slot_ptr = h264_snapshot_slot_ptr(ctx, i);
+                        if (slot_ptr == 0) continue;
                         ctx->h264_snapshot_pool_used[i] = 1;
                         pool_slot = i;
-                        copy = ctx->h264_snapshot_pool +
-                               (uint32_t)i * CFW_H264_SNAPSHOT_BYTES;
+                        copy = slot_ptr;
                         break;
                     }
                 }
@@ -5502,12 +5863,15 @@ int image_deferred(uint8_t *state, uint8_t *src, uint32_t len) {
         ctx->snaps[slot].h264_sequence = 0;
         ctx->snaps[slot].h264_pool_slot = 0xffu;
         r = image_worker(state, buf, blen);
-        if (pool_slot < CFW_H264_SNAPSHOT_SLOTS &&
-            ctx->h264_snapshot_pool != 0) {
+        if (pool_slot < CFW_H264_SNAPSHOT_SLOTS_MAX &&
+            h264_snapshot_slot_ptr(ctx, pool_slot) != 0) {
             ctx->h264_snapshot_pool_used[pool_slot] = 0;
         } else {
             FW_FREE(buf);
         }
+
+        if (was_h264_sequence)
+            h264_try_expand_pipeline(ctx);
 
         /* V11 refill credit: a frame NAL's fixed snapshot is reusable now,
          * even when its queued panel copy has not presented yet. Report the
