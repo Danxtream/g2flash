@@ -1,0 +1,28 @@
+﻿G2 BOX UART TABLE SOURCE SCAN
+=============================
+
+SHA256=36c5b0e499a68ac2493a497bdab9740fd3e7027730c26a9094eca47268a27863
+IMAGE BASE=0x00437FE0
+IMAGE SIZE=3523396
+
+Runtime table:
+  RAM base = 0x20000D2C
+  entries  = 4
+  stride   = 0x1C
+
+TOTAL STRUCTURAL CANDIDATES = 0
+
+RESULT: NO STATIC FOUR-ENTRY SOURCE TABLE FOUND
+
+That would mean the RAM entries are populated
+individually at runtime rather than copied from
+one contiguous initialized-data table.
+
+======================================================================
+END
+======================================================================
+OFFLINE ONLY
+NO COM PORT OPENED
+NO CASE RESET
+NO GLASSES ACCESSED
+NO FLASH WRITE

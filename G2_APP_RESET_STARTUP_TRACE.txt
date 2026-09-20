@@ -1,0 +1,392 @@
+﻿G2 STOCK APP RESET / STARTUP TRACE
+==================================
+
+SHA256 = 36c5b0e499a68ac2493a497bdab9740fd3e7027730c26a9094eca47268a27863
+IMAGE BASE  = 0x00437FE0
+VECTOR BASE = 0x00438000
+
+INITIAL MSP  = 0x2007FB00
+RESET RAW    = 0x005E4233
+RESET CODE   = 0x005E4232
+
+VECTOR TABLE - FIRST 32 WORDS
+=============================
+[ 0] 0x00438000 : 0x2007FB00
+[ 1] 0x00438004 : 0x005E4233
+[ 2] 0x00438008 : 0x004397A7
+[ 3] 0x0043800C : 0x005B0115
+[ 4] 0x00438010 : 0x00000000
+[ 5] 0x00438014 : 0x00000000
+[ 6] 0x00438018 : 0x00000000
+[ 7] 0x0043801C : 0x00000000
+[ 8] 0x00438020 : 0x00000000
+[ 9] 0x00438024 : 0x00000000
+[10] 0x00438028 : 0x00000000
+[11] 0x0043802C : 0x005FA121
+[12] 0x00438030 : 0x005E4251
+[13] 0x00438034 : 0x00000000
+[14] 0x00438038 : 0x005FA0C9
+[15] 0x0043803C : 0x00442115
+[16] 0x00438040 : 0x005E4251
+[17] 0x00438044 : 0x005E4251
+[18] 0x00438048 : 0x005E4251
+[19] 0x0043804C : 0x005E4251
+[20] 0x00438050 : 0x005E4251
+[21] 0x00438054 : 0x005E4251
+[22] 0x00438058 : 0x005E4251
+[23] 0x0043805C : 0x005E4251
+[24] 0x00438060 : 0x005E4251
+[25] 0x00438064 : 0x005E4251
+[26] 0x00438068 : 0x00504489
+[27] 0x0043806C : 0x005E4251
+[28] 0x00438070 : 0x005E4251
+[29] 0x00438074 : 0x005E4251
+[30] 0x00438078 : 0x005E4251
+[31] 0x0043807C : 0x00584A7D
+
+RESET HANDLER / STARTUP WINDOW
+==============================
+Range 0x005E41F2 .. 0x005E4532
+
+  5e41f4:	e002      	b.n	0x5e41fc
+  5e41f6:	201d      	movs	r0, #29
+  5e41f8:	f88d 0002 	strb.w	r0, [sp, #2]
+  5e41fc:	4669      	mov	r1, sp
+  5e41fe:	0020      	movs	r0, r4
+  5e4200:	f78a fe2f 	bl	0x56ee62
+  5e4204:	bd73      	pop	{r0, r1, r4, r5, r6, pc}
+  5e4206:	0000      	movs	r0, r0
+  5e4208:	6243      	str	r3, [r0, #36]	@ 0x24
+  5e420a:	0069      	lsls	r1, r5, #1
+  5e420c:	6143      	str	r3, [r0, #20]
+  5e420e:	0000      	movs	r0, r0
+  5e4210:	56b0      	ldrsb	r0, [r6, r2]
+  5e4212:	0078      	lsls	r0, r7, #1
+  5e4214:	e85c 0078 			@ <UNDEFINED> instruction: 0xe85c0078
+  5e4218:	92f0      	str	r2, [sp, #960]	@ 0x3c0
+  5e421a:	0078      	lsls	r0, r7, #1
+  5e421c:	e864 0078 	strd	r0, r0, [r4], #-480	@ 0x1e0
+  5e4220:	c350      	stmia	r3!, {r4, r6}
+  5e4222:	0078      	lsls	r0, r7, #1
+  5e4224:	04b8      	lsls	r0, r7, #18
+  5e4226:	2000      	movs	r0, #0
+  5e4228:	4806      	ldr	r0, [pc, #24]	@ (0x5e4244)
+  5e422a:	4907      	ldr	r1, [pc, #28]	@ (0x5e4248)
+  5e422c:	6008      	str	r0, [r1, #0]
+  5e422e:	2001      	movs	r0, #1
+  5e4230:	4770      	bx	lr
+
+>>> RESET HANDLER ENTRY
+  5e4232:	4806      	ldr	r0, [pc, #24]	@ (0x5e424c)
+  5e4234:	f380 880a 	msr	MSPLIM, r0
+  5e4238:	f380 880b 	msr	PSPLIM, r0
+  5e423c:	f000 f80a 	bl	0x5e4254
+  5e4240:	4770      	bx	lr
+  5e4242:	0000      	movs	r0, r0
+  5e4244:	8000      	strh	r0, [r0, #0]
+  5e4246:	0043      	lsls	r3, r0, #1
+  5e4248:	ed08 e000 	stc	0, cr14, [r8, #-0]
+  5e424c:	d000      	beq.n	0x5e4250
+  5e424e:	2007      	movs	r0, #7
+  5e4250:	e7fe      	b.n	0x5e4250
+  5e4252:	0000      	movs	r0, r0
+  5e4254:	4805      	ldr	r0, [pc, #20]	@ (0x5e426c)
+  5e4256:	4601      	mov	r1, r0
+  5e4258:	b403      	push	{r0, r1}
+  5e425a:	4668      	mov	r0, sp
+  5e425c:	f380 8809 	msr	PSP, r0
+  5e4260:	f3af 8000 	nop.w
+  5e4264:	f000 f804 	bl	0x5e4270
+  5e4268:	f000 f814 	bl	0x5e4294
+  5e426c:	eda5 fef5 	stc	14, cr15, [r5, #980]!	@ 0x3d4
+  5e4270:	f64e 5188 	movw	r1, #60808	@ 0xed88
+  5e4274:	f2ce 0100 	movt	r1, #57344	@ 0xe000
+  5e4278:	6808      	ldr	r0, [r1, #0]
+  5e427a:	f440 0070 	orr.w	r0, r0, #15728640	@ 0xf00000
+  5e427e:	6008      	str	r0, [r1, #0]
+  5e4280:	f3bf 8f4f 	dsb	sy
+  5e4284:	f3bf 8f6f 	isb	sy
+  5e4288:	f04f 7001 	mov.w	r0, #33816576	@ 0x2040000
+  5e428c:	eee1 0a10 	vmsr	fpscr, r0
+  5e4290:	4770      	bx	lr
+  5e4292:	0000      	movs	r0, r0
+  5e4294:	f7ff ffc8 	bl	0x5e4228
+  5e4298:	2800      	cmp	r0, #0
+  5e429a:	d001      	beq.n	0x5e42a0
+  5e429c:	f000 f80a 	bl	0x5e42b4
+  5e42a0:	f3af 8000 	nop.w
+  5e42a4:	2000      	movs	r0, #0
+  5e42a6:	f3af 8000 	nop.w
+  5e42aa:	f7e9 feb8 	bl	0x5ce01e
+  5e42ae:	f000 f815 	bl	0x5e42dc
+  5e42b2:	0000      	movs	r0, r0
+  5e42b4:	b510      	push	{r4, lr}
+  5e42b6:	4907      	ldr	r1, [pc, #28]	@ (0x5e42d4)
+  5e42b8:	4479      	add	r1, pc
+  5e42ba:	3118      	adds	r1, #24
+  5e42bc:	4c06      	ldr	r4, [pc, #24]	@ (0x5e42d8)
+  5e42be:	447c      	add	r4, pc
+  5e42c0:	3416      	adds	r4, #22
+  5e42c2:	e004      	b.n	0x5e42ce
+  5e42c4:	680a      	ldr	r2, [r1, #0]
+  5e42c6:	1d08      	adds	r0, r1, #4
+  5e42c8:	4411      	add	r1, r2
+  5e42ca:	4788      	blx	r1
+  5e42cc:	4601      	mov	r1, r0
+  5e42ce:	42a1      	cmp	r1, r4
+  5e42d0:	d1f8      	bne.n	0x5e42c4
+  5e42d2:	bd10      	pop	{r4, pc}
+  5e42d4:	90f4      	str	r0, [sp, #976]	@ 0x3d0
+  5e42d6:	0017      	movs	r7, r2
+  5e42d8:	9138      	str	r1, [sp, #224]	@ 0xe0
+  5e42da:	0017      	movs	r7, r2
+  5e42dc:	f000 b800 	b.w	0x5e42e0
+  5e42e0:	4607      	mov	r7, r0
+  5e42e2:	4638      	mov	r0, r7
+  5e42e4:	f7a0 ff1c 	bl	0x585120
+  5e42e8:	e7fb      	b.n	0x5e42e2
+  5e42ea:	0000      	movs	r0, r0
+  5e42ec:	b51c      	push	{r2, r3, r4, lr}
+  5e42ee:	2102      	movs	r1, #2
+  5e42f0:	2200      	movs	r2, #0
+  5e42f2:	466c      	mov	r4, sp
+  5e42f4:	0020      	movs	r0, r4
+  5e42f6:	f657 fef5 	bl	0x43c0e4
+  5e42fa:	f8df 1468 	ldr.w	r1, [pc, #1128]	@ 0x5e4764
+  5e42fe:	f891 0274 	ldrb.w	r0, [r1, #628]	@ 0x274
+  5e4302:	2800      	cmp	r0, #0
+  5e4304:	d00e      	beq.n	0x5e4324
+  5e4306:	2000      	movs	r0, #0
+  5e4308:	f881 0274 	strb.w	r0, [r1, #628]	@ 0x274
+  5e430c:	f688 f990 	bl	0x46c630
+  5e4310:	2800      	cmp	r0, #0
+  5e4312:	d001      	beq.n	0x5e4318
+  5e4314:	2002      	movs	r0, #2
+  5e4316:	e000      	b.n	0x5e431a
+  5e4318:	2001      	movs	r0, #1
+  5e431a:	f88d 0000 	strb.w	r0, [sp]
+  5e431e:	4668      	mov	r0, sp
+  5e4320:	f7ea fc3f 	bl	0x5ceba2
+  5e4324:	bd13      	pop	{r0, r1, r4, pc}
+  5e4326:	b51c      	push	{r2, r3, r4, lr}
+  5e4328:	f8df 443c 	ldr.w	r4, [pc, #1084]	@ 0x5e4768
+  5e432c:	6820      	ldr	r0, [r4, #0]
+  5e432e:	2800      	cmp	r0, #0
+  5e4330:	d12b      	bne.n	0x5e438a
+  5e4332:	f8df 0438 	ldr.w	r0, [pc, #1080]	@ 0x5e476c
+  5e4336:	f665 f9f1 	bl	0x44971c
+  5e433a:	6020      	str	r0, [r4, #0]
+  5e433c:	6820      	ldr	r0, [r4, #0]
+  5e433e:	2800      	cmp	r0, #0
+  5e4340:	d123      	bne.n	0x5e438a
+  5e4342:	f658 fec4 	bl	0x43d0ce
+  5e4346:	0780      	lsls	r0, r0, #30
+  5e4348:	d50d      	bpl.n	0x5e4366
+  5e434a:	f8df 0424 	ldr.w	r0, [pc, #1060]	@ 0x5e4770
+  5e434e:	9001      	str	r0, [sp, #4]
+  5e4350:	2038      	movs	r0, #56	@ 0x38
+  5e4352:	9000      	str	r0, [sp, #0]
+  5e4354:	f8df 341c 	ldr.w	r3, [pc, #1052]	@ 0x5e4774
+  5e4358:	f8df 241c 	ldr.w	r2, [pc, #1052]	@ 0x5e4778
+  5e435c:	f8df 141c 	ldr.w	r1, [pc, #1052]	@ 0x5e477c
+  5e4360:	2001      	movs	r0, #1
+  5e4362:	f659 f907 	bl	0x43d574
+  5e4366:	f658 feb2 	bl	0x43d0ce
+  5e436a:	07c0      	lsls	r0, r0, #31
+  5e436c:	d403      	bmi.n	0x5e4376
+  5e436e:	f658 feae 	bl	0x43d0ce
+  5e4372:	0740      	lsls	r0, r0, #29
+  5e4374:	d506      	bpl.n	0x5e4384
+  5e4376:	f8df 1408 	ldr.w	r1, [pc, #1032]	@ 0x5e4780
+  5e437a:	000a      	movs	r2, r1
+  5e437c:	f05f 6080 	movs.w	r0, #67108864	@ 0x4000000
+  5e4380:	f658 fd8d 	bl	0x43ce9e
+  5e4384:	f05f 30ff 	movs.w	r0, #4294967295
+  5e4388:	e000      	b.n	0x5e438c
+  5e438a:	2000      	movs	r0, #0
+  5e438c:	bd16      	pop	{r1, r2, r4, pc}
+  5e438e:	b510      	push	{r4, lr}
+  5e4390:	f8df 43d4 	ldr.w	r4, [pc, #980]	@ 0x5e4768
+  5e4394:	6820      	ldr	r0, [r4, #0]
+  5e4396:	2800      	cmp	r0, #0
+  5e4398:	d105      	bne.n	0x5e43a6
+  5e439a:	f7ff ffc4 	bl	0x5e4326
+  5e439e:	2800      	cmp	r0, #0
+  5e43a0:	d001      	beq.n	0x5e43a6
+  5e43a2:	2000      	movs	r0, #0
+  5e43a4:	e00a      	b.n	0x5e43bc
+  5e43a6:	f05f 31ff 	movs.w	r1, #4294967295
+  5e43aa:	6820      	ldr	r0, [r4, #0]
+  5e43ac:	f665 fa03 	bl	0x4497b6
+  5e43b0:	2800      	cmp	r0, #0
+  5e43b2:	d101      	bne.n	0x5e43b8
+  5e43b4:	2001      	movs	r0, #1
+  5e43b6:	e000      	b.n	0x5e43ba
+  5e43b8:	2000      	movs	r0, #0
+  5e43ba:	b2c0      	uxtb	r0, r0
+  5e43bc:	bd10      	pop	{r4, pc}
+  5e43be:	b580      	push	{r7, lr}
+  5e43c0:	f8df 13a4 	ldr.w	r1, [pc, #932]	@ 0x5e4768
+  5e43c4:	6808      	ldr	r0, [r1, #0]
+  5e43c6:	2800      	cmp	r0, #0
+  5e43c8:	d002      	beq.n	0x5e43d0
+  5e43ca:	6808      	ldr	r0, [r1, #0]
+  5e43cc:	f665 fa26 	bl	0x44981c
+  5e43d0:	bd01      	pop	{r0, pc}
+  5e43d2:	b538      	push	{r3, r4, r5, lr}
+  5e43d4:	b084      	sub	sp, #16
+  5e43d6:	0004      	movs	r4, r0
+  5e43d8:	000d      	movs	r5, r1
+  5e43da:	f676 f8c5 	bl	0x45a568
+  5e43de:	2801      	cmp	r0, #1
+  5e43e0:	d001      	beq.n	0x5e43e6
+  5e43e2:	2000      	movs	r0, #0
+  5e43e4:	e030      	b.n	0x5e4448
+  5e43e6:	f88d 4008 	strb.w	r4, [sp, #8]
+  5e43ea:	9503      	str	r5, [sp, #12]
+  5e43ec:	f8df 0394 	ldr.w	r0, [pc, #916]	@ 0x5e4784
+  5e43f0:	6800      	ldr	r0, [r0, #0]
+  5e43f2:	2800      	cmp	r0, #0
+  5e43f4:	d122      	bne.n	0x5e443c
+  5e43f6:	f658 fe6a 	bl	0x43d0ce
+  5e43fa:	0780      	lsls	r0, r0, #30
+  5e43fc:	d50d      	bpl.n	0x5e441a
+  5e43fe:	f8df 0388 	ldr.w	r0, [pc, #904]	@ 0x5e4788
+  5e4402:	9001      	str	r0, [sp, #4]
+  5e4404:	2061      	movs	r0, #97	@ 0x61
+  5e4406:	9000      	str	r0, [sp, #0]
+  5e4408:	f8df 3380 	ldr.w	r3, [pc, #896]	@ 0x5e478c
+  5e440c:	f8df 2368 	ldr.w	r2, [pc, #872]	@ 0x5e4778
+  5e4410:	f8df 1368 	ldr.w	r1, [pc, #872]	@ 0x5e477c
+  5e4414:	2002      	movs	r0, #2
+  5e4416:	f659 f8ad 	bl	0x43d574
+  5e441a:	f658 fe58 	bl	0x43d0ce
+  5e441e:	07c0      	lsls	r0, r0, #31
+  5e4420:	d403      	bmi.n	0x5e442a
+  5e4422:	f658 fe54 	bl	0x43d0ce
+  5e4426:	0740      	lsls	r0, r0, #29
+  5e4428:	d506      	bpl.n	0x5e4438
+  5e442a:	f8df 1364 	ldr.w	r1, [pc, #868]	@ 0x5e4790
+  5e442e:	000a      	movs	r2, r1
+  5e4430:	f05f 6000 	movs.w	r0, #134217728	@ 0x8000000
+  5e4434:	f658 fd33 	bl	0x43ce9e
+  5e4438:	2000      	movs	r0, #0
+  5e443a:	e005      	b.n	0x5e4448
+  5e443c:	2300      	movs	r3, #0
+  5e443e:	2208      	movs	r2, #8
+  5e4440:	a902      	add	r1, sp, #8
+  5e4442:	2030      	movs	r0, #48	@ 0x30
+  5e4444:	f680 fbb5 	bl	0x464bb2
+  5e4448:	b005      	add	sp, #20
+  5e444a:	bd30      	pop	{r4, r5, pc}
+  5e444c:	b580      	push	{r7, lr}
+  5e444e:	0019      	movs	r1, r3
+  5e4450:	2000      	movs	r0, #0
+  5e4452:	0010      	movs	r0, r2
+  5e4454:	2a44      	cmp	r2, #68	@ 0x44
+  5e4456:	d101      	bne.n	0x5e445c
+  5e4458:	2045      	movs	r0, #69	@ 0x45
+  5e445a:	e002      	b.n	0x5e4462
+  5e445c:	2a45      	cmp	r2, #69	@ 0x45
+  5e445e:	d100      	bne.n	0x5e4462
+  5e4460:	2044      	movs	r0, #68	@ 0x44
+  5e4462:	0002      	movs	r2, r0
+  5e4464:	2a08      	cmp	r2, #8
+  5e4466:	d009      	beq.n	0x5e447c
+  5e4468:	2a0a      	cmp	r2, #10
+  5e446a:	d007      	beq.n	0x5e447c
+  5e446c:	2a44      	cmp	r2, #68	@ 0x44
+  5e446e:	d005      	beq.n	0x5e447c
+  5e4470:	2a45      	cmp	r2, #69	@ 0x45
+  5e4472:	d003      	beq.n	0x5e447c
+  5e4474:	2a48      	cmp	r2, #72	@ 0x48
+  5e4476:	d001      	beq.n	0x5e447c
+  5e4478:	2a4a      	cmp	r2, #74	@ 0x4a
+  5e447a:	d103      	bne.n	0x5e4484
+  5e447c:	f002 ff52 	bl	0x5e7324
+  5e4480:	2001      	movs	r0, #1
+  5e4482:	e000      	b.n	0x5e4486
+  5e4484:	2001      	movs	r0, #1
+  5e4486:	bd02      	pop	{r1, pc}
+  5e4488:	b570      	push	{r4, r5, r6, lr}
+  5e448a:	0004      	movs	r4, r0
+  5e448c:	000d      	movs	r5, r1
+  5e448e:	0016      	movs	r6, r2
+  5e4490:	f7ff ff7d 	bl	0x5e438e
+  5e4494:	2c00      	cmp	r4, #0
+  5e4496:	d12a      	bne.n	0x5e44ee
+  5e4498:	f8df 42f8 	ldr.w	r4, [pc, #760]	@ 0x5e4794
+  5e449c:	0022      	movs	r2, r4
+  5e449e:	0031      	movs	r1, r6
+  5e44a0:	b289      	uxth	r1, r1
+  5e44a2:	0028      	movs	r0, r5
+  5e44a4:	f7ea fa74 	bl	0x5ce990
+  5e44a8:	280d      	cmp	r0, #13
+  5e44aa:	d106      	bne.n	0x5e44ba
+  5e44ac:	48ba      	ldr	r0, [pc, #744]	@ (0x5e4798)
+  5e44ae:	2100      	movs	r1, #0
+  5e44b0:	7001      	strb	r1, [r0, #0]
+  5e44b2:	7861      	ldrb	r1, [r4, #1]
+  5e44b4:	f7ea fb1a 	bl	0x5ceaec
+  5e44b8:	e019      	b.n	0x5e44ee
+  5e44ba:	2800      	cmp	r0, #0
+  5e44bc:	d006      	beq.n	0x5e44cc
+  5e44be:	48b6      	ldr	r0, [pc, #728]	@ (0x5e4798)
+  5e44c0:	2101      	movs	r1, #1
+  5e44c2:	7001      	strb	r1, [r0, #0]
+  5e44c4:	7861      	ldrb	r1, [r4, #1]
+  5e44c6:	f7ea fb11 	bl	0x5ceaec
+  5e44ca:	e010      	b.n	0x5e44ee
+  5e44cc:	0020      	movs	r0, r4
+  5e44ce:	f000 f899 	bl	0x5e4604
+  5e44d2:	2800      	cmp	r0, #0
+  5e44d4:	d103      	bne.n	0x5e44de
+  5e44d6:	2000      	movs	r0, #0
+  5e44d8:	49af      	ldr	r1, [pc, #700]	@ (0x5e4798)
+  5e44da:	7008      	strb	r0, [r1, #0]
+  5e44dc:	e002      	b.n	0x5e44e4
+  5e44de:	2001      	movs	r0, #1
+  5e44e0:	49ad      	ldr	r1, [pc, #692]	@ (0x5e4798)
+  5e44e2:	7008      	strb	r0, [r1, #0]
+  5e44e4:	7861      	ldrb	r1, [r4, #1]
+  5e44e6:	48ac      	ldr	r0, [pc, #688]	@ (0x5e4798)
+  5e44e8:	f7ea fb00 	bl	0x5ceaec
+  5e44ec:	e7ff      	b.n	0x5e44ee
+  5e44ee:	f7ff ff66 	bl	0x5e43be
+  5e44f2:	2000      	movs	r0, #0
+  5e44f4:	bd70      	pop	{r4, r5, r6, pc}
+  5e44f6:	e92d 41ff 	stmdb	sp!, {r0, r1, r2, r3, r4, r5, r6, r7, r8, lr}
+  5e44fa:	0006      	movs	r6, r0
+  5e44fc:	000c      	movs	r4, r1
+  5e44fe:	0017      	movs	r7, r2
+  5e4500:	001d      	movs	r5, r3
+  5e4502:	2108      	movs	r1, #8
+  5e4504:	2200      	movs	r2, #0
+  5e4506:	f10d 0808 	add.w	r8, sp, #8
+  5e450a:	4640      	mov	r0, r8
+  5e450c:	f657 fdea 	bl	0x43c0e4
+  5e4510:	f7ff ff3d 	bl	0x5e438e
+  5e4514:	2e02      	cmp	r6, #2
+  5e4516:	d006      	beq.n	0x5e4526
+  5e4518:	d36e      	bcc.n	0x5e45f8
+  5e451a:	2e04      	cmp	r6, #4
+  5e451c:	d048      	beq.n	0x5e45b0
+  5e451e:	d337      	bcc.n	0x5e4590
+  5e4520:	2e05      	cmp	r6, #5
+  5e4522:	d048      	beq.n	0x5e45b6
+  5e4524:	e068      	b.n	0x5e45f8
+  5e4526:	f658 fdd2 	bl	0x43d0ce
+  5e452a:	0780      	lsls	r0, r0, #30
+  5e452c:	d509      	bpl.n	0x5e4542
+  5e452e:	489b      	ldr	r0, [pc, #620]	@ (0x5e479c)
+  5e4530:	9001      	str	r0, [sp, #4]
+  5e4532:	20b0      	movs	r0, #176	@ 0xb0
+
+==================================
+END
+==================================
+Next target: follow reset startup into the IAR initialized-data path.
+No UART field/write scan was repeated.
+
+OFFLINE ONLY
+NO HARDWARE ACCESSED

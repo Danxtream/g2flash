@@ -1,0 +1,1838 @@
+﻿G2 BOX UART FINAL STATIC TRACE
+================================
+
+BIN=C:\Users\danxt\StudioProjects\g2flash\s200_firmware_ota_extracted.bin
+DISASM=C:\Users\danxt\StudioProjects\g2flash\stock_disasm.txt
+SHA256=36c5b0e499a68ac2493a497bdab9740fd3e7027730c26a9094eca47268a27863
+RAW_BINARY_BASE=0x00437FE0
+
+NO COM PORT OPENED
+NO RESET
+NO HARDWARE ACCESS
+NO FLASH WRITE
+
+======================================================================
+BOX UART STRING LOCATIONS
+======================================================================
+STRING "[box_uart_mgr]uart clear buffer failed: %d"  FILE_OFF=0x00304790  VA=0x0073C770
+STRING "[box_uart_mgr]uart stop failed: %d"  FILE_OFF=0x0031A63C  VA=0x0075261C
+STRING "[box_uart_mgr]box uart pack err:%d"  FILE_OFF=0x0031A660  VA=0x00752640
+STRING "[box_uart_mgr]box uart send err:%d"  FILE_OFF=0x0031A684  VA=0x00752664
+STRING "DEV_BoxRevcMsgProcess"  FILE_OFF=0x0033D88C  VA=0x0077586C
+
+======================================================================
+RAW POINTERS TO BOX UART STRINGS
+======================================================================
+0x0073C770 -> [box_uart_mgr]uart clear buffer failed: %d  FILE_OFF=0x00102400  POINTER_VA=0x0053A3E0
+0x0075261C -> [box_uart_mgr]uart stop failed: %d  FILE_OFF=0x001023F8  POINTER_VA=0x0053A3D8
+0x00752640 -> [box_uart_mgr]box uart pack err:%d  FILE_OFF=0x00102410  POINTER_VA=0x0053A3F0
+0x00752664 -> [box_uart_mgr]box uart send err:%d  FILE_OFF=0x00102418  POINTER_VA=0x0053A3F8
+0x0077586C -> DEV_BoxRevcMsgProcess  FILE_OFF=0x001023F0  POINTER_VA=0x0053A3D0
+
+======================================================================
+RESOLVED CODE XREFS TO BOX UART STRINGS
+======================================================================
+XREF PC=0x0053A0D8  LITERAL=0x0053A3D0  LOADS=0x0077586C  STRING="DEV_BoxRevcMsgProcess"
+XREF PC=0x0053A14A  LITERAL=0x0053A3D0  LOADS=0x0077586C  STRING="DEV_BoxRevcMsgProcess"
+XREF PC=0x0053A166  LITERAL=0x0053A3D8  LOADS=0x0075261C  STRING="[box_uart_mgr]uart stop failed: %d"
+XREF PC=0x0053A194  LITERAL=0x0053A3D0  LOADS=0x0077586C  STRING="DEV_BoxRevcMsgProcess"
+XREF PC=0x0053A1B0  LITERAL=0x0053A3E0  LOADS=0x0073C770  STRING="[box_uart_mgr]uart clear buffer failed: %d"
+XREF PC=0x0053A1E0  LITERAL=0x0053A3D0  LOADS=0x0077586C  STRING="DEV_BoxRevcMsgProcess"
+XREF PC=0x0053A234  LITERAL=0x0053A3D0  LOADS=0x0077586C  STRING="DEV_BoxRevcMsgProcess"
+XREF PC=0x0053A250  LITERAL=0x0053A3F0  LOADS=0x00752640  STRING="[box_uart_mgr]box uart pack err:%d"
+XREF PC=0x0053A28A  LITERAL=0x0053A3D0  LOADS=0x0077586C  STRING="DEV_BoxRevcMsgProcess"
+XREF PC=0x0053A2A6  LITERAL=0x0053A3F8  LOADS=0x00752664  STRING="[box_uart_mgr]box uart send err:%d"
+XREF PC=0x0053A2D4  LITERAL=0x0053A3D0  LOADS=0x0077586C  STRING="DEV_BoxRevcMsgProcess"
+XREF PC=0x0053A31C  LITERAL=0x0053A3D0  LOADS=0x0077586C  STRING="DEV_BoxRevcMsgProcess"
+XREF PC=0x0053A372  LITERAL=0x0053A3D0  LOADS=0x0077586C  STRING="DEV_BoxRevcMsgProcess"
+
+BOX STRING CODE XREF COUNT = 13
+GPIO PINCONFIG CALL COUNT  = 247
+CALLS TO 0x584BC0          = 1
+CALLS TO 0x44989A          = 5
+
+======================================================================
+BOX_UART_MGR STRING XREF AT DISASM LINE 405590
+======================================================================
+  53a09c:	b580      	push	{r7, lr}
+  53a09e:	f8df 132c 	ldr.w	r1, [pc, #812]	@ 0x53a3cc
+  53a0a2:	2002      	movs	r0, #2
+  53a0a4:	f024 fc24 	bl	0x55e8f0
+  53a0a8:	2002      	movs	r0, #2
+  53a0aa:	f024 fa87 	bl	0x55e5bc
+  53a0ae:	2002      	movs	r0, #2
+  53a0b0:	f024 faed 	bl	0x55e68e
+  53a0b4:	bd01      	pop	{r0, pc}
+  53a0b6:	b538      	push	{r3, r4, r5, lr}
+  53a0b8:	f5ad 6da2 	sub.w	sp, sp, #1296	@ 0x510
+  53a0bc:	0004      	movs	r4, r0
+  53a0be:	2c00      	cmp	r4, #0
+  53a0c0:	d002      	beq.n	0x53a0c8
+  53a0c2:	8860      	ldrh	r0, [r4, #2]
+  53a0c4:	2800      	cmp	r0, #0
+  53a0c6:	d11c      	bne.n	0x53a102
+  53a0c8:	f703 f801 	bl	0x43d0ce
+  53a0cc:	0780      	lsls	r0, r0, #30
+  53a0ce:	d509      	bpl.n	0x53a0e4
+  53a0d0:	48b4      	ldr	r0, [pc, #720]	@ (0x53a3a4)
+  53a0d2:	9001      	str	r0, [sp, #4]
+  53a0d4:	207c      	movs	r0, #124	@ 0x7c
+  53a0d6:	9000      	str	r0, [sp, #0]
+  53a0d8:	4bbd      	ldr	r3, [pc, #756]	@ (0x53a3d0)
+  53a0da:	4ab4      	ldr	r2, [pc, #720]	@ (0x53a3ac)
+  53a0dc:	49b4      	ldr	r1, [pc, #720]	@ (0x53a3b0)
+  53a0de:	2001      	movs	r0, #1
+  53a0e0:	f703 fa48 	bl	0x43d574
+  53a0e4:	f702 fff3 	bl	0x43d0ce
+  53a0e8:	07c0      	lsls	r0, r0, #31
+  53a0ea:	d403      	bmi.n	0x53a0f4
+  53a0ec:	f702 ffef 	bl	0x43d0ce
+  53a0f0:	0740      	lsls	r0, r0, #29
+  53a0f2:	d505      	bpl.n	0x53a100
+  53a0f4:	49af      	ldr	r1, [pc, #700]	@ (0x53a3b4)
+  53a0f6:	000a      	movs	r2, r1
+  53a0f8:	f05f 6080 	movs.w	r0, #67108864	@ 0x4000000
+  53a0fc:	f702 fecf 	bl	0x43ce9e
+  53a100:	e14c      	b.n	0x53a39c
+  53a102:	2000      	movs	r0, #0
+  53a104:	2000      	movs	r0, #0
+  53a106:	f88d 000d 	strb.w	r0, [sp, #13]
+  53a10a:	2000      	movs	r0, #0
+  53a10c:	f88d 000c 	strb.w	r0, [sp, #12]
+  53a110:	f44f 6180 	mov.w	r1, #1024	@ 0x400
+  53a114:	2200      	movs	r2, #0
+  53a116:	ad44      	add	r5, sp, #272	@ 0x110
+  53a118:	0028      	movs	r0, r5
+  53a11a:	f701 ffe3 	bl	0x43c0e4
+  53a11e:	f44f 7180 	mov.w	r1, #256	@ 0x100
+  53a122:	2200      	movs	r2, #0
+  53a124:	ad04      	add	r5, sp, #16
+  53a126:	0028      	movs	r0, r5
+  53a128:	f701 ffdc 	bl	0x43c0e4
+  53a12c:	2002      	movs	r0, #2
+  53a12e:	f024 fb14 	bl	0x55e75a
+  53a132:	0005      	movs	r5, r0
+  53a134:	2d00      	cmp	r5, #0
+  53a136:	d01e      	beq.n	0x53a176
+  53a138:	f702 ffc9 	bl	0x43d0ce
+  53a13c:	0780      	lsls	r0, r0, #30
+  53a13e:	d50a      	bpl.n	0x53a156
+  53a140:	9502      	str	r5, [sp, #8]
+  53a142:	48a4      	ldr	r0, [pc, #656]	@ (0x53a3d4)
+
+======================================================================
+BOX_UART_MGR STRING XREF AT DISASM LINE 405634
+======================================================================
+  53a10c:	f88d 000c 	strb.w	r0, [sp, #12]
+  53a110:	f44f 6180 	mov.w	r1, #1024	@ 0x400
+  53a114:	2200      	movs	r2, #0
+  53a116:	ad44      	add	r5, sp, #272	@ 0x110
+  53a118:	0028      	movs	r0, r5
+  53a11a:	f701 ffe3 	bl	0x43c0e4
+  53a11e:	f44f 7180 	mov.w	r1, #256	@ 0x100
+  53a122:	2200      	movs	r2, #0
+  53a124:	ad04      	add	r5, sp, #16
+  53a126:	0028      	movs	r0, r5
+  53a128:	f701 ffdc 	bl	0x43c0e4
+  53a12c:	2002      	movs	r0, #2
+  53a12e:	f024 fb14 	bl	0x55e75a
+  53a132:	0005      	movs	r5, r0
+  53a134:	2d00      	cmp	r5, #0
+  53a136:	d01e      	beq.n	0x53a176
+  53a138:	f702 ffc9 	bl	0x43d0ce
+  53a13c:	0780      	lsls	r0, r0, #30
+  53a13e:	d50a      	bpl.n	0x53a156
+  53a140:	9502      	str	r5, [sp, #8]
+  53a142:	48a4      	ldr	r0, [pc, #656]	@ (0x53a3d4)
+  53a144:	9001      	str	r0, [sp, #4]
+  53a146:	208a      	movs	r0, #138	@ 0x8a
+  53a148:	9000      	str	r0, [sp, #0]
+  53a14a:	4ba1      	ldr	r3, [pc, #644]	@ (0x53a3d0)
+  53a14c:	4a97      	ldr	r2, [pc, #604]	@ (0x53a3ac)
+  53a14e:	4998      	ldr	r1, [pc, #608]	@ (0x53a3b0)
+  53a150:	2001      	movs	r0, #1
+  53a152:	f703 fa0f 	bl	0x43d574
+  53a156:	f702 ffba 	bl	0x43d0ce
+  53a15a:	07c0      	lsls	r0, r0, #31
+  53a15c:	d403      	bmi.n	0x53a166
+  53a15e:	f702 ffb6 	bl	0x43d0ce
+  53a162:	0740      	lsls	r0, r0, #29
+  53a164:	d506      	bpl.n	0x53a174
+  53a166:	499c      	ldr	r1, [pc, #624]	@ (0x53a3d8)
+  53a168:	002b      	movs	r3, r5
+  53a16a:	000a      	movs	r2, r1
+  53a16c:	f05f 6088 	movs.w	r0, #71303168	@ 0x4400000
+  53a170:	f702 fe95 	bl	0x43ce9e
+  53a174:	e0c3      	b.n	0x53a2fe
+  53a176:	2002      	movs	r0, #2
+  53a178:	f024 fbc8 	bl	0x55e90c
+  53a17c:	0005      	movs	r5, r0
+  53a17e:	2d00      	cmp	r5, #0
+  53a180:	d01d      	beq.n	0x53a1be
+  53a182:	f702 ffa4 	bl	0x43d0ce
+  53a186:	0780      	lsls	r0, r0, #30
+  53a188:	d50a      	bpl.n	0x53a1a0
+  53a18a:	9502      	str	r5, [sp, #8]
+  53a18c:	4893      	ldr	r0, [pc, #588]	@ (0x53a3dc)
+  53a18e:	9001      	str	r0, [sp, #4]
+  53a190:	2092      	movs	r0, #146	@ 0x92
+  53a192:	9000      	str	r0, [sp, #0]
+  53a194:	4b8e      	ldr	r3, [pc, #568]	@ (0x53a3d0)
+  53a196:	4a85      	ldr	r2, [pc, #532]	@ (0x53a3ac)
+  53a198:	4985      	ldr	r1, [pc, #532]	@ (0x53a3b0)
+  53a19a:	2001      	movs	r0, #1
+  53a19c:	f703 f9ea 	bl	0x43d574
+  53a1a0:	f702 ff95 	bl	0x43d0ce
+  53a1a4:	07c0      	lsls	r0, r0, #31
+  53a1a6:	d403      	bmi.n	0x53a1b0
+  53a1a8:	f702 ff91 	bl	0x43d0ce
+  53a1ac:	0740      	lsls	r0, r0, #29
+  53a1ae:	d506      	bpl.n	0x53a1be
+
+======================================================================
+BOX_UART_MGR STRING XREF AT DISASM LINE 405645
+======================================================================
+  53a12c:	2002      	movs	r0, #2
+  53a12e:	f024 fb14 	bl	0x55e75a
+  53a132:	0005      	movs	r5, r0
+  53a134:	2d00      	cmp	r5, #0
+  53a136:	d01e      	beq.n	0x53a176
+  53a138:	f702 ffc9 	bl	0x43d0ce
+  53a13c:	0780      	lsls	r0, r0, #30
+  53a13e:	d50a      	bpl.n	0x53a156
+  53a140:	9502      	str	r5, [sp, #8]
+  53a142:	48a4      	ldr	r0, [pc, #656]	@ (0x53a3d4)
+  53a144:	9001      	str	r0, [sp, #4]
+  53a146:	208a      	movs	r0, #138	@ 0x8a
+  53a148:	9000      	str	r0, [sp, #0]
+  53a14a:	4ba1      	ldr	r3, [pc, #644]	@ (0x53a3d0)
+  53a14c:	4a97      	ldr	r2, [pc, #604]	@ (0x53a3ac)
+  53a14e:	4998      	ldr	r1, [pc, #608]	@ (0x53a3b0)
+  53a150:	2001      	movs	r0, #1
+  53a152:	f703 fa0f 	bl	0x43d574
+  53a156:	f702 ffba 	bl	0x43d0ce
+  53a15a:	07c0      	lsls	r0, r0, #31
+  53a15c:	d403      	bmi.n	0x53a166
+  53a15e:	f702 ffb6 	bl	0x43d0ce
+  53a162:	0740      	lsls	r0, r0, #29
+  53a164:	d506      	bpl.n	0x53a174
+  53a166:	499c      	ldr	r1, [pc, #624]	@ (0x53a3d8)
+  53a168:	002b      	movs	r3, r5
+  53a16a:	000a      	movs	r2, r1
+  53a16c:	f05f 6088 	movs.w	r0, #71303168	@ 0x4400000
+  53a170:	f702 fe95 	bl	0x43ce9e
+  53a174:	e0c3      	b.n	0x53a2fe
+  53a176:	2002      	movs	r0, #2
+  53a178:	f024 fbc8 	bl	0x55e90c
+  53a17c:	0005      	movs	r5, r0
+  53a17e:	2d00      	cmp	r5, #0
+  53a180:	d01d      	beq.n	0x53a1be
+  53a182:	f702 ffa4 	bl	0x43d0ce
+  53a186:	0780      	lsls	r0, r0, #30
+  53a188:	d50a      	bpl.n	0x53a1a0
+  53a18a:	9502      	str	r5, [sp, #8]
+  53a18c:	4893      	ldr	r0, [pc, #588]	@ (0x53a3dc)
+  53a18e:	9001      	str	r0, [sp, #4]
+  53a190:	2092      	movs	r0, #146	@ 0x92
+  53a192:	9000      	str	r0, [sp, #0]
+  53a194:	4b8e      	ldr	r3, [pc, #568]	@ (0x53a3d0)
+  53a196:	4a85      	ldr	r2, [pc, #532]	@ (0x53a3ac)
+  53a198:	4985      	ldr	r1, [pc, #532]	@ (0x53a3b0)
+  53a19a:	2001      	movs	r0, #1
+  53a19c:	f703 f9ea 	bl	0x43d574
+  53a1a0:	f702 ff95 	bl	0x43d0ce
+  53a1a4:	07c0      	lsls	r0, r0, #31
+  53a1a6:	d403      	bmi.n	0x53a1b0
+  53a1a8:	f702 ff91 	bl	0x43d0ce
+  53a1ac:	0740      	lsls	r0, r0, #29
+  53a1ae:	d506      	bpl.n	0x53a1be
+  53a1b0:	498b      	ldr	r1, [pc, #556]	@ (0x53a3e0)
+  53a1b2:	002b      	movs	r3, r5
+  53a1b4:	000a      	movs	r2, r1
+  53a1b6:	f05f 6088 	movs.w	r0, #71303168	@ 0x4400000
+  53a1ba:	f702 fe70 	bl	0x43ce9e
+  53a1be:	aa03      	add	r2, sp, #12
+  53a1c0:	a944      	add	r1, sp, #272	@ 0x110
+  53a1c2:	0020      	movs	r0, r4
+  53a1c4:	f7ff fe66 	bl	0x539e94
+  53a1c8:	0004      	movs	r4, r0
+  53a1ca:	2c00      	cmp	r4, #0
+
+======================================================================
+BOX_UART_MGR STRING XREF AT DISASM LINE 405664
+======================================================================
+  53a15a:	07c0      	lsls	r0, r0, #31
+  53a15c:	d403      	bmi.n	0x53a166
+  53a15e:	f702 ffb6 	bl	0x43d0ce
+  53a162:	0740      	lsls	r0, r0, #29
+  53a164:	d506      	bpl.n	0x53a174
+  53a166:	499c      	ldr	r1, [pc, #624]	@ (0x53a3d8)
+  53a168:	002b      	movs	r3, r5
+  53a16a:	000a      	movs	r2, r1
+  53a16c:	f05f 6088 	movs.w	r0, #71303168	@ 0x4400000
+  53a170:	f702 fe95 	bl	0x43ce9e
+  53a174:	e0c3      	b.n	0x53a2fe
+  53a176:	2002      	movs	r0, #2
+  53a178:	f024 fbc8 	bl	0x55e90c
+  53a17c:	0005      	movs	r5, r0
+  53a17e:	2d00      	cmp	r5, #0
+  53a180:	d01d      	beq.n	0x53a1be
+  53a182:	f702 ffa4 	bl	0x43d0ce
+  53a186:	0780      	lsls	r0, r0, #30
+  53a188:	d50a      	bpl.n	0x53a1a0
+  53a18a:	9502      	str	r5, [sp, #8]
+  53a18c:	4893      	ldr	r0, [pc, #588]	@ (0x53a3dc)
+  53a18e:	9001      	str	r0, [sp, #4]
+  53a190:	2092      	movs	r0, #146	@ 0x92
+  53a192:	9000      	str	r0, [sp, #0]
+  53a194:	4b8e      	ldr	r3, [pc, #568]	@ (0x53a3d0)
+  53a196:	4a85      	ldr	r2, [pc, #532]	@ (0x53a3ac)
+  53a198:	4985      	ldr	r1, [pc, #532]	@ (0x53a3b0)
+  53a19a:	2001      	movs	r0, #1
+  53a19c:	f703 f9ea 	bl	0x43d574
+  53a1a0:	f702 ff95 	bl	0x43d0ce
+  53a1a4:	07c0      	lsls	r0, r0, #31
+  53a1a6:	d403      	bmi.n	0x53a1b0
+  53a1a8:	f702 ff91 	bl	0x43d0ce
+  53a1ac:	0740      	lsls	r0, r0, #29
+  53a1ae:	d506      	bpl.n	0x53a1be
+  53a1b0:	498b      	ldr	r1, [pc, #556]	@ (0x53a3e0)
+  53a1b2:	002b      	movs	r3, r5
+  53a1b4:	000a      	movs	r2, r1
+  53a1b6:	f05f 6088 	movs.w	r0, #71303168	@ 0x4400000
+  53a1ba:	f702 fe70 	bl	0x43ce9e
+  53a1be:	aa03      	add	r2, sp, #12
+  53a1c0:	a944      	add	r1, sp, #272	@ 0x110
+  53a1c2:	0020      	movs	r0, r4
+  53a1c4:	f7ff fe66 	bl	0x539e94
+  53a1c8:	0004      	movs	r4, r0
+  53a1ca:	2c00      	cmp	r4, #0
+  53a1cc:	d01e      	beq.n	0x53a20c
+  53a1ce:	f702 ff7e 	bl	0x43d0ce
+  53a1d2:	0780      	lsls	r0, r0, #30
+  53a1d4:	d50a      	bpl.n	0x53a1ec
+  53a1d6:	9402      	str	r4, [sp, #8]
+  53a1d8:	4882      	ldr	r0, [pc, #520]	@ (0x53a3e4)
+  53a1da:	9001      	str	r0, [sp, #4]
+  53a1dc:	2098      	movs	r0, #152	@ 0x98
+  53a1de:	9000      	str	r0, [sp, #0]
+  53a1e0:	4b7b      	ldr	r3, [pc, #492]	@ (0x53a3d0)
+  53a1e2:	4a72      	ldr	r2, [pc, #456]	@ (0x53a3ac)
+  53a1e4:	4972      	ldr	r1, [pc, #456]	@ (0x53a3b0)
+  53a1e6:	2001      	movs	r0, #1
+  53a1e8:	f703 f9c4 	bl	0x43d574
+  53a1ec:	f702 ff6f 	bl	0x43d0ce
+  53a1f0:	07c0      	lsls	r0, r0, #31
+  53a1f2:	d403      	bmi.n	0x53a1fc
+  53a1f4:	f702 ff6b 	bl	0x43d0ce
+  53a1f8:	0740      	lsls	r0, r0, #29
+
+======================================================================
+BOX_UART_MGR STRING XREF AT DISASM LINE 405675
+======================================================================
+  53a176:	2002      	movs	r0, #2
+  53a178:	f024 fbc8 	bl	0x55e90c
+  53a17c:	0005      	movs	r5, r0
+  53a17e:	2d00      	cmp	r5, #0
+  53a180:	d01d      	beq.n	0x53a1be
+  53a182:	f702 ffa4 	bl	0x43d0ce
+  53a186:	0780      	lsls	r0, r0, #30
+  53a188:	d50a      	bpl.n	0x53a1a0
+  53a18a:	9502      	str	r5, [sp, #8]
+  53a18c:	4893      	ldr	r0, [pc, #588]	@ (0x53a3dc)
+  53a18e:	9001      	str	r0, [sp, #4]
+  53a190:	2092      	movs	r0, #146	@ 0x92
+  53a192:	9000      	str	r0, [sp, #0]
+  53a194:	4b8e      	ldr	r3, [pc, #568]	@ (0x53a3d0)
+  53a196:	4a85      	ldr	r2, [pc, #532]	@ (0x53a3ac)
+  53a198:	4985      	ldr	r1, [pc, #532]	@ (0x53a3b0)
+  53a19a:	2001      	movs	r0, #1
+  53a19c:	f703 f9ea 	bl	0x43d574
+  53a1a0:	f702 ff95 	bl	0x43d0ce
+  53a1a4:	07c0      	lsls	r0, r0, #31
+  53a1a6:	d403      	bmi.n	0x53a1b0
+  53a1a8:	f702 ff91 	bl	0x43d0ce
+  53a1ac:	0740      	lsls	r0, r0, #29
+  53a1ae:	d506      	bpl.n	0x53a1be
+  53a1b0:	498b      	ldr	r1, [pc, #556]	@ (0x53a3e0)
+  53a1b2:	002b      	movs	r3, r5
+  53a1b4:	000a      	movs	r2, r1
+  53a1b6:	f05f 6088 	movs.w	r0, #71303168	@ 0x4400000
+  53a1ba:	f702 fe70 	bl	0x43ce9e
+  53a1be:	aa03      	add	r2, sp, #12
+  53a1c0:	a944      	add	r1, sp, #272	@ 0x110
+  53a1c2:	0020      	movs	r0, r4
+  53a1c4:	f7ff fe66 	bl	0x539e94
+  53a1c8:	0004      	movs	r4, r0
+  53a1ca:	2c00      	cmp	r4, #0
+  53a1cc:	d01e      	beq.n	0x53a20c
+  53a1ce:	f702 ff7e 	bl	0x43d0ce
+  53a1d2:	0780      	lsls	r0, r0, #30
+  53a1d4:	d50a      	bpl.n	0x53a1ec
+  53a1d6:	9402      	str	r4, [sp, #8]
+  53a1d8:	4882      	ldr	r0, [pc, #520]	@ (0x53a3e4)
+  53a1da:	9001      	str	r0, [sp, #4]
+  53a1dc:	2098      	movs	r0, #152	@ 0x98
+  53a1de:	9000      	str	r0, [sp, #0]
+  53a1e0:	4b7b      	ldr	r3, [pc, #492]	@ (0x53a3d0)
+  53a1e2:	4a72      	ldr	r2, [pc, #456]	@ (0x53a3ac)
+  53a1e4:	4972      	ldr	r1, [pc, #456]	@ (0x53a3b0)
+  53a1e6:	2001      	movs	r0, #1
+  53a1e8:	f703 f9c4 	bl	0x43d574
+  53a1ec:	f702 ff6f 	bl	0x43d0ce
+  53a1f0:	07c0      	lsls	r0, r0, #31
+  53a1f2:	d403      	bmi.n	0x53a1fc
+  53a1f4:	f702 ff6b 	bl	0x43d0ce
+  53a1f8:	0740      	lsls	r0, r0, #29
+  53a1fa:	d506      	bpl.n	0x53a20a
+  53a1fc:	497a      	ldr	r1, [pc, #488]	@ (0x53a3e8)
+  53a1fe:	0023      	movs	r3, r4
+  53a200:	000a      	movs	r2, r1
+  53a202:	f05f 6088 	movs.w	r0, #71303168	@ 0x4400000
+  53a206:	f702 fe4a 	bl	0x43ce9e
+  53a20a:	e078      	b.n	0x53a2fe
+  53a20c:	f10d 030d 	add.w	r3, sp, #13
+  53a210:	aa04      	add	r2, sp, #16
+  53a212:	f89d 100c 	ldrb.w	r1, [sp, #12]
+  53a216:	a844      	add	r0, sp, #272	@ 0x110
+
+======================================================================
+BOX_UART_MGR STRING XREF AT DISASM LINE 405695
+======================================================================
+  53a1a6:	d403      	bmi.n	0x53a1b0
+  53a1a8:	f702 ff91 	bl	0x43d0ce
+  53a1ac:	0740      	lsls	r0, r0, #29
+  53a1ae:	d506      	bpl.n	0x53a1be
+  53a1b0:	498b      	ldr	r1, [pc, #556]	@ (0x53a3e0)
+  53a1b2:	002b      	movs	r3, r5
+  53a1b4:	000a      	movs	r2, r1
+  53a1b6:	f05f 6088 	movs.w	r0, #71303168	@ 0x4400000
+  53a1ba:	f702 fe70 	bl	0x43ce9e
+  53a1be:	aa03      	add	r2, sp, #12
+  53a1c0:	a944      	add	r1, sp, #272	@ 0x110
+  53a1c2:	0020      	movs	r0, r4
+  53a1c4:	f7ff fe66 	bl	0x539e94
+  53a1c8:	0004      	movs	r4, r0
+  53a1ca:	2c00      	cmp	r4, #0
+  53a1cc:	d01e      	beq.n	0x53a20c
+  53a1ce:	f702 ff7e 	bl	0x43d0ce
+  53a1d2:	0780      	lsls	r0, r0, #30
+  53a1d4:	d50a      	bpl.n	0x53a1ec
+  53a1d6:	9402      	str	r4, [sp, #8]
+  53a1d8:	4882      	ldr	r0, [pc, #520]	@ (0x53a3e4)
+  53a1da:	9001      	str	r0, [sp, #4]
+  53a1dc:	2098      	movs	r0, #152	@ 0x98
+  53a1de:	9000      	str	r0, [sp, #0]
+  53a1e0:	4b7b      	ldr	r3, [pc, #492]	@ (0x53a3d0)
+  53a1e2:	4a72      	ldr	r2, [pc, #456]	@ (0x53a3ac)
+  53a1e4:	4972      	ldr	r1, [pc, #456]	@ (0x53a3b0)
+  53a1e6:	2001      	movs	r0, #1
+  53a1e8:	f703 f9c4 	bl	0x43d574
+  53a1ec:	f702 ff6f 	bl	0x43d0ce
+  53a1f0:	07c0      	lsls	r0, r0, #31
+  53a1f2:	d403      	bmi.n	0x53a1fc
+  53a1f4:	f702 ff6b 	bl	0x43d0ce
+  53a1f8:	0740      	lsls	r0, r0, #29
+  53a1fa:	d506      	bpl.n	0x53a20a
+  53a1fc:	497a      	ldr	r1, [pc, #488]	@ (0x53a3e8)
+  53a1fe:	0023      	movs	r3, r4
+  53a200:	000a      	movs	r2, r1
+  53a202:	f05f 6088 	movs.w	r0, #71303168	@ 0x4400000
+  53a206:	f702 fe4a 	bl	0x43ce9e
+  53a20a:	e078      	b.n	0x53a2fe
+  53a20c:	f10d 030d 	add.w	r3, sp, #13
+  53a210:	aa04      	add	r2, sp, #16
+  53a212:	f89d 100c 	ldrb.w	r1, [sp, #12]
+  53a216:	a844      	add	r0, sp, #272	@ 0x110
+  53a218:	f035 f942 	bl	0x56f4a0
+  53a21c:	0004      	movs	r4, r0
+  53a21e:	2c00      	cmp	r4, #0
+  53a220:	d01e      	beq.n	0x53a260
+  53a222:	f702 ff54 	bl	0x43d0ce
+  53a226:	0780      	lsls	r0, r0, #30
+  53a228:	d50a      	bpl.n	0x53a240
+  53a22a:	9402      	str	r4, [sp, #8]
+  53a22c:	486f      	ldr	r0, [pc, #444]	@ (0x53a3ec)
+  53a22e:	9001      	str	r0, [sp, #4]
+  53a230:	209f      	movs	r0, #159	@ 0x9f
+  53a232:	9000      	str	r0, [sp, #0]
+  53a234:	4b66      	ldr	r3, [pc, #408]	@ (0x53a3d0)
+  53a236:	4a5d      	ldr	r2, [pc, #372]	@ (0x53a3ac)
+  53a238:	495d      	ldr	r1, [pc, #372]	@ (0x53a3b0)
+  53a23a:	2001      	movs	r0, #1
+  53a23c:	f703 f99a 	bl	0x43d574
+  53a240:	f702 ff45 	bl	0x43d0ce
+  53a244:	07c0      	lsls	r0, r0, #31
+  53a246:	d403      	bmi.n	0x53a250
+
+======================================================================
+BOX_UART_MGR STRING XREF AT DISASM LINE 405728
+======================================================================
+  53a1f8:	0740      	lsls	r0, r0, #29
+  53a1fa:	d506      	bpl.n	0x53a20a
+  53a1fc:	497a      	ldr	r1, [pc, #488]	@ (0x53a3e8)
+  53a1fe:	0023      	movs	r3, r4
+  53a200:	000a      	movs	r2, r1
+  53a202:	f05f 6088 	movs.w	r0, #71303168	@ 0x4400000
+  53a206:	f702 fe4a 	bl	0x43ce9e
+  53a20a:	e078      	b.n	0x53a2fe
+  53a20c:	f10d 030d 	add.w	r3, sp, #13
+  53a210:	aa04      	add	r2, sp, #16
+  53a212:	f89d 100c 	ldrb.w	r1, [sp, #12]
+  53a216:	a844      	add	r0, sp, #272	@ 0x110
+  53a218:	f035 f942 	bl	0x56f4a0
+  53a21c:	0004      	movs	r4, r0
+  53a21e:	2c00      	cmp	r4, #0
+  53a220:	d01e      	beq.n	0x53a260
+  53a222:	f702 ff54 	bl	0x43d0ce
+  53a226:	0780      	lsls	r0, r0, #30
+  53a228:	d50a      	bpl.n	0x53a240
+  53a22a:	9402      	str	r4, [sp, #8]
+  53a22c:	486f      	ldr	r0, [pc, #444]	@ (0x53a3ec)
+  53a22e:	9001      	str	r0, [sp, #4]
+  53a230:	209f      	movs	r0, #159	@ 0x9f
+  53a232:	9000      	str	r0, [sp, #0]
+  53a234:	4b66      	ldr	r3, [pc, #408]	@ (0x53a3d0)
+  53a236:	4a5d      	ldr	r2, [pc, #372]	@ (0x53a3ac)
+  53a238:	495d      	ldr	r1, [pc, #372]	@ (0x53a3b0)
+  53a23a:	2001      	movs	r0, #1
+  53a23c:	f703 f99a 	bl	0x43d574
+  53a240:	f702 ff45 	bl	0x43d0ce
+  53a244:	07c0      	lsls	r0, r0, #31
+  53a246:	d403      	bmi.n	0x53a250
+  53a248:	f702 ff41 	bl	0x43d0ce
+  53a24c:	0740      	lsls	r0, r0, #29
+  53a24e:	d506      	bpl.n	0x53a25e
+  53a250:	4967      	ldr	r1, [pc, #412]	@ (0x53a3f0)
+  53a252:	0023      	movs	r3, r4
+  53a254:	000a      	movs	r2, r1
+  53a256:	f05f 6088 	movs.w	r0, #71303168	@ 0x4400000
+  53a25a:	f702 fe20 	bl	0x43ce9e
+  53a25e:	e04e      	b.n	0x53a2fe
+  53a260:	2002      	movs	r0, #2
+  53a262:	f70f f888 	bl	0x449376
+  53a266:	f89d 200d 	ldrb.w	r2, [sp, #13]
+  53a26a:	a904      	add	r1, sp, #16
+  53a26c:	2002      	movs	r0, #2
+  53a26e:	f7ff fecf 	bl	0x53a010
+  53a272:	0004      	movs	r4, r0
+  53a274:	2c00      	cmp	r4, #0
+  53a276:	d01e      	beq.n	0x53a2b6
+  53a278:	f702 ff29 	bl	0x43d0ce
+  53a27c:	0780      	lsls	r0, r0, #30
+  53a27e:	d50a      	bpl.n	0x53a296
+  53a280:	9402      	str	r4, [sp, #8]
+  53a282:	485c      	ldr	r0, [pc, #368]	@ (0x53a3f4)
+  53a284:	9001      	str	r0, [sp, #4]
+  53a286:	20a9      	movs	r0, #169	@ 0xa9
+  53a288:	9000      	str	r0, [sp, #0]
+  53a28a:	4b51      	ldr	r3, [pc, #324]	@ (0x53a3d0)
+  53a28c:	4a47      	ldr	r2, [pc, #284]	@ (0x53a3ac)
+  53a28e:	4948      	ldr	r1, [pc, #288]	@ (0x53a3b0)
+  53a290:	2001      	movs	r0, #1
+  53a292:	f703 f96f 	bl	0x43d574
+  53a296:	f702 ff1a 	bl	0x43d0ce
+  53a29a:	07c0      	lsls	r0, r0, #31
+
+======================================================================
+BOX_UART_MGR STRING XREF AT DISASM LINE 405739
+======================================================================
+  53a216:	a844      	add	r0, sp, #272	@ 0x110
+  53a218:	f035 f942 	bl	0x56f4a0
+  53a21c:	0004      	movs	r4, r0
+  53a21e:	2c00      	cmp	r4, #0
+  53a220:	d01e      	beq.n	0x53a260
+  53a222:	f702 ff54 	bl	0x43d0ce
+  53a226:	0780      	lsls	r0, r0, #30
+  53a228:	d50a      	bpl.n	0x53a240
+  53a22a:	9402      	str	r4, [sp, #8]
+  53a22c:	486f      	ldr	r0, [pc, #444]	@ (0x53a3ec)
+  53a22e:	9001      	str	r0, [sp, #4]
+  53a230:	209f      	movs	r0, #159	@ 0x9f
+  53a232:	9000      	str	r0, [sp, #0]
+  53a234:	4b66      	ldr	r3, [pc, #408]	@ (0x53a3d0)
+  53a236:	4a5d      	ldr	r2, [pc, #372]	@ (0x53a3ac)
+  53a238:	495d      	ldr	r1, [pc, #372]	@ (0x53a3b0)
+  53a23a:	2001      	movs	r0, #1
+  53a23c:	f703 f99a 	bl	0x43d574
+  53a240:	f702 ff45 	bl	0x43d0ce
+  53a244:	07c0      	lsls	r0, r0, #31
+  53a246:	d403      	bmi.n	0x53a250
+  53a248:	f702 ff41 	bl	0x43d0ce
+  53a24c:	0740      	lsls	r0, r0, #29
+  53a24e:	d506      	bpl.n	0x53a25e
+  53a250:	4967      	ldr	r1, [pc, #412]	@ (0x53a3f0)
+  53a252:	0023      	movs	r3, r4
+  53a254:	000a      	movs	r2, r1
+  53a256:	f05f 6088 	movs.w	r0, #71303168	@ 0x4400000
+  53a25a:	f702 fe20 	bl	0x43ce9e
+  53a25e:	e04e      	b.n	0x53a2fe
+  53a260:	2002      	movs	r0, #2
+  53a262:	f70f f888 	bl	0x449376
+  53a266:	f89d 200d 	ldrb.w	r2, [sp, #13]
+  53a26a:	a904      	add	r1, sp, #16
+  53a26c:	2002      	movs	r0, #2
+  53a26e:	f7ff fecf 	bl	0x53a010
+  53a272:	0004      	movs	r4, r0
+  53a274:	2c00      	cmp	r4, #0
+  53a276:	d01e      	beq.n	0x53a2b6
+  53a278:	f702 ff29 	bl	0x43d0ce
+  53a27c:	0780      	lsls	r0, r0, #30
+  53a27e:	d50a      	bpl.n	0x53a296
+  53a280:	9402      	str	r4, [sp, #8]
+  53a282:	485c      	ldr	r0, [pc, #368]	@ (0x53a3f4)
+  53a284:	9001      	str	r0, [sp, #4]
+  53a286:	20a9      	movs	r0, #169	@ 0xa9
+  53a288:	9000      	str	r0, [sp, #0]
+  53a28a:	4b51      	ldr	r3, [pc, #324]	@ (0x53a3d0)
+  53a28c:	4a47      	ldr	r2, [pc, #284]	@ (0x53a3ac)
+  53a28e:	4948      	ldr	r1, [pc, #288]	@ (0x53a3b0)
+  53a290:	2001      	movs	r0, #1
+  53a292:	f703 f96f 	bl	0x43d574
+  53a296:	f702 ff1a 	bl	0x43d0ce
+  53a29a:	07c0      	lsls	r0, r0, #31
+  53a29c:	d403      	bmi.n	0x53a2a6
+  53a29e:	f702 ff16 	bl	0x43d0ce
+  53a2a2:	0740      	lsls	r0, r0, #29
+  53a2a4:	d506      	bpl.n	0x53a2b4
+  53a2a6:	4954      	ldr	r1, [pc, #336]	@ (0x53a3f8)
+  53a2a8:	0023      	movs	r3, r4
+  53a2aa:	000a      	movs	r2, r1
+  53a2ac:	f05f 6088 	movs.w	r0, #71303168	@ 0x4400000
+  53a2b0:	f702 fdf5 	bl	0x43ce9e
+  53a2b4:	e023      	b.n	0x53a2fe
+  53a2b6:	2002      	movs	r0, #2
+
+======================================================================
+BOX_UART_MGR STRING XREF AT DISASM LINE 405762
+======================================================================
+  53a24e:	d506      	bpl.n	0x53a25e
+  53a250:	4967      	ldr	r1, [pc, #412]	@ (0x53a3f0)
+  53a252:	0023      	movs	r3, r4
+  53a254:	000a      	movs	r2, r1
+  53a256:	f05f 6088 	movs.w	r0, #71303168	@ 0x4400000
+  53a25a:	f702 fe20 	bl	0x43ce9e
+  53a25e:	e04e      	b.n	0x53a2fe
+  53a260:	2002      	movs	r0, #2
+  53a262:	f70f f888 	bl	0x449376
+  53a266:	f89d 200d 	ldrb.w	r2, [sp, #13]
+  53a26a:	a904      	add	r1, sp, #16
+  53a26c:	2002      	movs	r0, #2
+  53a26e:	f7ff fecf 	bl	0x53a010
+  53a272:	0004      	movs	r4, r0
+  53a274:	2c00      	cmp	r4, #0
+  53a276:	d01e      	beq.n	0x53a2b6
+  53a278:	f702 ff29 	bl	0x43d0ce
+  53a27c:	0780      	lsls	r0, r0, #30
+  53a27e:	d50a      	bpl.n	0x53a296
+  53a280:	9402      	str	r4, [sp, #8]
+  53a282:	485c      	ldr	r0, [pc, #368]	@ (0x53a3f4)
+  53a284:	9001      	str	r0, [sp, #4]
+  53a286:	20a9      	movs	r0, #169	@ 0xa9
+  53a288:	9000      	str	r0, [sp, #0]
+  53a28a:	4b51      	ldr	r3, [pc, #324]	@ (0x53a3d0)
+  53a28c:	4a47      	ldr	r2, [pc, #284]	@ (0x53a3ac)
+  53a28e:	4948      	ldr	r1, [pc, #288]	@ (0x53a3b0)
+  53a290:	2001      	movs	r0, #1
+  53a292:	f703 f96f 	bl	0x43d574
+  53a296:	f702 ff1a 	bl	0x43d0ce
+  53a29a:	07c0      	lsls	r0, r0, #31
+  53a29c:	d403      	bmi.n	0x53a2a6
+  53a29e:	f702 ff16 	bl	0x43d0ce
+  53a2a2:	0740      	lsls	r0, r0, #29
+  53a2a4:	d506      	bpl.n	0x53a2b4
+  53a2a6:	4954      	ldr	r1, [pc, #336]	@ (0x53a3f8)
+  53a2a8:	0023      	movs	r3, r4
+  53a2aa:	000a      	movs	r2, r1
+  53a2ac:	f05f 6088 	movs.w	r0, #71303168	@ 0x4400000
+  53a2b0:	f702 fdf5 	bl	0x43ce9e
+  53a2b4:	e023      	b.n	0x53a2fe
+  53a2b6:	2002      	movs	r0, #2
+  53a2b8:	f024 fb4d 	bl	0x55e956
+  53a2bc:	0004      	movs	r4, r0
+  53a2be:	2c00      	cmp	r4, #0
+  53a2c0:	d01d      	beq.n	0x53a2fe
+  53a2c2:	f702 ff04 	bl	0x43d0ce
+  53a2c6:	0780      	lsls	r0, r0, #30
+  53a2c8:	d50a      	bpl.n	0x53a2e0
+  53a2ca:	9402      	str	r4, [sp, #8]
+  53a2cc:	484b      	ldr	r0, [pc, #300]	@ (0x53a3fc)
+  53a2ce:	9001      	str	r0, [sp, #4]
+  53a2d0:	20b1      	movs	r0, #177	@ 0xb1
+  53a2d2:	9000      	str	r0, [sp, #0]
+  53a2d4:	4b3e      	ldr	r3, [pc, #248]	@ (0x53a3d0)
+  53a2d6:	4a35      	ldr	r2, [pc, #212]	@ (0x53a3ac)
+  53a2d8:	4935      	ldr	r1, [pc, #212]	@ (0x53a3b0)
+  53a2da:	2001      	movs	r0, #1
+  53a2dc:	f703 f94a 	bl	0x43d574
+  53a2e0:	f702 fef5 	bl	0x43d0ce
+  53a2e4:	07c0      	lsls	r0, r0, #31
+  53a2e6:	d403      	bmi.n	0x53a2f0
+  53a2e8:	f702 fef1 	bl	0x43d0ce
+  53a2ec:	0740      	lsls	r0, r0, #29
+  53a2ee:	d506      	bpl.n	0x53a2fe
+
+======================================================================
+BOX_UART_MGR STRING XREF AT DISASM LINE 405773
+======================================================================
+  53a26c:	2002      	movs	r0, #2
+  53a26e:	f7ff fecf 	bl	0x53a010
+  53a272:	0004      	movs	r4, r0
+  53a274:	2c00      	cmp	r4, #0
+  53a276:	d01e      	beq.n	0x53a2b6
+  53a278:	f702 ff29 	bl	0x43d0ce
+  53a27c:	0780      	lsls	r0, r0, #30
+  53a27e:	d50a      	bpl.n	0x53a296
+  53a280:	9402      	str	r4, [sp, #8]
+  53a282:	485c      	ldr	r0, [pc, #368]	@ (0x53a3f4)
+  53a284:	9001      	str	r0, [sp, #4]
+  53a286:	20a9      	movs	r0, #169	@ 0xa9
+  53a288:	9000      	str	r0, [sp, #0]
+  53a28a:	4b51      	ldr	r3, [pc, #324]	@ (0x53a3d0)
+  53a28c:	4a47      	ldr	r2, [pc, #284]	@ (0x53a3ac)
+  53a28e:	4948      	ldr	r1, [pc, #288]	@ (0x53a3b0)
+  53a290:	2001      	movs	r0, #1
+  53a292:	f703 f96f 	bl	0x43d574
+  53a296:	f702 ff1a 	bl	0x43d0ce
+  53a29a:	07c0      	lsls	r0, r0, #31
+  53a29c:	d403      	bmi.n	0x53a2a6
+  53a29e:	f702 ff16 	bl	0x43d0ce
+  53a2a2:	0740      	lsls	r0, r0, #29
+  53a2a4:	d506      	bpl.n	0x53a2b4
+  53a2a6:	4954      	ldr	r1, [pc, #336]	@ (0x53a3f8)
+  53a2a8:	0023      	movs	r3, r4
+  53a2aa:	000a      	movs	r2, r1
+  53a2ac:	f05f 6088 	movs.w	r0, #71303168	@ 0x4400000
+  53a2b0:	f702 fdf5 	bl	0x43ce9e
+  53a2b4:	e023      	b.n	0x53a2fe
+  53a2b6:	2002      	movs	r0, #2
+  53a2b8:	f024 fb4d 	bl	0x55e956
+  53a2bc:	0004      	movs	r4, r0
+  53a2be:	2c00      	cmp	r4, #0
+  53a2c0:	d01d      	beq.n	0x53a2fe
+  53a2c2:	f702 ff04 	bl	0x43d0ce
+  53a2c6:	0780      	lsls	r0, r0, #30
+  53a2c8:	d50a      	bpl.n	0x53a2e0
+  53a2ca:	9402      	str	r4, [sp, #8]
+  53a2cc:	484b      	ldr	r0, [pc, #300]	@ (0x53a3fc)
+  53a2ce:	9001      	str	r0, [sp, #4]
+  53a2d0:	20b1      	movs	r0, #177	@ 0xb1
+  53a2d2:	9000      	str	r0, [sp, #0]
+  53a2d4:	4b3e      	ldr	r3, [pc, #248]	@ (0x53a3d0)
+  53a2d6:	4a35      	ldr	r2, [pc, #212]	@ (0x53a3ac)
+  53a2d8:	4935      	ldr	r1, [pc, #212]	@ (0x53a3b0)
+  53a2da:	2001      	movs	r0, #1
+  53a2dc:	f703 f94a 	bl	0x43d574
+  53a2e0:	f702 fef5 	bl	0x43d0ce
+  53a2e4:	07c0      	lsls	r0, r0, #31
+  53a2e6:	d403      	bmi.n	0x53a2f0
+  53a2e8:	f702 fef1 	bl	0x43d0ce
+  53a2ec:	0740      	lsls	r0, r0, #29
+  53a2ee:	d506      	bpl.n	0x53a2fe
+  53a2f0:	4943      	ldr	r1, [pc, #268]	@ (0x53a400)
+  53a2f2:	0023      	movs	r3, r4
+  53a2f4:	000a      	movs	r2, r1
+  53a2f6:	f05f 6088 	movs.w	r0, #71303168	@ 0x4400000
+  53a2fa:	f702 fdd0 	bl	0x43ce9e
+  53a2fe:	2002      	movs	r0, #2
+  53a300:	f024 f9c5 	bl	0x55e68e
+  53a304:	0004      	movs	r4, r0
+  53a306:	2c00      	cmp	r4, #0
+  53a308:	d01d      	beq.n	0x53a346
+  53a30a:	f702 fee0 	bl	0x43d0ce
+
+======================================================================
+BOX_UART_MGR STRING XREF AT DISASM LINE 405792
+======================================================================
+  53a29a:	07c0      	lsls	r0, r0, #31
+  53a29c:	d403      	bmi.n	0x53a2a6
+  53a29e:	f702 ff16 	bl	0x43d0ce
+  53a2a2:	0740      	lsls	r0, r0, #29
+  53a2a4:	d506      	bpl.n	0x53a2b4
+  53a2a6:	4954      	ldr	r1, [pc, #336]	@ (0x53a3f8)
+  53a2a8:	0023      	movs	r3, r4
+  53a2aa:	000a      	movs	r2, r1
+  53a2ac:	f05f 6088 	movs.w	r0, #71303168	@ 0x4400000
+  53a2b0:	f702 fdf5 	bl	0x43ce9e
+  53a2b4:	e023      	b.n	0x53a2fe
+  53a2b6:	2002      	movs	r0, #2
+  53a2b8:	f024 fb4d 	bl	0x55e956
+  53a2bc:	0004      	movs	r4, r0
+  53a2be:	2c00      	cmp	r4, #0
+  53a2c0:	d01d      	beq.n	0x53a2fe
+  53a2c2:	f702 ff04 	bl	0x43d0ce
+  53a2c6:	0780      	lsls	r0, r0, #30
+  53a2c8:	d50a      	bpl.n	0x53a2e0
+  53a2ca:	9402      	str	r4, [sp, #8]
+  53a2cc:	484b      	ldr	r0, [pc, #300]	@ (0x53a3fc)
+  53a2ce:	9001      	str	r0, [sp, #4]
+  53a2d0:	20b1      	movs	r0, #177	@ 0xb1
+  53a2d2:	9000      	str	r0, [sp, #0]
+  53a2d4:	4b3e      	ldr	r3, [pc, #248]	@ (0x53a3d0)
+  53a2d6:	4a35      	ldr	r2, [pc, #212]	@ (0x53a3ac)
+  53a2d8:	4935      	ldr	r1, [pc, #212]	@ (0x53a3b0)
+  53a2da:	2001      	movs	r0, #1
+  53a2dc:	f703 f94a 	bl	0x43d574
+  53a2e0:	f702 fef5 	bl	0x43d0ce
+  53a2e4:	07c0      	lsls	r0, r0, #31
+  53a2e6:	d403      	bmi.n	0x53a2f0
+  53a2e8:	f702 fef1 	bl	0x43d0ce
+  53a2ec:	0740      	lsls	r0, r0, #29
+  53a2ee:	d506      	bpl.n	0x53a2fe
+  53a2f0:	4943      	ldr	r1, [pc, #268]	@ (0x53a400)
+  53a2f2:	0023      	movs	r3, r4
+  53a2f4:	000a      	movs	r2, r1
+  53a2f6:	f05f 6088 	movs.w	r0, #71303168	@ 0x4400000
+  53a2fa:	f702 fdd0 	bl	0x43ce9e
+  53a2fe:	2002      	movs	r0, #2
+  53a300:	f024 f9c5 	bl	0x55e68e
+  53a304:	0004      	movs	r4, r0
+  53a306:	2c00      	cmp	r4, #0
+  53a308:	d01d      	beq.n	0x53a346
+  53a30a:	f702 fee0 	bl	0x43d0ce
+  53a30e:	0780      	lsls	r0, r0, #30
+  53a310:	d50a      	bpl.n	0x53a328
+  53a312:	9402      	str	r4, [sp, #8]
+  53a314:	483b      	ldr	r0, [pc, #236]	@ (0x53a404)
+  53a316:	9001      	str	r0, [sp, #4]
+  53a318:	20ba      	movs	r0, #186	@ 0xba
+  53a31a:	9000      	str	r0, [sp, #0]
+  53a31c:	4b2c      	ldr	r3, [pc, #176]	@ (0x53a3d0)
+  53a31e:	4a23      	ldr	r2, [pc, #140]	@ (0x53a3ac)
+  53a320:	4923      	ldr	r1, [pc, #140]	@ (0x53a3b0)
+  53a322:	2001      	movs	r0, #1
+  53a324:	f703 f926 	bl	0x43d574
+  53a328:	f702 fed1 	bl	0x43d0ce
+  53a32c:	07c0      	lsls	r0, r0, #31
+  53a32e:	d403      	bmi.n	0x53a338
+  53a330:	f702 fecd 	bl	0x43d0ce
+  53a334:	0740      	lsls	r0, r0, #29
+  53a336:	d506      	bpl.n	0x53a346
+  53a338:	4933      	ldr	r1, [pc, #204]	@ (0x53a408)
+
+======================================================================
+BOX_UART_MGR STRING XREF AT DISASM LINE 405821
+======================================================================
+  53a2e0:	f702 fef5 	bl	0x43d0ce
+  53a2e4:	07c0      	lsls	r0, r0, #31
+  53a2e6:	d403      	bmi.n	0x53a2f0
+  53a2e8:	f702 fef1 	bl	0x43d0ce
+  53a2ec:	0740      	lsls	r0, r0, #29
+  53a2ee:	d506      	bpl.n	0x53a2fe
+  53a2f0:	4943      	ldr	r1, [pc, #268]	@ (0x53a400)
+  53a2f2:	0023      	movs	r3, r4
+  53a2f4:	000a      	movs	r2, r1
+  53a2f6:	f05f 6088 	movs.w	r0, #71303168	@ 0x4400000
+  53a2fa:	f702 fdd0 	bl	0x43ce9e
+  53a2fe:	2002      	movs	r0, #2
+  53a300:	f024 f9c5 	bl	0x55e68e
+  53a304:	0004      	movs	r4, r0
+  53a306:	2c00      	cmp	r4, #0
+  53a308:	d01d      	beq.n	0x53a346
+  53a30a:	f702 fee0 	bl	0x43d0ce
+  53a30e:	0780      	lsls	r0, r0, #30
+  53a310:	d50a      	bpl.n	0x53a328
+  53a312:	9402      	str	r4, [sp, #8]
+  53a314:	483b      	ldr	r0, [pc, #236]	@ (0x53a404)
+  53a316:	9001      	str	r0, [sp, #4]
+  53a318:	20ba      	movs	r0, #186	@ 0xba
+  53a31a:	9000      	str	r0, [sp, #0]
+  53a31c:	4b2c      	ldr	r3, [pc, #176]	@ (0x53a3d0)
+  53a31e:	4a23      	ldr	r2, [pc, #140]	@ (0x53a3ac)
+  53a320:	4923      	ldr	r1, [pc, #140]	@ (0x53a3b0)
+  53a322:	2001      	movs	r0, #1
+  53a324:	f703 f926 	bl	0x43d574
+  53a328:	f702 fed1 	bl	0x43d0ce
+  53a32c:	07c0      	lsls	r0, r0, #31
+  53a32e:	d403      	bmi.n	0x53a338
+  53a330:	f702 fecd 	bl	0x43d0ce
+  53a334:	0740      	lsls	r0, r0, #29
+  53a336:	d506      	bpl.n	0x53a346
+  53a338:	4933      	ldr	r1, [pc, #204]	@ (0x53a408)
+  53a33a:	0023      	movs	r3, r4
+  53a33c:	000a      	movs	r2, r1
+  53a33e:	f05f 6088 	movs.w	r0, #71303168	@ 0x4400000
+  53a342:	f702 fdac 	bl	0x43ce9e
+  53a346:	2c00      	cmp	r4, #0
+  53a348:	d128      	bne.n	0x53a39c
+  53a34a:	f89d 300d 	ldrb.w	r3, [sp, #13]
+  53a34e:	aa04      	add	r2, sp, #16
+  53a350:	f89d 100c 	ldrb.w	r1, [sp, #12]
+  53a354:	a844      	add	r0, sp, #272	@ 0x110
+  53a356:	f035 fae9 	bl	0x56f92c
+  53a35a:	0004      	movs	r4, r0
+  53a35c:	2c00      	cmp	r4, #0
+  53a35e:	d01d      	beq.n	0x53a39c
+  53a360:	f702 feb5 	bl	0x43d0ce
+  53a364:	0780      	lsls	r0, r0, #30
+  53a366:	d50a      	bpl.n	0x53a37e
+  53a368:	9402      	str	r4, [sp, #8]
+  53a36a:	4828      	ldr	r0, [pc, #160]	@ (0x53a40c)
+  53a36c:	9001      	str	r0, [sp, #4]
+  53a36e:	20c3      	movs	r0, #195	@ 0xc3
+  53a370:	9000      	str	r0, [sp, #0]
+  53a372:	4b17      	ldr	r3, [pc, #92]	@ (0x53a3d0)
+  53a374:	4a0d      	ldr	r2, [pc, #52]	@ (0x53a3ac)
+  53a376:	490e      	ldr	r1, [pc, #56]	@ (0x53a3b0)
+  53a378:	2001      	movs	r0, #1
+  53a37a:	f703 f8fb 	bl	0x43d574
+  53a37e:	f702 fea6 	bl	0x43d0ce
+  53a382:	07c0      	lsls	r0, r0, #31
+
+======================================================================
+BOX_UART_MGR STRING XREF AT DISASM LINE 405855
+======================================================================
+  53a336:	d506      	bpl.n	0x53a346
+  53a338:	4933      	ldr	r1, [pc, #204]	@ (0x53a408)
+  53a33a:	0023      	movs	r3, r4
+  53a33c:	000a      	movs	r2, r1
+  53a33e:	f05f 6088 	movs.w	r0, #71303168	@ 0x4400000
+  53a342:	f702 fdac 	bl	0x43ce9e
+  53a346:	2c00      	cmp	r4, #0
+  53a348:	d128      	bne.n	0x53a39c
+  53a34a:	f89d 300d 	ldrb.w	r3, [sp, #13]
+  53a34e:	aa04      	add	r2, sp, #16
+  53a350:	f89d 100c 	ldrb.w	r1, [sp, #12]
+  53a354:	a844      	add	r0, sp, #272	@ 0x110
+  53a356:	f035 fae9 	bl	0x56f92c
+  53a35a:	0004      	movs	r4, r0
+  53a35c:	2c00      	cmp	r4, #0
+  53a35e:	d01d      	beq.n	0x53a39c
+  53a360:	f702 feb5 	bl	0x43d0ce
+  53a364:	0780      	lsls	r0, r0, #30
+  53a366:	d50a      	bpl.n	0x53a37e
+  53a368:	9402      	str	r4, [sp, #8]
+  53a36a:	4828      	ldr	r0, [pc, #160]	@ (0x53a40c)
+  53a36c:	9001      	str	r0, [sp, #4]
+  53a36e:	20c3      	movs	r0, #195	@ 0xc3
+  53a370:	9000      	str	r0, [sp, #0]
+  53a372:	4b17      	ldr	r3, [pc, #92]	@ (0x53a3d0)
+  53a374:	4a0d      	ldr	r2, [pc, #52]	@ (0x53a3ac)
+  53a376:	490e      	ldr	r1, [pc, #56]	@ (0x53a3b0)
+  53a378:	2001      	movs	r0, #1
+  53a37a:	f703 f8fb 	bl	0x43d574
+  53a37e:	f702 fea6 	bl	0x43d0ce
+  53a382:	07c0      	lsls	r0, r0, #31
+  53a384:	d403      	bmi.n	0x53a38e
+  53a386:	f702 fea2 	bl	0x43d0ce
+  53a38a:	0740      	lsls	r0, r0, #29
+  53a38c:	d506      	bpl.n	0x53a39c
+  53a38e:	4920      	ldr	r1, [pc, #128]	@ (0x53a410)
+  53a390:	0023      	movs	r3, r4
+  53a392:	000a      	movs	r2, r1
+  53a394:	f05f 6088 	movs.w	r0, #71303168	@ 0x4400000
+  53a398:	f702 fd81 	bl	0x43ce9e
+  53a39c:	f50d 6da0 	add.w	sp, sp, #1280	@ 0x500
+  53a3a0:	b005      	add	sp, #20
+  53a3a2:	bd30      	pop	{r4, r5, pc}
+  53a3a4:	e7e4      	b.n	0x53a370
+  53a3a6:	0077      	lsls	r7, r6, #1
+  53a3a8:	a55c      	add	r5, pc, #368	@ (adr r5, 0x53a51c)
+  53a3aa:	0078      	lsls	r0, r7, #1
+  53a3ac:	890c      	ldrh	r4, [r1, #8]
+  53a3ae:	006f      	lsls	r7, r5, #1
+  53a3b0:	56a0      	ldrsb	r0, [r4, r2]
+  53a3b2:	0078      	lsls	r0, r7, #1
+  53a3b4:	e4d0      	b.n	0x539d58
+  53a3b6:	0075      	lsls	r5, r6, #1
+  53a3b8:	661c      	str	r4, [r3, #96]	@ 0x60
+  53a3ba:	006e      	lsls	r6, r5, #1
+  53a3bc:	cb14      	ldmia	r3!, {r2, r4}
+  53a3be:	006d      	lsls	r5, r5, #1
+  53a3c0:	4f96      	ldr	r7, [pc, #600]	@ (0x53a61c)
+  53a3c2:	2007      	movs	r0, #7
+  53a3c4:	ba68      	rev16	r0, r5
+  53a3c6:	2005      	movs	r0, #5
+  53a3c8:	d10c      	bne.n	0x53a3e4
+  53a3ca:	0078      	lsls	r0, r7, #1
+  53a3cc:	a01d      	add	r0, pc, #116	@ (adr r0, 0x53a444)
+  53a3ce:	0053      	lsls	r3, r2, #1
+
+======================================================================
+CANDIDATE FUNCTION 0x00584BC0
+======================================================================
+  584bb0:	d003      	beq.n	0x584bba
+  584bb2:	6821      	ldr	r1, [r4, #0]
+  584bb4:	0038      	movs	r0, r7
+  584bb6:	6812      	ldr	r2, [r2, #0]
+  584bb8:	4790      	blx	r2
+  584bba:	2000      	movs	r0, #0
+  584bbc:	6020      	str	r0, [r4, #0]
+  584bbe:	bdf1      	pop	{r0, r4, r5, r6, r7, pc}
+  584bc0:	b538      	push	{r3, r4, r5, lr}
+  584bc2:	2400      	movs	r4, #0
+  584bc4:	4da3      	ldr	r5, [pc, #652]	@ (0x584e54)
+  584bc6:	6828      	ldr	r0, [r5, #0]
+  584bc8:	2800      	cmp	r0, #0
+  584bca:	d10a      	bne.n	0x584be2
+  584bcc:	2200      	movs	r2, #0
+  584bce:	2100      	movs	r1, #0
+  584bd0:	2001      	movs	r0, #1
+  584bd2:	f6c4 fe62 	bl	0x44989a
+  584bd6:	6028      	str	r0, [r5, #0]
+  584bd8:	6828      	ldr	r0, [r5, #0]
+  584bda:	2800      	cmp	r0, #0
+  584bdc:	d101      	bne.n	0x584be2
+  584bde:	2001      	movs	r0, #1
+  584be0:	e053      	b.n	0x584c8a
+  584be2:	4da4      	ldr	r5, [pc, #656]	@ (0x584e74)
+  584be4:	6828      	ldr	r0, [r5, #0]
+  584be6:	2800      	cmp	r0, #0
+  584be8:	d108      	bne.n	0x584bfc
+  584bea:	2000      	movs	r0, #0
+  584bec:	f6c4 fd96 	bl	0x44971c
+  584bf0:	6028      	str	r0, [r5, #0]
+  584bf2:	6828      	ldr	r0, [r5, #0]
+  584bf4:	2800      	cmp	r0, #0
+  584bf6:	d101      	bne.n	0x584bfc
+  584bf8:	2001      	movs	r0, #1
+  584bfa:	e046      	b.n	0x584c8a
+  584bfc:	4d92      	ldr	r5, [pc, #584]	@ (0x584e48)
+  584bfe:	0029      	movs	r1, r5
+  584c00:	2000      	movs	r0, #0
+  584c02:	f008 ff6f 	bl	0x58dae4
+  584c06:	4304      	orrs	r4, r0
+  584c08:	2c00      	cmp	r4, #0
+  584c0a:	d102      	bne.n	0x584c12
+  584c0c:	6828      	ldr	r0, [r5, #0]
+  584c0e:	2800      	cmp	r0, #0
+  584c10:	d101      	bne.n	0x584c16
+  584c12:	2001      	movs	r0, #1
+  584c14:	e039      	b.n	0x584c8a
+  584c16:	4898      	ldr	r0, [pc, #608]	@ (0x584e78)
+  584c18:	6801      	ldr	r1, [r0, #0]
+  584c1a:	2000      	movs	r0, #0
+  584c1c:	f6fc f976 	bl	0x480f0c
+  584c20:	4304      	orrs	r4, r0
+  584c22:	4896      	ldr	r0, [pc, #600]	@ (0x584e7c)
+  584c24:	6801      	ldr	r1, [r0, #0]
+  584c26:	2002      	movs	r0, #2
+  584c28:	f6fc f970 	bl	0x480f0c
+  584c2c:	4304      	orrs	r4, r0
+  584c2e:	2200      	movs	r2, #0
+  584c30:	2100      	movs	r1, #0
+  584c32:	6828      	ldr	r0, [r5, #0]
+  584c34:	f008 ffc0 	bl	0x58dbb8
+  584c38:	4304      	orrs	r4, r0
+  584c3a:	4991      	ldr	r1, [pc, #580]	@ (0x584e80)
+  584c3c:	6828      	ldr	r0, [r5, #0]
+  584c3e:	f009 fa2e 	bl	0x58e09e
+  584c42:	4304      	orrs	r4, r0
+  584c44:	2000      	movs	r0, #0
+  584c46:	9000      	str	r0, [sp, #0]
+  584c48:	2300      	movs	r3, #0
+  584c4a:	2200      	movs	r2, #0
+  584c4c:	2100      	movs	r1, #0
+  584c4e:	6828      	ldr	r0, [r5, #0]
+  584c50:	f009 f8c1 	bl	0x58ddd6
+  584c54:	4304      	orrs	r4, r0
+  584c56:	200f      	movs	r0, #15
+  584c58:	f7ff fecb 	bl	0x5849f2
+  584c5c:	2103      	movs	r1, #3
+  584c5e:	200f      	movs	r0, #15
+  584c60:	f7ff fed6 	bl	0x584a10
+  584c64:	200f      	movs	r0, #15
+  584c66:	f7ff feb5 	bl	0x5849d4
+  584c6a:	f641 71d0 	movw	r1, #8144	@ 0x1fd0
+  584c6e:	6828      	ldr	r0, [r5, #0]
+  584c70:	f009 fd87 	bl	0x58e782
+  584c74:	4304      	orrs	r4, r0
+  584c76:	2001      	movs	r0, #1
+  584c78:	4974      	ldr	r1, [pc, #464]	@ (0x584e4c)
+  584c7a:	7008      	strb	r0, [r1, #0]
+  584c7c:	f000 f8ba 	bl	0x584df4
+  584c80:	2c00      	cmp	r4, #0
+  584c82:	d001      	beq.n	0x584c88
+  584c84:	2001      	movs	r0, #1
+  584c86:	e000      	b.n	0x584c8a
+  584c88:	2000      	movs	r0, #0
+  584c8a:	bd32      	pop	{r1, r4, r5, pc}
+  584c8c:	0001      	movs	r1, r0
+  584c8e:	2900      	cmp	r1, #0
+  584c90:	d001      	beq.n	0x584c96
+
+======================================================================
+CANDIDATE FUNCTION 0x005417C4
+======================================================================
+  5417b0:	48b5      	ldr	r0, [pc, #724]	@ (0x541a88)
+  5417b2:	6800      	ldr	r0, [r0, #0]
+  5417b4:	f03c fc53 	bl	0x57e05e
+  5417b8:	2101      	movs	r1, #1
+  5417ba:	48b4      	ldr	r0, [pc, #720]	@ (0x541a8c)
+  5417bc:	6800      	ldr	r0, [r0, #0]
+  5417be:	f707 ff11 	bl	0x4495e4
+  5417c2:	bd01      	pop	{r0, pc}
+  5417c4:	b580      	push	{r7, lr}
+  5417c6:	f043 f9fb 	bl	0x584bc0
+  5417ca:	48b1      	ldr	r0, [pc, #708]	@ (0x541a90)
+  5417cc:	f043 fa5e 	bl	0x584c8c
+  5417d0:	f043 faf1 	bl	0x584db6
+  5417d4:	bd01      	pop	{r0, pc}
+  5417d6:	e92d 47ff 	stmdb	sp!, {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, sl, lr}
+  5417da:	4cae      	ldr	r4, [pc, #696]	@ (0x541a94)
+  5417dc:	2000      	movs	r0, #0
+  5417de:	f707 ff9d 	bl	0x44971c
+  5417e2:	6020      	str	r0, [r4, #0]
+  5417e4:	6820      	ldr	r0, [r4, #0]
+  5417e6:	2800      	cmp	r0, #0
+  5417e8:	d11d      	bne.n	0x541826
+  5417ea:	f6fb fc70 	bl	0x43d0ce
+  5417ee:	0780      	lsls	r0, r0, #30
+  5417f0:	d509      	bpl.n	0x541806
+  5417f2:	48a9      	ldr	r0, [pc, #676]	@ (0x541a98)
+  5417f4:	9001      	str	r0, [sp, #4]
+  5417f6:	2060      	movs	r0, #96	@ 0x60
+  5417f8:	9000      	str	r0, [sp, #0]
+  5417fa:	4ba8      	ldr	r3, [pc, #672]	@ (0x541a9c)
+  5417fc:	4aa8      	ldr	r2, [pc, #672]	@ (0x541aa0)
+  5417fe:	49a9      	ldr	r1, [pc, #676]	@ (0x541aa4)
+  541800:	2001      	movs	r0, #1
+  541802:	f6fb feb7 	bl	0x43d574
+  541806:	f6fb fc62 	bl	0x43d0ce
+  54180a:	07c0      	lsls	r0, r0, #31
+  54180c:	d403      	bmi.n	0x541816
+  54180e:	f6fb fc5e 	bl	0x43d0ce
+  541812:	0740      	lsls	r0, r0, #29
+  541814:	d505      	bpl.n	0x541822
+  541816:	49a4      	ldr	r1, [pc, #656]	@ (0x541aa8)
+  541818:	000a      	movs	r2, r1
+  54181a:	f05f 6080 	movs.w	r0, #67108864	@ 0x4000000
+  54181e:	f6fb fb3e 	bl	0x43ce9e
+  541822:	e8bd 87ff 	ldmia.w	sp!, {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, sl, pc}
+  541826:	4c99      	ldr	r4, [pc, #612]	@ (0x541a8c)
+  541828:	2000      	movs	r0, #0
+  54182a:	f707 feb1 	bl	0x449590
+  54182e:	6020      	str	r0, [r4, #0]
+  541830:	6820      	ldr	r0, [r4, #0]
+  541832:	2800      	cmp	r0, #0
+  541834:	d11c      	bne.n	0x541870
+  541836:	f6fb fc4a 	bl	0x43d0ce
+  54183a:	0780      	lsls	r0, r0, #30
+  54183c:	d509      	bpl.n	0x541852
+  54183e:	489b      	ldr	r0, [pc, #620]	@ (0x541aac)
+  541840:	9001      	str	r0, [sp, #4]
+  541842:	2066      	movs	r0, #102	@ 0x66
+  541844:	9000      	str	r0, [sp, #0]
+  541846:	4b95      	ldr	r3, [pc, #596]	@ (0x541a9c)
+  541848:	4a95      	ldr	r2, [pc, #596]	@ (0x541aa0)
+  54184a:	4996      	ldr	r1, [pc, #600]	@ (0x541aa4)
+  54184c:	2001      	movs	r0, #1
+  54184e:	f6fb fe91 	bl	0x43d574
+  541852:	f6fb fc3c 	bl	0x43d0ce
+  541856:	07c0      	lsls	r0, r0, #31
+  541858:	d403      	bmi.n	0x541862
+  54185a:	f6fb fc38 	bl	0x43d0ce
+  54185e:	0740      	lsls	r0, r0, #29
+  541860:	d505      	bpl.n	0x54186e
+  541862:	4993      	ldr	r1, [pc, #588]	@ (0x541ab0)
+  541864:	000a      	movs	r2, r1
+  541866:	f05f 6080 	movs.w	r0, #67108864	@ 0x4000000
+  54186a:	f6fb fb18 	bl	0x43ce9e
+  54186e:	e7d8      	b.n	0x541822
+  541870:	4d85      	ldr	r5, [pc, #532]	@ (0x541a88)
+  541872:	2000      	movs	r0, #0
+  541874:	9002      	str	r0, [sp, #8]
+  541876:	2000      	movs	r0, #0
+  541878:	9001      	str	r0, [sp, #4]
+  54187a:	488e      	ldr	r0, [pc, #568]	@ (0x541ab4)
+  54187c:	9000      	str	r0, [sp, #0]
+  54187e:	4b8e      	ldr	r3, [pc, #568]	@ (0x541ab8)
+  541880:	2200      	movs	r2, #0
+  541882:	2101      	movs	r1, #1
+  541884:	f44f 40c0 	mov.w	r0, #24576	@ 0x6000
+  541888:	f03c fb78 	bl	0x57df7c
+  54188c:	6028      	str	r0, [r5, #0]
+  54188e:	6828      	ldr	r0, [r5, #0]
+  541890:	2800      	cmp	r0, #0
+  541892:	d11c      	bne.n	0x5418ce
+  541894:	f6fb fc1b 	bl	0x43d0ce
+  541898:	0780      	lsls	r0, r0, #30
+  54189a:	d509      	bpl.n	0x5418b0
+  54189c:	4887      	ldr	r0, [pc, #540]	@ (0x541abc)
+  54189e:	9001      	str	r0, [sp, #4]
+  5418a0:	2071      	movs	r0, #113	@ 0x71
+  5418a2:	9000      	str	r0, [sp, #0]
+  5418a4:	4b7d      	ldr	r3, [pc, #500]	@ (0x541a9c)
+
+======================================================================
+CANDIDATE FUNCTION 0x0054191A
+======================================================================
+  541904:	000a      	movs	r2, r1
+  541906:	f05f 6080 	movs.w	r0, #67108864	@ 0x4000000
+  54190a:	f6fb fac8 	bl	0x43ce9e
+  54190e:	e788      	b.n	0x541822
+  541910:	486e      	ldr	r0, [pc, #440]	@ (0x541acc)
+  541912:	6800      	ldr	r0, [r0, #0]
+  541914:	4780      	blx	r0
+  541916:	f702 ff03 	bl	0x444720
+  54191a:	f7ff ff53 	bl	0x5417c4
+  54191e:	f043 fab9 	bl	0x584e94
+  541922:	2003      	movs	r0, #3
+  541924:	f76a ff80 	bl	0x4ac828
+  541928:	f718 fe22 	bl	0x45a570
+  54192c:	2802      	cmp	r0, #2
+  54192e:	d101      	bne.n	0x541934
+  541930:	f72f fdfa 	bl	0x471528
+  541934:	f73c fdb7 	bl	0x47e4a6
+  541938:	f73b ff6e 	bl	0x47d818
+  54193c:	f7be f82d 	bl	0x4ff99a
+  541940:	f7c0 fa0c 	bl	0x501d5c
+  541944:	2001      	movs	r0, #1
+  541946:	f7bf fb8e 	bl	0x501066
+  54194a:	e026      	b.n	0x54199a
+  54194c:	2100      	movs	r1, #0
+  54194e:	7001      	strb	r1, [r0, #0]
+  541950:	1c46      	adds	r6, r0, #1
+  541952:	2300      	movs	r3, #0
+  541954:	220a      	movs	r2, #10
+  541956:	0031      	movs	r1, r6
+  541958:	6828      	ldr	r0, [r5, #0]
+  54195a:	f03c fbec 	bl	0x57e136
+  54195e:	f6fb fbb6 	bl	0x43d0ce
+  541962:	0780      	lsls	r0, r0, #30
+  541964:	d50a      	bpl.n	0x54197c
+  541966:	9602      	str	r6, [sp, #8]
+  541968:	4859      	ldr	r0, [pc, #356]	@ (0x541ad0)
+  54196a:	9001      	str	r0, [sp, #4]
+  54196c:	209f      	movs	r0, #159	@ 0x9f
+  54196e:	9000      	str	r0, [sp, #0]
+  541970:	4b4a      	ldr	r3, [pc, #296]	@ (0x541a9c)
+  541972:	4a4b      	ldr	r2, [pc, #300]	@ (0x541aa0)
+  541974:	494b      	ldr	r1, [pc, #300]	@ (0x541aa4)
+  541976:	2003      	movs	r0, #3
+  541978:	f6fb fdfc 	bl	0x43d574
+  54197c:	f6fb fba7 	bl	0x43d0ce
+  541980:	07c0      	lsls	r0, r0, #31
+  541982:	d403      	bmi.n	0x54198c
+  541984:	f6fb fba3 	bl	0x43d0ce
+  541988:	0740      	lsls	r0, r0, #29
+  54198a:	d506      	bpl.n	0x54199a
+  54198c:	4951      	ldr	r1, [pc, #324]	@ (0x541ad4)
+  54198e:	0033      	movs	r3, r6
+  541990:	000a      	movs	r2, r1
+  541992:	f05f 6044 	movs.w	r0, #205520896	@ 0xc400000
+  541996:	f6fb fa82 	bl	0x43ce9e
+  54199a:	f05f 33ff 	movs.w	r3, #4294967295
+  54199e:	2202      	movs	r2, #2
+  5419a0:	2107      	movs	r1, #7
+  5419a2:	6820      	ldr	r0, [r4, #0]
+  5419a4:	f707 fe7a 	bl	0x44969c
+  5419a8:	0006      	movs	r6, r0
+  5419aa:	07f0      	lsls	r0, r6, #31
+  5419ac:	d52d      	bpl.n	0x541a0a
+  5419ae:	2101      	movs	r1, #1
+  5419b0:	6820      	ldr	r0, [r4, #0]
+  5419b2:	f707 fe46 	bl	0x449642
+  5419b6:	2700      	movs	r7, #0
+  5419b8:	f05f 0800 	movs.w	r8, #0
+  5419bc:	f76a fa50 	bl	0x4abe60
+  5419c0:	2801      	cmp	r0, #1
+  5419c2:	d103      	bne.n	0x5419cc
+  5419c4:	4844      	ldr	r0, [pc, #272]	@ (0x541ad8)
+  5419c6:	7801      	ldrb	r1, [r0, #0]
+  5419c8:	2901      	cmp	r1, #1
+  5419ca:	d0bf      	beq.n	0x54194c
+  5419cc:	f44f 6180 	mov.w	r1, #1024	@ 0x400
+  5419d0:	2200      	movs	r2, #0
+  5419d2:	f8df 9108 	ldr.w	r9, [pc, #264]	@ 0x541adc
+  5419d6:	46ca      	mov	sl, r9
+  5419d8:	4650      	mov	r0, sl
+  5419da:	f6fa fb83 	bl	0x43c0e4
+  5419de:	2300      	movs	r3, #0
+  5419e0:	f44f 6280 	mov.w	r2, #1024	@ 0x400
+  5419e4:	4649      	mov	r1, r9
+  5419e6:	6828      	ldr	r0, [r5, #0]
+  5419e8:	f03c fba5 	bl	0x57e136
+  5419ec:	2800      	cmp	r0, #0
+  5419ee:	d01d      	beq.n	0x541a2c
+  5419f0:	19c7      	adds	r7, r0, r7
+  5419f2:	0001      	movs	r1, r0
+  5419f4:	4648      	mov	r0, r9
+  5419f6:	f71b fd71 	bl	0x45d4dc
+  5419fa:	f118 0801 	adds.w	r8, r8, #1
+  5419fe:	f5b7 4f00 	cmp.w	r7, #32768	@ 0x8000
+  541a02:	d202      	bcs.n	0x541a0a
+  541a04:	f1b8 0f20 	cmp.w	r8, #32
+  541a08:	d3e0      	bcc.n	0x5419cc
+  541a0a:	07b0      	lsls	r0, r6, #30
+  541a0c:	d505      	bpl.n	0x541a1a
+
+======================================================================
+CANDIDATE FUNCTION 0x0044989A
+======================================================================
+  449886:	d102      	bne.n	0x44988e
+  449888:	f07f 0503 	mvns.w	r5, #3
+  44988c:	e003      	b.n	0x449896
+  44988e:	2500      	movs	r5, #0
+  449890:	0020      	movs	r0, r4
+  449892:	f7f8 fb06 	bl	0x441ea2
+  449896:	0028      	movs	r0, r5
+  449898:	bd32      	pop	{r1, r4, r5, pc}
+  44989a:	b5f8      	push	{r3, r4, r5, r6, r7, lr}
+  44989c:	0005      	movs	r5, r0
+  44989e:	000e      	movs	r6, r1
+  4498a0:	0017      	movs	r7, r2
+  4498a2:	2400      	movs	r4, #0
+  4498a4:	f7ff fbb3 	bl	0x44900e
+  4498a8:	2800      	cmp	r0, #0
+  4498aa:	d14e      	bne.n	0x44994a
+  4498ac:	2d00      	cmp	r5, #0
+  4498ae:	d04c      	beq.n	0x44994a
+  4498b0:	42b5      	cmp	r5, r6
+  4498b2:	d34a      	bcc.n	0x44994a
+  4498b4:	f05f 31ff 	movs.w	r1, #4294967295
+  4498b8:	2f00      	cmp	r7, #0
+  4498ba:	d00f      	beq.n	0x4498dc
+  4498bc:	68b8      	ldr	r0, [r7, #8]
+  4498be:	2800      	cmp	r0, #0
+  4498c0:	d004      	beq.n	0x4498cc
+  4498c2:	68f8      	ldr	r0, [r7, #12]
+  4498c4:	2850      	cmp	r0, #80	@ 0x50
+  4498c6:	d301      	bcc.n	0x4498cc
+  4498c8:	2101      	movs	r1, #1
+  4498ca:	e008      	b.n	0x4498de
+  4498cc:	68b8      	ldr	r0, [r7, #8]
+  4498ce:	2800      	cmp	r0, #0
+  4498d0:	d105      	bne.n	0x4498de
+  4498d2:	68f8      	ldr	r0, [r7, #12]
+  4498d4:	2800      	cmp	r0, #0
+  4498d6:	d102      	bne.n	0x4498de
+  4498d8:	2100      	movs	r1, #0
+  4498da:	e000      	b.n	0x4498de
+  4498dc:	2100      	movs	r1, #0
+  4498de:	f111 0f01 	cmn.w	r1, #1
+  4498e2:	d032      	beq.n	0x44994a
+  4498e4:	2d01      	cmp	r5, #1
+  4498e6:	d122      	bne.n	0x44992e
+  4498e8:	2901      	cmp	r1, #1
+  4498ea:	d109      	bne.n	0x449900
+  4498ec:	2003      	movs	r0, #3
+  4498ee:	9000      	str	r0, [sp, #0]
+  4498f0:	68bb      	ldr	r3, [r7, #8]
+  4498f2:	2200      	movs	r2, #0
+  4498f4:	2100      	movs	r1, #0
+  4498f6:	2001      	movs	r0, #1
+  4498f8:	f7f7 fe67 	bl	0x4415ca
+  4498fc:	0004      	movs	r4, r0
+  4498fe:	e005      	b.n	0x44990c
+  449900:	2203      	movs	r2, #3
+  449902:	2100      	movs	r1, #0
+  449904:	2001      	movs	r0, #1
+  449906:	f7f7 fe96 	bl	0x441636
+  44990a:	0004      	movs	r4, r0
+  44990c:	2c00      	cmp	r4, #0
+  44990e:	d01c      	beq.n	0x44994a
+  449910:	2e00      	cmp	r6, #0
+  449912:	d01a      	beq.n	0x44994a
+  449914:	2300      	movs	r3, #0
+  449916:	2200      	movs	r2, #0
+  449918:	2100      	movs	r1, #0
+  44991a:	0020      	movs	r0, r4
+  44991c:	f7f7 ff67 	bl	0x4417ee
+  449920:	2801      	cmp	r0, #1
+  449922:	d012      	beq.n	0x44994a
+  449924:	0020      	movs	r0, r4
+  449926:	f7f8 fabc 	bl	0x441ea2
+  44992a:	2400      	movs	r4, #0
+  44992c:	e00d      	b.n	0x44994a
+  44992e:	2901      	cmp	r1, #1
+  449930:	d106      	bne.n	0x449940
+  449932:	68ba      	ldr	r2, [r7, #8]
+  449934:	0031      	movs	r1, r6
+  449936:	0028      	movs	r0, r5
+  449938:	f7f7 ff2a 	bl	0x441790
+  44993c:	0004      	movs	r4, r0
+  44993e:	e004      	b.n	0x44994a
+  449940:	0031      	movs	r1, r6
+  449942:	0028      	movs	r0, r5
+  449944:	f7f7 ff3d 	bl	0x4417c2
+  449948:	0004      	movs	r4, r0
+  44994a:	0020      	movs	r0, r4
+  44994c:	bdf2      	pop	{r1, r4, r5, r6, r7, pc}
+  44994e:	b57c      	push	{r2, r3, r4, r5, r6, lr}
+  449950:	0005      	movs	r5, r0
+  449952:	000c      	movs	r4, r1
+  449954:	2600      	movs	r6, #0
+  449956:	2d00      	cmp	r5, #0
+  449958:	d102      	bne.n	0x449960
+  44995a:	f07f 0603 	mvns.w	r6, #3
+  44995e:	e029      	b.n	0x4499b4
+  449960:	f7ff fb55 	bl	0x44900e
+  449964:	2800      	cmp	r0, #0
+
+======================================================================
+CANDIDATE FUNCTION 0x00480F0C
+======================================================================
+  480efa:	2900      	cmp	r1, #0
+  480efc:	d101      	bne.n	0x480f02
+  480efe:	2006      	movs	r0, #6
+  480f00:	e003      	b.n	0x480f0a
+  480f02:	f852 0020 	ldr.w	r0, [r2, r0, lsl #2]
+  480f06:	6008      	str	r0, [r1, #0]
+  480f08:	2000      	movs	r0, #0
+  480f0a:	4770      	bx	lr
+  480f0c:	b57c      	push	{r2, r3, r4, r5, r6, lr}
+  480f0e:	0004      	movs	r4, r0
+  480f10:	000e      	movs	r6, r1
+  480f12:	f8df 5828 	ldr.w	r5, [pc, #2088]	@ 0x48173c
+  480f16:	2ce0      	cmp	r4, #224	@ 0xe0
+  480f18:	d301      	bcc.n	0x480f1e
+  480f1a:	2005      	movs	r0, #5
+  480f1c:	e034      	b.n	0x480f88
+  480f1e:	0021      	movs	r1, r4
+  480f20:	0949      	lsrs	r1, r1, #5
+  480f22:	2201      	movs	r2, #1
+  480f24:	f014 001f 	ands.w	r0, r4, #31
+  480f28:	4082      	lsls	r2, r0
+  480f2a:	f8df 0814 	ldr.w	r0, [pc, #2068]	@ 0x481740
+  480f2e:	f850 0021 	ldr.w	r0, [r0, r1, lsl #2]
+  480f32:	4210      	tst	r0, r2
+  480f34:	d10b      	bne.n	0x480f4e
+  480f36:	f3c6 2081 	ubfx	r0, r6, #10, #2
+  480f3a:	2802      	cmp	r0, #2
+  480f3c:	db15      	blt.n	0x480f6a
+  480f3e:	f8df 0804 	ldr.w	r0, [pc, #2052]	@ 0x481744
+  480f42:	f850 0021 	ldr.w	r0, [r0, r1, lsl #2]
+  480f46:	4210      	tst	r0, r2
+  480f48:	d10f      	bne.n	0x480f6a
+  480f4a:	2007      	movs	r0, #7
+  480f4c:	e01c      	b.n	0x480f88
+  480f4e:	f3c6 3042 	ubfx	r0, r6, #13, #3
+  480f52:	2800      	cmp	r0, #0
+  480f54:	d009      	beq.n	0x480f6a
+  480f56:	f3c6 3042 	ubfx	r0, r6, #13, #3
+  480f5a:	2806      	cmp	r0, #6
+  480f5c:	d005      	beq.n	0x480f6a
+  480f5e:	f3c6 3042 	ubfx	r0, r6, #13, #3
+  480f62:	2801      	cmp	r0, #1
+  480f64:	d001      	beq.n	0x480f6a
+  480f66:	2007      	movs	r0, #7
+  480f68:	e00e      	b.n	0x480f88
+  480f6a:	f7f2 fce9 	bl	0x473940
+  480f6e:	9000      	str	r0, [sp, #0]
+  480f70:	f8df 07d4 	ldr.w	r0, [pc, #2004]	@ 0x481748
+  480f74:	2173      	movs	r1, #115	@ 0x73
+  480f76:	6001      	str	r1, [r0, #0]
+  480f78:	f845 6024 	str.w	r6, [r5, r4, lsl #2]
+  480f7c:	2100      	movs	r1, #0
+  480f7e:	6001      	str	r1, [r0, #0]
+  480f80:	9800      	ldr	r0, [sp, #0]
+  480f82:	f380 8810 	msr	PRIMASK, r0
+  480f86:	2000      	movs	r0, #0
+  480f88:	bd76      	pop	{r1, r2, r4, r5, r6, pc}
+  480f8a:	b2c9      	uxtb	r1, r1
+  480f8c:	2900      	cmp	r1, #0
+  480f8e:	d003      	beq.n	0x480f98
+  480f90:	2902      	cmp	r1, #2
+  480f92:	d017      	beq.n	0x480fc4
+  480f94:	d30f      	bcc.n	0x480fb6
+  480f96:	e01c      	b.n	0x480fd2
+  480f98:	f8df 17b0 	ldr.w	r1, [pc, #1968]	@ 0x48174c
+  480f9c:	f3c0 1342 	ubfx	r3, r0, #5, #3
+  480fa0:	eb01 0183 	add.w	r1, r1, r3, lsl #2
+  480fa4:	6809      	ldr	r1, [r1, #0]
+  480fa6:	f010 001f 	ands.w	r0, r0, #31
+  480faa:	40c1      	lsrs	r1, r0
+  480fac:	f011 0101 	ands.w	r1, r1, #1
+  480fb0:	6011      	str	r1, [r2, #0]
+  480fb2:	2000      	movs	r0, #0
+  480fb4:	4770      	bx	lr
+  480fb6:	f8df 1798 	ldr.w	r1, [pc, #1944]	@ 0x481750
+  480fba:	f3c0 1342 	ubfx	r3, r0, #5, #3
+  480fbe:	eb01 0183 	add.w	r1, r1, r3, lsl #2
+  480fc2:	e7ef      	b.n	0x480fa4
+  480fc4:	f8df 178c 	ldr.w	r1, [pc, #1932]	@ 0x481754
+  480fc8:	f3c0 1342 	ubfx	r3, r0, #5, #3
+  480fcc:	eb01 0183 	add.w	r1, r1, r3, lsl #2
+  480fd0:	e7e8      	b.n	0x480fa4
+  480fd2:	2006      	movs	r0, #6
+  480fd4:	e7ee      	b.n	0x480fb4
+
+======================================================================
+CALLER OF 0x00584BC0
+======================================================================
+  541782:	0054      	lsls	r4, r2, #1
+  541784:	48b8      	ldr	r0, [pc, #736]	@ (0x541a68)
+  541786:	2007      	movs	r0, #7
+  541788:	b958      	cbnz	r0, 0x5417a2
+  54178a:	0075      	lsls	r5, r6, #1
+  54178c:	1601      	asrs	r1, r0, #24
+  54178e:	0054      	lsls	r4, r2, #1
+  541790:	b580      	push	{r7, lr}
+  541792:	f043 fa81 	bl	0x584c98
+  541796:	2800      	cmp	r0, #0
+  541798:	d101      	bne.n	0x54179e
+  54179a:	2000      	movs	r0, #0
+  54179c:	e001      	b.n	0x5417a2
+  54179e:	f05f 30ff 	movs.w	r0, #4294967295
+  5417a2:	bd02      	pop	{r1, pc}
+  5417a4:	b580      	push	{r7, lr}
+  5417a6:	000a      	movs	r2, r1
+  5417a8:	2100      	movs	r1, #0
+  5417aa:	9100      	str	r1, [sp, #0]
+  5417ac:	466b      	mov	r3, sp
+  5417ae:	0001      	movs	r1, r0
+  5417b0:	48b5      	ldr	r0, [pc, #724]	@ (0x541a88)
+  5417b2:	6800      	ldr	r0, [r0, #0]
+  5417b4:	f03c fc53 	bl	0x57e05e
+  5417b8:	2101      	movs	r1, #1
+  5417ba:	48b4      	ldr	r0, [pc, #720]	@ (0x541a8c)
+  5417bc:	6800      	ldr	r0, [r0, #0]
+  5417be:	f707 ff11 	bl	0x4495e4
+  5417c2:	bd01      	pop	{r0, pc}
+  5417c4:	b580      	push	{r7, lr}
+  5417c6:	f043 f9fb 	bl	0x584bc0
+  5417ca:	48b1      	ldr	r0, [pc, #708]	@ (0x541a90)
+  5417cc:	f043 fa5e 	bl	0x584c8c
+  5417d0:	f043 faf1 	bl	0x584db6
+  5417d4:	bd01      	pop	{r0, pc}
+  5417d6:	e92d 47ff 	stmdb	sp!, {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, sl, lr}
+  5417da:	4cae      	ldr	r4, [pc, #696]	@ (0x541a94)
+  5417dc:	2000      	movs	r0, #0
+  5417de:	f707 ff9d 	bl	0x44971c
+  5417e2:	6020      	str	r0, [r4, #0]
+  5417e4:	6820      	ldr	r0, [r4, #0]
+  5417e6:	2800      	cmp	r0, #0
+  5417e8:	d11d      	bne.n	0x541826
+  5417ea:	f6fb fc70 	bl	0x43d0ce
+  5417ee:	0780      	lsls	r0, r0, #30
+  5417f0:	d509      	bpl.n	0x541806
+  5417f2:	48a9      	ldr	r0, [pc, #676]	@ (0x541a98)
+  5417f4:	9001      	str	r0, [sp, #4]
+  5417f6:	2060      	movs	r0, #96	@ 0x60
+  5417f8:	9000      	str	r0, [sp, #0]
+  5417fa:	4ba8      	ldr	r3, [pc, #672]	@ (0x541a9c)
+  5417fc:	4aa8      	ldr	r2, [pc, #672]	@ (0x541aa0)
+  5417fe:	49a9      	ldr	r1, [pc, #676]	@ (0x541aa4)
+  541800:	2001      	movs	r0, #1
+  541802:	f6fb feb7 	bl	0x43d574
+  541806:	f6fb fc62 	bl	0x43d0ce
+  54180a:	07c0      	lsls	r0, r0, #31
+  54180c:	d403      	bmi.n	0x541816
+  54180e:	f6fb fc5e 	bl	0x43d0ce
+  541812:	0740      	lsls	r0, r0, #29
+  541814:	d505      	bpl.n	0x541822
+  541816:	49a4      	ldr	r1, [pc, #656]	@ (0x541aa8)
+  541818:	000a      	movs	r2, r1
+  54181a:	f05f 6080 	movs.w	r0, #67108864	@ 0x4000000
+  54181e:	f6fb fb3e 	bl	0x43ce9e
+  541822:	e8bd 87ff 	ldmia.w	sp!, {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, sl, pc}
+  541826:	4c99      	ldr	r4, [pc, #612]	@ (0x541a8c)
+
+======================================================================
+0x44989A CALL IN 0x584xxx UART CANDIDATE AREA
+======================================================================
+  584ba0:	d00d      	beq.n	0x584bbe
+  584ba2:	f8df 22c8 	ldr.w	r2, [pc, #712]	@ 0x584e6c
+  584ba6:	6810      	ldr	r0, [r2, #0]
+  584ba8:	2800      	cmp	r0, #0
+  584baa:	d006      	beq.n	0x584bba
+  584bac:	6820      	ldr	r0, [r4, #0]
+  584bae:	2800      	cmp	r0, #0
+  584bb0:	d003      	beq.n	0x584bba
+  584bb2:	6821      	ldr	r1, [r4, #0]
+  584bb4:	0038      	movs	r0, r7
+  584bb6:	6812      	ldr	r2, [r2, #0]
+  584bb8:	4790      	blx	r2
+  584bba:	2000      	movs	r0, #0
+  584bbc:	6020      	str	r0, [r4, #0]
+  584bbe:	bdf1      	pop	{r0, r4, r5, r6, r7, pc}
+  584bc0:	b538      	push	{r3, r4, r5, lr}
+  584bc2:	2400      	movs	r4, #0
+  584bc4:	4da3      	ldr	r5, [pc, #652]	@ (0x584e54)
+  584bc6:	6828      	ldr	r0, [r5, #0]
+  584bc8:	2800      	cmp	r0, #0
+  584bca:	d10a      	bne.n	0x584be2
+  584bcc:	2200      	movs	r2, #0
+  584bce:	2100      	movs	r1, #0
+  584bd0:	2001      	movs	r0, #1
+  584bd2:	f6c4 fe62 	bl	0x44989a
+  584bd6:	6028      	str	r0, [r5, #0]
+  584bd8:	6828      	ldr	r0, [r5, #0]
+  584bda:	2800      	cmp	r0, #0
+  584bdc:	d101      	bne.n	0x584be2
+  584bde:	2001      	movs	r0, #1
+  584be0:	e053      	b.n	0x584c8a
+  584be2:	4da4      	ldr	r5, [pc, #656]	@ (0x584e74)
+  584be4:	6828      	ldr	r0, [r5, #0]
+  584be6:	2800      	cmp	r0, #0
+  584be8:	d108      	bne.n	0x584bfc
+  584bea:	2000      	movs	r0, #0
+  584bec:	f6c4 fd96 	bl	0x44971c
+  584bf0:	6028      	str	r0, [r5, #0]
+  584bf2:	6828      	ldr	r0, [r5, #0]
+  584bf4:	2800      	cmp	r0, #0
+  584bf6:	d101      	bne.n	0x584bfc
+  584bf8:	2001      	movs	r0, #1
+  584bfa:	e046      	b.n	0x584c8a
+  584bfc:	4d92      	ldr	r5, [pc, #584]	@ (0x584e48)
+  584bfe:	0029      	movs	r1, r5
+  584c00:	2000      	movs	r0, #0
+  584c02:	f008 ff6f 	bl	0x58dae4
+  584c06:	4304      	orrs	r4, r0
+  584c08:	2c00      	cmp	r4, #0
+  584c0a:	d102      	bne.n	0x584c12
+  584c0c:	6828      	ldr	r0, [r5, #0]
+  584c0e:	2800      	cmp	r0, #0
+  584c10:	d101      	bne.n	0x584c16
+  584c12:	2001      	movs	r0, #1
+  584c14:	e039      	b.n	0x584c8a
+  584c16:	4898      	ldr	r0, [pc, #608]	@ (0x584e78)
+  584c18:	6801      	ldr	r1, [r0, #0]
+
+======================================================================
+RELEVANT GPIO PINCONFIG CALLS
+======================================================================
+
+======================================================================
+RELEVANT am_hal_gpio_pinconfig CALL AT 0x0053A486
+======================================================================
+  53a46a:	e08e      	b.n	0x53a58a
+  53a46c:	2600      	movs	r6, #0
+  53a46e:	e06b      	b.n	0x53a548
+  53a470:	fb07 f006 	mul.w	r0, r7, r6
+  53a474:	4420      	add	r0, r4
+  53a476:	7900      	ldrb	r0, [r0, #4]
+  53a478:	2804      	cmp	r0, #4
+  53a47a:	d164      	bne.n	0x53a546
+  53a47c:	4878      	ldr	r0, [pc, #480]	@ (0x53a660)
+  53a47e:	6801      	ldr	r1, [r0, #0]
+  53a480:	fb07 f706 	mul.w	r7, r7, r6
+  53a484:	59e0      	ldr	r0, [r4, r7]
+  53a486:	f746 fd41 	bl	0x480f0c
+  53a48a:	e05c      	b.n	0x53a546
+  53a48c:	fb07 f006 	mul.w	r0, r7, r6
+  53a490:	4420      	add	r0, r4
+  53a492:	7900      	ldrb	r0, [r0, #4]
+  53a494:	2802      	cmp	r0, #2
+  53a496:	d1eb      	bne.n	0x53a470
+  53a498:	4872      	ldr	r0, [pc, #456]	@ (0x53a664)
+  53a49a:	6801      	ldr	r1, [r0, #0]
+
+======================================================================
+RELEVANT am_hal_gpio_pinconfig CALL AT 0x0053A4B2
+======================================================================
+  53a492:	7900      	ldrb	r0, [r0, #4]
+  53a494:	2802      	cmp	r0, #2
+  53a496:	d1eb      	bne.n	0x53a470
+  53a498:	4872      	ldr	r0, [pc, #456]	@ (0x53a664)
+  53a49a:	6801      	ldr	r1, [r0, #0]
+  53a49c:	fb07 f006 	mul.w	r0, r7, r6
+  53a4a0:	4420      	add	r0, r4
+  53a4a2:	7980      	ldrb	r0, [r0, #6]
+  53a4a4:	f010 0003 	ands.w	r0, r0, #3
+  53a4a8:	f360 1187 	bfi	r1, r0, #6, #2
+  53a4ac:	fb07 f006 	mul.w	r0, r7, r6
+  53a4b0:	5820      	ldr	r0, [r4, r0]
+  53a4b2:	f746 fd2b 	bl	0x480f0c
+  53a4b6:	fb07 f006 	mul.w	r0, r7, r6
+  53a4ba:	4420      	add	r0, r4
+  53a4bc:	7980      	ldrb	r0, [r0, #6]
+  53a4be:	2800      	cmp	r0, #0
+  53a4c0:	d041      	beq.n	0x53a546
+  53a4c2:	fb07 f006 	mul.w	r0, r7, r6
+  53a4c6:	4420      	add	r0, r4
+  53a4c8:	6880      	ldr	r0, [r0, #8]
+
+======================================================================
+RELEVANT am_hal_gpio_pinconfig CALL AT 0x0053A564
+======================================================================
+  53a548:	42ae      	cmp	r6, r5
+  53a54a:	d21d      	bcs.n	0x53a588
+  53a54c:	270c      	movs	r7, #12
+  53a54e:	fb07 f006 	mul.w	r0, r7, r6
+  53a552:	4420      	add	r0, r4
+  53a554:	7900      	ldrb	r0, [r0, #4]
+  53a556:	2801      	cmp	r0, #1
+  53a558:	d198      	bne.n	0x53a48c
+  53a55a:	4844      	ldr	r0, [pc, #272]	@ (0x53a66c)
+  53a55c:	6801      	ldr	r1, [r0, #0]
+  53a55e:	fb07 f006 	mul.w	r0, r7, r6
+  53a562:	5820      	ldr	r0, [r4, r0]
+  53a564:	f746 fcd2 	bl	0x480f0c
+  53a568:	fb07 f006 	mul.w	r0, r7, r6
+  53a56c:	4420      	add	r0, r4
+  53a56e:	7940      	ldrb	r0, [r0, #5]
+  53a570:	2801      	cmp	r0, #1
+  53a572:	d101      	bne.n	0x53a578
+  53a574:	2101      	movs	r1, #1
+  53a576:	e000      	b.n	0x53a57a
+  53a578:	2100      	movs	r1, #0
+
+======================================================================
+RELEVANT am_hal_gpio_pinconfig CALL AT 0x00584C1C
+======================================================================
+  584c02:	f008 ff6f 	bl	0x58dae4
+  584c06:	4304      	orrs	r4, r0
+  584c08:	2c00      	cmp	r4, #0
+  584c0a:	d102      	bne.n	0x584c12
+  584c0c:	6828      	ldr	r0, [r5, #0]
+  584c0e:	2800      	cmp	r0, #0
+  584c10:	d101      	bne.n	0x584c16
+  584c12:	2001      	movs	r0, #1
+  584c14:	e039      	b.n	0x584c8a
+  584c16:	4898      	ldr	r0, [pc, #608]	@ (0x584e78)
+  584c18:	6801      	ldr	r1, [r0, #0]
+  584c1a:	2000      	movs	r0, #0
+  584c1c:	f6fc f976 	bl	0x480f0c
+  584c20:	4304      	orrs	r4, r0
+  584c22:	4896      	ldr	r0, [pc, #600]	@ (0x584e7c)
+  584c24:	6801      	ldr	r1, [r0, #0]
+  584c26:	2002      	movs	r0, #2
+  584c28:	f6fc f970 	bl	0x480f0c
+  584c2c:	4304      	orrs	r4, r0
+  584c2e:	2200      	movs	r2, #0
+  584c30:	2100      	movs	r1, #0
+
+======================================================================
+RELEVANT am_hal_gpio_pinconfig CALL AT 0x00584C28
+======================================================================
+  584c0e:	2800      	cmp	r0, #0
+  584c10:	d101      	bne.n	0x584c16
+  584c12:	2001      	movs	r0, #1
+  584c14:	e039      	b.n	0x584c8a
+  584c16:	4898      	ldr	r0, [pc, #608]	@ (0x584e78)
+  584c18:	6801      	ldr	r1, [r0, #0]
+  584c1a:	2000      	movs	r0, #0
+  584c1c:	f6fc f976 	bl	0x480f0c
+  584c20:	4304      	orrs	r4, r0
+  584c22:	4896      	ldr	r0, [pc, #600]	@ (0x584e7c)
+  584c24:	6801      	ldr	r1, [r0, #0]
+  584c26:	2002      	movs	r0, #2
+  584c28:	f6fc f970 	bl	0x480f0c
+  584c2c:	4304      	orrs	r4, r0
+  584c2e:	2200      	movs	r2, #0
+  584c30:	2100      	movs	r1, #0
+  584c32:	6828      	ldr	r0, [r5, #0]
+  584c34:	f008 ffc0 	bl	0x58dbb8
+  584c38:	4304      	orrs	r4, r0
+  584c3a:	4991      	ldr	r1, [pc, #580]	@ (0x584e80)
+  584c3c:	6828      	ldr	r0, [r5, #0]
+
+======================================================================
+RELEVANT am_hal_gpio_pinconfig CALL AT 0x00584DD8
+======================================================================
+  584dbe:	2800      	cmp	r0, #0
+  584dc0:	d101      	bne.n	0x584dc6
+  584dc2:	2001      	movs	r0, #1
+  584dc4:	e015      	b.n	0x584df2
+  584dc6:	2201      	movs	r2, #1
+  584dc8:	2100      	movs	r1, #0
+  584dca:	6818      	ldr	r0, [r3, #0]
+  584dcc:	f008 fef4 	bl	0x58dbb8
+  584dd0:	4304      	orrs	r4, r0
+  584dd2:	482a      	ldr	r0, [pc, #168]	@ (0x584e7c)
+  584dd4:	6801      	ldr	r1, [r0, #0]
+  584dd6:	2002      	movs	r0, #2
+  584dd8:	f6fc f898 	bl	0x480f0c
+  584ddc:	4304      	orrs	r4, r0
+  584dde:	4826      	ldr	r0, [pc, #152]	@ (0x584e78)
+  584de0:	6801      	ldr	r1, [r0, #0]
+  584de2:	2000      	movs	r0, #0
+  584de4:	f6fc f892 	bl	0x480f0c
+  584de8:	4304      	orrs	r4, r0
+  584dea:	2001      	movs	r0, #1
+  584dec:	4917      	ldr	r1, [pc, #92]	@ (0x584e4c)
+
+======================================================================
+RELEVANT am_hal_gpio_pinconfig CALL AT 0x00584DE4
+======================================================================
+  584dc8:	2100      	movs	r1, #0
+  584dca:	6818      	ldr	r0, [r3, #0]
+  584dcc:	f008 fef4 	bl	0x58dbb8
+  584dd0:	4304      	orrs	r4, r0
+  584dd2:	482a      	ldr	r0, [pc, #168]	@ (0x584e7c)
+  584dd4:	6801      	ldr	r1, [r0, #0]
+  584dd6:	2002      	movs	r0, #2
+  584dd8:	f6fc f898 	bl	0x480f0c
+  584ddc:	4304      	orrs	r4, r0
+  584dde:	4826      	ldr	r0, [pc, #152]	@ (0x584e78)
+  584de0:	6801      	ldr	r1, [r0, #0]
+  584de2:	2000      	movs	r0, #0
+  584de4:	f6fc f892 	bl	0x480f0c
+  584de8:	4304      	orrs	r4, r0
+  584dea:	2001      	movs	r0, #1
+  584dec:	4917      	ldr	r1, [pc, #92]	@ (0x584e4c)
+  584dee:	7008      	strb	r0, [r1, #0]
+  584df0:	0020      	movs	r0, r4
+  584df2:	bd10      	pop	{r4, pc}
+  584df4:	b538      	push	{r3, r4, r5, lr}
+  584df6:	2400      	movs	r4, #0
+
+======================================================================
+RELEVANT am_hal_gpio_pinconfig CALL AT 0x00584E10
+======================================================================
+  584df8:	4d13      	ldr	r5, [pc, #76]	@ (0x584e48)
+  584dfa:	6828      	ldr	r0, [r5, #0]
+  584dfc:	2800      	cmp	r0, #0
+  584dfe:	d101      	bne.n	0x584e04
+  584e00:	2001      	movs	r0, #1
+  584e02:	e015      	b.n	0x584e30
+  584e04:	2000      	movs	r0, #0
+  584e06:	4911      	ldr	r1, [pc, #68]	@ (0x584e4c)
+  584e08:	7008      	strb	r0, [r1, #0]
+  584e0a:	4820      	ldr	r0, [pc, #128]	@ (0x584e8c)
+  584e0c:	6801      	ldr	r1, [r0, #0]
+  584e0e:	2002      	movs	r0, #2
+  584e10:	f6fc f87c 	bl	0x480f0c
+  584e14:	4304      	orrs	r4, r0
+  584e16:	481e      	ldr	r0, [pc, #120]	@ (0x584e90)
+  584e18:	6801      	ldr	r1, [r0, #0]
+  584e1a:	2000      	movs	r0, #0
+  584e1c:	f6fc f876 	bl	0x480f0c
+  584e20:	4304      	orrs	r4, r0
+  584e22:	2201      	movs	r2, #1
+  584e24:	2102      	movs	r1, #2
+
+======================================================================
+RELEVANT am_hal_gpio_pinconfig CALL AT 0x00584E1C
+======================================================================
+  584e02:	e015      	b.n	0x584e30
+  584e04:	2000      	movs	r0, #0
+  584e06:	4911      	ldr	r1, [pc, #68]	@ (0x584e4c)
+  584e08:	7008      	strb	r0, [r1, #0]
+  584e0a:	4820      	ldr	r0, [pc, #128]	@ (0x584e8c)
+  584e0c:	6801      	ldr	r1, [r0, #0]
+  584e0e:	2002      	movs	r0, #2
+  584e10:	f6fc f87c 	bl	0x480f0c
+  584e14:	4304      	orrs	r4, r0
+  584e16:	481e      	ldr	r0, [pc, #120]	@ (0x584e90)
+  584e18:	6801      	ldr	r1, [r0, #0]
+  584e1a:	2000      	movs	r0, #0
+  584e1c:	f6fc f876 	bl	0x480f0c
+  584e20:	4304      	orrs	r4, r0
+  584e22:	2201      	movs	r2, #1
+  584e24:	2102      	movs	r1, #2
+  584e26:	6828      	ldr	r0, [r5, #0]
+  584e28:	f008 fec6 	bl	0x58dbb8
+  584e2c:	4304      	orrs	r4, r0
+  584e2e:	0020      	movs	r0, r4
+  584e30:	bd32      	pop	{r1, r4, r5, pc}
+
+RELEVANT PINCONFIG CALLS DUMPED = 9
+
+======================================================================
+RAW UART BASE CONSTANT LOCATIONS
+======================================================================
+UART0 VALUE=0x40039000  FILE_OFF=0x0014CE64  VA=0x00584E44
+UART0 VALUE=0x40039000  FILE_OFF=0x00156470  VA=0x0058E450
+UART0 VALUE=0x40039000  FILE_OFF=0x00156868  VA=0x0058E848
+UART0 VALUE=0x40039000  FILE_OFF=0x00156964  VA=0x0058E944
+UART0 raw constant count = 4
+UART1 raw constant count = 0
+UART2 raw constant count = 0
+UART3 raw constant count = 0
+GPIO  VALUE=0x40010000  FILE_OFF=0x0004975C  VA=0x0048173C
+GPIO  VALUE=0x40010000  FILE_OFF=0x00297412  VA=0x006CF3F2
+GPIO  VALUE=0x40010000  FILE_OFF=0x0029E2A6  VA=0x006D6286
+GPIO  VALUE=0x40010000  FILE_OFF=0x002A6AF1  VA=0x006DEAD1
+GPIO raw constant count = 4
+
+======================================================================
+END
+======================================================================
+STATIC ANALYSIS ONLY
+NO COM PORT OPENED
+NO RESET
+NO GLASSES OR CASE ACCESSED
+NO FLASH WRITE

@@ -1,0 +1,133 @@
+============================================================
+G2 IAR CHANNEL-2 DECOMPRESSION V2
+============================================================
+
+SHA256              = 36c5b0e499a68ac2493a497bdab9740fd3e7027730c26a9094eca47268a27863
+SOURCE VA           = 0x0079189E
+COMPRESSED SIZE     = 0x2A70 (10864)
+COMPRESSED CONSUMED = 0x2A70 (10864)
+DECOMPRESSED SIZE   = 0x4558 (17752)
+TOKENS              = 2610
+LITERAL BYTES       = 4882
+MATCH BYTES         = 12870
+UNKNOWN MATCH BYTES = 0
+
+============================================================
+FIRST 20 TOKENS - DECODER SELF-CHECK
+============================================================
+src+0x0000 token=0x12 lit=1 litbytes=[00] matchcode=1 distance=0x1 copy=3 out=0x1->0x4 nextsrc=0x3
+src+0x0003 token=0xF0 lit=3 litbytes=[0b 02 00] matchcode=19 distance=0x1 copy=21 out=0x7->0x1C nextsrc=0xA
+src+0x000A token=0x20 lit=8 litbytes=[28 07 00 20 f0 3f 07 20] matchcode=2 distance=0x1E copy=4 out=0x24->0x28 nextsrc=0x15
+src+0x0015 token=0xC3 lit=2 litbytes=[ff 37] matchcode=12 distance=0x24 copy=14 out=0x2A->0x38 nextsrc=0x19
+src+0x0019 token=0x92 lit=1 litbytes=[0a] matchcode=9 distance=0xF copy=11 out=0x39->0x44 nextsrc=0x1C
+src+0x001C token=0xF3 lit=2 litbytes=[04 01] matchcode=18 distance=0x40 copy=20 out=0x46->0x5A nextsrc=0x21
+src+0x0021 token=0x10 lit=5 litbytes=[ff 01 51 c4 43] matchcode=1 distance=0x1D copy=3 out=0x5F->0x62 nextsrc=0x29
+src+0x0029 token=0x72 lit=1 litbytes=[00] matchcode=7 distance=0x4 copy=9 out=0x63->0x6C nextsrc=0x2C
+src+0x002C token=0x43 lit=2 litbytes=[87 05] matchcode=4 distance=0x8 copy=6 out=0x6E->0x74 nextsrc=0x30
+src+0x0030 token=0x52 lit=1 litbytes=[01] matchcode=5 distance=0x4 copy=7 out=0x75->0x7C nextsrc=0x33
+src+0x0033 token=0x43 lit=2 litbytes=[00 46] matchcode=4 distance=0x4 copy=6 out=0x7E->0x84 nextsrc=0x37
+src+0x0037 token=0x12 lit=1 litbytes=[87] matchcode=1 distance=0xD copy=3 out=0x85->0x88 nextsrc=0x3A
+src+0x003A token=0x21 lit=0 litbytes=[] matchcode=2 distance=0xF copy=4 out=0x88->0x8C nextsrc=0x3C
+src+0x003C token=0x52 lit=1 litbytes=[05] matchcode=5 distance=0x4 copy=7 out=0x8D->0x94 nextsrc=0x3F
+src+0x003F token=0x43 lit=2 litbytes=[04 42] matchcode=4 distance=0x4 copy=6 out=0x96->0x9C nextsrc=0x43
+src+0x0043 token=0x20 lit=4 litbytes=[87 01 08 00] matchcode=2 distance=0x5B copy=4 out=0xA0->0xA4 nextsrc=0x4A
+src+0x004A token=0x31 lit=0 litbytes=[] matchcode=3 distance=0x5F copy=5 out=0xA4->0xA9 nextsrc=0x4C
+src+0x004C token=0x11 lit=0 litbytes=[] matchcode=1 distance=0x10 copy=3 out=0xA9->0xAC nextsrc=0x4E
+src+0x004E token=0x21 lit=0 litbytes=[] matchcode=2 distance=0x4 copy=4 out=0xAC->0xB0 nextsrc=0x50
+src+0x0050 token=0xF0 lit=3 litbytes=[87 01 0c] matchcode=17 distance=0x14 copy=19 out=0xB3->0xC6 nextsrc=0x57
+
+EXPECTED FIRST TOKEN:
+  token=0x12
+  literals=1
+  literal byte=00
+  matchcode=1
+  distance=1
+  copy=3
+  resulting first four output bytes = 00 00 00 00
+
+============================================================
+CHANNEL 2 ENTRY
+============================================================
+UART TABLE BASE     = 0x20000D2C
+CHANNEL 2 VA        = 0x20000D64
+CHANNEL 2 OFFSET    = 0xD64
+
+RAW:
+02 00 00 00 00 00 00 00 70 60 78 00 DC 0C 00 20 0C 0D 00 20 00 00 00 00 00 00 00 00
+
++0x00 module          = 0x00000002
++0x04 handle-init     = 0x00000000
++0x08 gpio-descriptor = 0x00786070
++0x0C uart-config     = 0x20000CDC
++0x10 field10         = 0x20000D0C
++0x14 field14         = 0x00000000
++0x18 field18         = 0x00000000
+
+============================================================
+GPIO DESCRIPTOR
+============================================================
+LOCATION = STOCK MRAM
+ADDRESS  = 0x00786070
+RAW      = 2A 00 00 00 2C 00 00 00 04 00 00 00 04 00 00 00 49 00 00 00 45 00 00 00 05 00 00 00 05 00 00 00
+
++0x00 = 0x0000002A
++0x04 = 0x0000002C
++0x08 = 0x00000004
++0x0C = 0x00000004
++0x10 = 0x00000049
++0x14 = 0x00000045
++0x18 = 0x00000005
++0x1C = 0x00000005
+
+ALREADY-TRACED PINCONFIG LAYOUT:
+PIN[0]    = 42
+PIN[1]    = 44
+CONFIG[0] = 0x00000004
+CONFIG[1] = 0x00000004
+
+============================================================
+UART CONFIG
+============================================================
+LOCATION = INITIALIZED RAM
+ADDRESS  = 0x20000CDC
+RAW      = 40 42 0F 00 03 02 00 00 00 00 02 02 00 00 00 00 00 84 03 00 03 02 00 00 00 00 02 02 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 20 9C 0B 20 00 00 00 00 00 00 00 00 00 00 00 00 20 A0 0B 20
+
++0x00 = 0x000F4240
++0x04 = 0x00000203
++0x08 = 0x02020000
++0x0C = 0x00000000
++0x10 = 0x00038400
++0x14 = 0x00000203
++0x18 = 0x02020000
++0x1C = 0x00000000
++0x20 = 0x00000000
++0x24 = 0x00000000
++0x28 = 0x00000000
++0x2C = 0x200B9C20
++0x30 = 0x00000000
++0x34 = 0x00000000
++0x38 = 0x00000000
++0x3C = 0x200BA020
+
+============================================================
+FACTORY RECOVERY ROUTE COMPARISON
+============================================================
+Apollo factory recovery:
+  physical UART module = 0
+  GPIO pair            = {30,55}
+
+NORMAL CHANNEL MODULE = 2
+NORMAL GPIO PAIR       = {42,44}
+UART0 MODULE MATCH     = NO
+GPIO30/GPIO55 MATCH    = NO
+
+============================================================
+RECOVERY ROUTE RESULT = NOT AN EXACT FACTORY-RECOVERY MATCH
+============================================================
+
+OFFLINE ONLY
+NO COM PORT
+NO USB ACCESS
+NO CASE RESET
+NO GLASSES ACCESS
+NO FLASH WRITE

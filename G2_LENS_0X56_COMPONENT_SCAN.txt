@@ -1,0 +1,117 @@
+﻿============================================================
+G2 LENS 0x56 STOCK COMPONENT SCAN
+============================================================
+
+CONTAINER = C:\Users\danxt\StudioProjects\g2flash\g2_2.2.6.10.bin
+SHA256    = f4dfb0b49ad3de3c2daf17f8a27a157c3dc98411d6a0d3ab2cfd0918f41b9afa
+COMPONENTS = 6
+
+TARGET CASE->LENS FRAME:
+  5A A5 FF 05 56 01 03 01 00 5E
+TARGET PAYLOAD:
+  56 01 03 01 00
+
+OFFLINE ONLY
+NO COM PORT
+NO CASE RESET
+NO GLASSES ACCESS
+NO FLASH WRITE
+
+============================================================
+COMPONENT #0
+============================================================
+ID             = 0x00000001
+NAME           = firmware/codec.bin
+CONTAINER OFF  = 0x000000B0
+TOC SIZE       = 0x0004FA4C (326220)
+PAYLOAD SIZE   = 0x0004F9CC (326092)
+EXACT PAYLOAD  = 0
+EXACT FRAME    = 0
+5A A5 FF       = 0
+CMP #0x56      = 0
+ALL IMM #0x56  = 0
+
+============================================================
+COMPONENT #1
+============================================================
+ID             = 0x00000002
+NAME           = firmware/ble_em9305.bin
+CONTAINER OFF  = 0x0004FAFC
+TOC SIZE       = 0x00033C6C (212076)
+PAYLOAD SIZE   = 0x00033BEC (211948)
+EXACT PAYLOAD  = 0
+EXACT FRAME    = 0
+5A A5 FF       = 0
+CMP #0x56      = 0
+ALL IMM #0x56  = 0
+
+============================================================
+COMPONENT #2
+============================================================
+ID             = 0x00000003
+NAME           = firmware/touch.bin
+CONTAINER OFF  = 0x00083768
+TOC SIZE       = 0x00008720 (34592)
+PAYLOAD SIZE   = 0x000086A0 (34464)
+EXACT PAYLOAD  = 0
+EXACT FRAME    = 0
+5A A5 FF       = 0
+CMP #0x56      = 0
+ALL IMM #0x56  = 0
+
+============================================================
+COMPONENT #3
+============================================================
+ID             = 0x00000004
+NAME           = firmware/box.bin
+CONTAINER OFF  = 0x0008BE88
+TOC SIZE       = 0x0000DA68 (55912)
+PAYLOAD SIZE   = 0x0000D9E8 (55784)
+EXACT PAYLOAD  = 0
+EXACT FRAME    = 0
+5A A5 FF       = 0
+CMP #0x56      = 0
+ALL IMM #0x56  = 0
+
+============================================================
+COMPONENT #4
+============================================================
+ID             = 0x00000005
+NAME           = ota/s200_bootloader.bin
+CONTAINER OFF  = 0x000998F0
+TOC SIZE       = 0x000244F7 (148727)
+PAYLOAD SIZE   = 0x00024477 (148599)
+EXACT PAYLOAD  = 0
+EXACT FRAME    = 0
+5A A5 FF       = 0
+CMP #0x56      = 0
+ALL IMM #0x56  = 0
+
+============================================================
+COMPONENT #5
+============================================================
+ID             = 0x00000006
+NAME           = ota/s200_firmware_ota.bin
+CONTAINER OFF  = 0x000BDDE7
+TOC SIZE       = 0x0035C3C4 (3523524)
+PAYLOAD SIZE   = 0x0035C344 (3523396)
+EXACT PAYLOAD  = 0
+EXACT FRAME    = 0
+5A A5 FF       = 0
+CMP #0x56      = 0
+ALL IMM #0x56  = 0
+
+============================================================
+SUMMARY
+============================================================
+INTERESTING COMPONENTS = 0
+TOTAL CMP #0x56        = 0
+TOTAL EXACT PAYLOAD    = 0
+TOTAL EXACT FRAME      = 0
+
+DECISION TARGET:
+Determine whether command 0x56 is implemented in:
+  A) normal s200 application only, or
+  B) a separate bootloader/updater/recovery component.
+
+NO HARDWARE WAS TOUCHED.

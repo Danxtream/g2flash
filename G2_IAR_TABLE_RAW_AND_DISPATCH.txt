@@ -1,0 +1,560 @@
+﻿G2 IAR TABLE RAW + DISPATCH TRACE
+=================================
+
+SHA256      = 36c5b0e499a68ac2493a497bdab9740fd3e7027730c26a9094eca47268a27863
+IMAGE BASE  = 0x00437FE0
+TABLE START = 0x0075D3C8
+TABLE END   = 0x0075D410
+TABLE SIZE  = 0x48 (72)
+
+Already-known recovery target:
+  UART runtime table = 0x20000D2C
+  channel 2          = 0x20000D64..0x20000D7F
+
+============================================================
+RAW 72-BYTE IAR TABLE
+============================================================
+0x0075D3C8: 57 CC E9 FF F0 0A 07 00 58 45 00 20 D4 0F 24 00
+0x0075D3D8: 70 BE 13 20 00 00 00 00 3F CD CD FF 2A 6F 03 00
+0x0075D3E8: 2C 00 00 00 40 00 00 00 2F CD CD FF AA 44 03 00
+0x0075D3F8: E0 54 00 00 00 00 00 20 1F CD CD FF F3 22 03 00
+0x0075D408: 4E 43 00 00 00 00 08 20
+
+============================================================
+TABLE WORDS + RELATIVE TARGET CANDIDATES
+============================================================
+0x0075D3C8 : U32=0xFFE9CC57  I32=-1455017  REL=0x005FA01F CODE=0x005FA01E
+0x0075D3CC : U32=0x00070AF0  I32=461552
+0x0075D3D0 : U32=0x20004558  I32=536888664
+0x0075D3D4 : U32=0x00240FD4  I32=2363348
+0x0075D3D8 : U32=0x2013BE70  I32=538164848
+0x0075D3DC : U32=0x00000000  I32=0  REL=0x0075D3DC CODE=0x0075D3DC
+0x0075D3E0 : U32=0xFFCDCD3F  I32=-3289793  REL=0x0043A11F CODE=0x0043A11E
+0x0075D3E4 : U32=0x00036F2A  I32=225066  REL=0x0079430E CODE=0x0079430E
+0x0075D3E8 : U32=0x0000002C  I32=44  REL=0x0075D414 CODE=0x0075D414
+0x0075D3EC : U32=0x00000040  I32=64  REL=0x0075D42C CODE=0x0075D42C
+0x0075D3F0 : U32=0xFFCDCD2F  I32=-3289809  REL=0x0043A11F CODE=0x0043A11E
+0x0075D3F4 : U32=0x000344AA  I32=214186  REL=0x0079189E CODE=0x0079189E
+0x0075D3F8 : U32=0x000054E0  I32=21728  REL=0x007628D8 CODE=0x007628D8
+0x0075D3FC : U32=0x20000000  I32=536870912
+0x0075D400 : U32=0xFFCDCD1F  I32=-3289825  REL=0x0043A11F CODE=0x0043A11E
+0x0075D404 : U32=0x000322F3  I32=205555  REL=0x0078F6F7 CODE=0x0078F6F6
+0x0075D408 : U32=0x0000434E  I32=17230  REL=0x00761756 CODE=0x00761756
+0x0075D40C : U32=0x20080000  I32=537395200
+
+============================================================
+PLAUSIBLE IAR DISPATCH ROUTINES
+============================================================
+
+------------------------------------------------------------
+TARGET = 0x0043A11E
+------------------------------------------------------------
+  43a110:	ee00 0a10 	vmov	s0, r0
+  43a114:	eeb7 0ac0 	vcvt.f64.f32	d0, s0
+  43a118:	ec51 0b10 	vmov	r0, r1, d0
+  43a11c:	4770      	bx	lr
+  43a11e:	b4f0      	push	{r4, r5, r6, r7}
+  43a120:	4602      	mov	r2, r0
+  43a122:	6810      	ldr	r0, [r2, #0]
+  43a124:	6895      	ldr	r5, [r2, #8]
+  43a126:	1813      	adds	r3, r2, r0
+  43a128:	6850      	ldr	r0, [r2, #4]
+  43a12a:	eb03 0450 	add.w	r4, r3, r0, lsr #1
+  43a12e:	07c0      	lsls	r0, r0, #31
+  43a130:	bf48      	it	mi
+  43a132:	444d      	addmi	r5, r9
+  43a134:	42a3      	cmp	r3, r4
+  43a136:	d02d      	beq.n	0x43a194
+  43a138:	f813 6b01 	ldrb.w	r6, [r3], #1
+  43a13c:	f016 0003 	ands.w	r0, r6, #3
+  43a140:	bf04      	itt	eq
+  43a142:	f813 0b01 	ldrbeq.w	r0, [r3], #1
+  43a146:	1cc0      	addeq	r0, r0, #3
+  43a148:	0931      	lsrs	r1, r6, #4
+  43a14a:	290f      	cmp	r1, #15
+  43a14c:	d107      	bne.n	0x43a15e
+  43a14e:	f813 1b01 	ldrb.w	r1, [r3], #1
+  43a152:	310f      	adds	r1, #15
+  43a154:	e003      	b.n	0x43a15e
+  43a156:	f813 7b01 	ldrb.w	r7, [r3], #1
+  43a15a:	f805 7b01 	strb.w	r7, [r5], #1
+  43a15e:	1e40      	subs	r0, r0, #1
+  43a160:	d1f9      	bne.n	0x43a156
+  43a162:	2900      	cmp	r1, #0
+  43a164:	d0e6      	beq.n	0x43a134
+  43a166:	f813 0b01 	ldrb.w	r0, [r3], #1
+  43a16a:	f3c6 0681 	ubfx	r6, r6, #2, #2
+  43a16e:	2e03      	cmp	r6, #3
+  43a170:	bf08      	it	eq
+  43a172:	f813 6b01 	ldrbeq.w	r6, [r3], #1
+  43a176:	eb00 2006 	add.w	r0, r0, r6, lsl #8
+  43a17a:	4240      	negs	r0, r0
+  43a17c:	4428      	add	r0, r5
+  43a17e:	2600      	movs	r6, #0
+  43a180:	1eb7      	subs	r7, r6, #2
+  43a182:	428f      	cmp	r7, r1
+  43a184:	bf1e      	ittt	ne
+  43a186:	f810 7b01 	ldrbne.w	r7, [r0], #1
+  43a18a:	f805 7b01 	strbne.w	r7, [r5], #1
+  43a18e:	1c76      	addne	r6, r6, #1
+  43a190:	d1f6      	bne.n	0x43a180
+  43a192:	e7cf      	b.n	0x43a134
+
+------------------------------------------------------------
+TARGET = 0x005FA01E
+------------------------------------------------------------
+  5fa016:	bf18      	it	ne
+  5fa018:	2400      	movne	r4, #0
+  5fa01a:	4620      	mov	r0, r4
+  5fa01c:	bd32      	pop	{r1, r4, r5, pc}
+  5fa01e:	b430      	push	{r4, r5}
+  5fa020:	2500      	movs	r5, #0
+  5fa022:	e012      	b.n	0x5fa04a
+  5fa024:	f850 2b04 	ldr.w	r2, [r0], #4
+  5fa028:	07d3      	lsls	r3, r2, #31
+  5fa02a:	bf44      	itt	mi
+  5fa02c:	444a      	addmi	r2, r9
+  5fa02e:	1e52      	submi	r2, r2, #1
+  5fa030:	1f09      	subs	r1, r1, #4
+  5fa032:	2904      	cmp	r1, #4
+  5fa034:	f842 5b04 	str.w	r5, [r2], #4
+  5fa038:	d2fa      	bcs.n	0x5fa030
+  5fa03a:	4613      	mov	r3, r2
+  5fa03c:	078c      	lsls	r4, r1, #30
+  5fa03e:	bf44      	itt	mi
+  5fa040:	8015      	strhmi	r5, [r2, #0]
+  5fa042:	1c9b      	addmi	r3, r3, #2
+  5fa044:	07c9      	lsls	r1, r1, #31
+  5fa046:	bf48      	it	mi
+  5fa048:	701d      	strbmi	r5, [r3, #0]
+  5fa04a:	f850 1b04 	ldr.w	r1, [r0], #4
+  5fa04e:	2900      	cmp	r1, #0
+  5fa050:	d1e8      	bne.n	0x5fa024
+  5fa052:	bc30      	pop	{r4, r5}
+  5fa054:	4770      	bx	lr
+  5fa056:	0001      	movs	r1, r0
+  5fa058:	4a36      	ldr	r2, [pc, #216]	@ (0x5fa134)
+  5fa05a:	6811      	ldr	r1, [r2, #0]
+  5fa05c:	6808      	ldr	r0, [r1, #0]
+  5fa05e:	c806      	ldmia	r0!, {r1, r2}
+  5fa060:	f381 880b 	msr	PSPLIM, r1
+  5fa064:	2102      	movs	r1, #2
+  5fa066:	f381 8814 	msr	CONTROL, r1
+  5fa06a:	3020      	adds	r0, #32
+  5fa06c:	f380 8809 	msr	PSP, r0
+  5fa070:	f3bf 8f6f 	isb	sy
+  5fa074:	f04f 0000 	mov.w	r0, #0
+  5fa078:	f380 8811 	msr	BASEPRI, r0
+  5fa07c:	4710      	bx	r2
+  5fa07e:	f3ef 8014 	mrs	r0, CONTROL
+  5fa082:	f020 0001 	bic.w	r0, r0, #1
+  5fa086:	f380 8814 	msr	CONTROL, r0
+  5fa08a:	4770      	bx	lr
+  5fa08c:	482a      	ldr	r0, [pc, #168]	@ (0x5fa138)
+  5fa08e:	6800      	ldr	r0, [r0, #0]
+  5fa090:	6800      	ldr	r0, [r0, #0]
+
+------------------------------------------------------------
+TARGET = 0x0075D3DC
+------------------------------------------------------------
+  75d3d4:	0fd4      	lsrs	r4, r2, #31
+  75d3d6:	0024      	movs	r4, r4
+  75d3d8:	be70      	bkpt	0x0070
+  75d3da:	2013      	movs	r0, #19
+  75d3dc:	0000      	movs	r0, r0
+  75d3de:	0000      	movs	r0, r0
+  75d3e0:	cd3f      	ldmia	r5, {r0, r1, r2, r3, r4, r5}
+  75d3e2:	ffcd 6f2a 			@ <UNDEFINED> instruction: 0xffcd6f2a
+  75d3e6:	0003      	movs	r3, r0
+  75d3e8:	002c      	movs	r4, r5
+  75d3ea:	0000      	movs	r0, r0
+  75d3ec:	0040      	lsls	r0, r0, #1
+  75d3ee:	0000      	movs	r0, r0
+  75d3f0:	cd2f      	ldmia	r5, {r0, r1, r2, r3, r5}
+  75d3f2:	ffcd 44aa 	vraddhn.i16	d20, <illegal reg q14.5>, q13
+  75d3f6:	0003      	movs	r3, r0
+  75d3f8:	54e0      	strb	r0, [r4, r3]
+  75d3fa:	0000      	movs	r0, r0
+  75d3fc:	0000      	movs	r0, r0
+  75d3fe:	2000      	movs	r0, #0
+  75d400:	cd1f      	ldmia	r5!, {r0, r1, r2, r3, r4}
+  75d402:	ffcd 22f3 	vrshr.u64	q9, <illegal reg q9.5>, #51
+  75d406:	0003      	movs	r3, r0
+  75d408:	434e      	muls	r6, r1
+  75d40a:	0000      	movs	r0, r0
+  75d40c:	0000      	movs	r0, r0
+  75d40e:	2008      	movs	r0, #8
+  75d410:	6741      	str	r1, [r0, #116]	@ 0x74
+  75d412:	6e69      	ldr	r1, [r5, #100]	@ 0x64
+  75d414:	5467      	strb	r7, [r4, r1]
+  75d416:	7365      	strb	r5, [r4, #13]
+  75d418:	5f74      	ldrsh	r4, [r6, r5]
+  75d41a:	6f63      	ldr	r3, [r4, #116]	@ 0x74
+  75d41c:	6d6d      	ldr	r5, [r5, #84]	@ 0x54
+  75d41e:	6e6f      	ldr	r7, [r5, #100]	@ 0x64
+  75d420:	645f      	str	r7, [r3, #68]	@ 0x44
+  75d422:	7461      	strb	r1, [r4, #17]
+  75d424:	5f61      	ldrsh	r1, [r4, r5]
+  75d426:	6168      	str	r0, [r5, #20]
+  75d428:	646e      	str	r6, [r5, #68]	@ 0x44
+  75d42a:	656c      	str	r4, [r5, #84]	@ 0x54
+  75d42c:	0072      	lsls	r2, r6, #1
+  75d42e:	0000      	movs	r0, r0
+  75d430:	6741      	str	r1, [r0, #116]	@ 0x74
+  75d432:	6e69      	ldr	r1, [r5, #100]	@ 0x64
+  75d434:	5467      	strb	r7, [r4, r1]
+  75d436:	7365      	strb	r5, [r4, #13]
+  75d438:	2074      	movs	r0, #116	@ 0x74
+  75d43a:	6572      	str	r2, [r6, #84]	@ 0x54
+  75d43c:	7663      	strb	r3, [r4, #25]
+
+------------------------------------------------------------
+TARGET = 0x0075D414
+------------------------------------------------------------
+  75d40c:	0000      	movs	r0, r0
+  75d40e:	2008      	movs	r0, #8
+  75d410:	6741      	str	r1, [r0, #116]	@ 0x74
+  75d412:	6e69      	ldr	r1, [r5, #100]	@ 0x64
+  75d414:	5467      	strb	r7, [r4, r1]
+  75d416:	7365      	strb	r5, [r4, #13]
+  75d418:	5f74      	ldrsh	r4, [r6, r5]
+  75d41a:	6f63      	ldr	r3, [r4, #116]	@ 0x74
+  75d41c:	6d6d      	ldr	r5, [r5, #84]	@ 0x54
+  75d41e:	6e6f      	ldr	r7, [r5, #100]	@ 0x64
+  75d420:	645f      	str	r7, [r3, #68]	@ 0x44
+  75d422:	7461      	strb	r1, [r4, #17]
+  75d424:	5f61      	ldrsh	r1, [r4, r5]
+  75d426:	6168      	str	r0, [r5, #20]
+  75d428:	646e      	str	r6, [r5, #68]	@ 0x44
+  75d42a:	656c      	str	r4, [r5, #84]	@ 0x54
+  75d42c:	0072      	lsls	r2, r6, #1
+  75d42e:	0000      	movs	r0, r0
+  75d430:	6741      	str	r1, [r0, #116]	@ 0x74
+  75d432:	6e69      	ldr	r1, [r5, #100]	@ 0x64
+  75d434:	5467      	strb	r7, [r4, r1]
+  75d436:	7365      	strb	r5, [r4, #13]
+  75d438:	2074      	movs	r0, #116	@ 0x74
+  75d43a:	6572      	str	r2, [r6, #84]	@ 0x54
+  75d43c:	7663      	strb	r3, [r4, #25]
+  75d43e:	6420      	str	r0, [r4, #64]	@ 0x40
+  75d440:	7461      	strb	r1, [r4, #17]
+  75d442:	2061      	movs	r0, #97	@ 0x61
+  75d444:	656c      	str	r4, [r5, #84]	@ 0x54
+  75d446:	206e      	movs	r0, #110	@ 0x6e
+  75d448:	203d      	movs	r0, #61	@ 0x3d
+  75d44a:	6425      	str	r5, [r4, #64]	@ 0x40
+  75d44c:	0000      	movs	r0, r0
+  75d44e:	0000      	movs	r0, r0
+  75d450:	6761      	str	r1, [r4, #116]	@ 0x74
+  75d452:	6e69      	ldr	r1, [r5, #100]	@ 0x64
+  75d454:	5f67      	ldrsh	r7, [r4, r5]
+  75d456:	6574      	str	r4, [r6, #84]	@ 0x54
+  75d458:	7473      	strb	r3, [r6, #17]
+  75d45a:	705f      	strb	r7, [r3, #1]
+  75d45c:	6761      	str	r1, [r4, #116]	@ 0x74
+  75d45e:	5f65      	ldrsh	r5, [r4, r5]
+  75d460:	7665      	strb	r5, [r4, #25]
+  75d462:	6e65      	ldr	r5, [r4, #100]	@ 0x64
+  75d464:	5f74      	ldrsh	r4, [r6, r5]
+  75d466:	6168      	str	r0, [r5, #20]
+  75d468:	646e      	str	r6, [r5, #68]	@ 0x44
+  75d46a:	656c      	str	r4, [r5, #84]	@ 0x54
+  75d46c:	0072      	lsls	r2, r6, #1
+  75d46e:	0000      	movs	r0, r0
+
+------------------------------------------------------------
+TARGET = 0x0075D42C
+------------------------------------------------------------
+  75d424:	5f61      	ldrsh	r1, [r4, r5]
+  75d426:	6168      	str	r0, [r5, #20]
+  75d428:	646e      	str	r6, [r5, #68]	@ 0x44
+  75d42a:	656c      	str	r4, [r5, #84]	@ 0x54
+  75d42c:	0072      	lsls	r2, r6, #1
+  75d42e:	0000      	movs	r0, r0
+  75d430:	6741      	str	r1, [r0, #116]	@ 0x74
+  75d432:	6e69      	ldr	r1, [r5, #100]	@ 0x64
+  75d434:	5467      	strb	r7, [r4, r1]
+  75d436:	7365      	strb	r5, [r4, #13]
+  75d438:	2074      	movs	r0, #116	@ 0x74
+  75d43a:	6572      	str	r2, [r6, #84]	@ 0x54
+  75d43c:	7663      	strb	r3, [r4, #25]
+  75d43e:	6420      	str	r0, [r4, #64]	@ 0x40
+  75d440:	7461      	strb	r1, [r4, #17]
+  75d442:	2061      	movs	r0, #97	@ 0x61
+  75d444:	656c      	str	r4, [r5, #84]	@ 0x54
+  75d446:	206e      	movs	r0, #110	@ 0x6e
+  75d448:	203d      	movs	r0, #61	@ 0x3d
+  75d44a:	6425      	str	r5, [r4, #64]	@ 0x40
+  75d44c:	0000      	movs	r0, r0
+  75d44e:	0000      	movs	r0, r0
+  75d450:	6761      	str	r1, [r4, #116]	@ 0x74
+  75d452:	6e69      	ldr	r1, [r5, #100]	@ 0x64
+  75d454:	5f67      	ldrsh	r7, [r4, r5]
+  75d456:	6574      	str	r4, [r6, #84]	@ 0x54
+  75d458:	7473      	strb	r3, [r6, #17]
+  75d45a:	705f      	strb	r7, [r3, #1]
+  75d45c:	6761      	str	r1, [r4, #116]	@ 0x74
+  75d45e:	5f65      	ldrsh	r5, [r4, r5]
+  75d460:	7665      	strb	r5, [r4, #25]
+  75d462:	6e65      	ldr	r5, [r4, #100]	@ 0x64
+  75d464:	5f74      	ldrsh	r4, [r6, r5]
+  75d466:	6168      	str	r0, [r5, #20]
+  75d468:	646e      	str	r6, [r5, #68]	@ 0x44
+  75d46a:	656c      	str	r4, [r5, #84]	@ 0x54
+  75d46c:	0072      	lsls	r2, r6, #1
+  75d46e:	0000      	movs	r0, r0
+  75d470:	615b      	str	r3, [r3, #20]
+  75d472:	6967      	ldr	r7, [r4, #20]
+  75d474:	676e      	str	r6, [r5, #116]	@ 0x74
+  75d476:	745f      	strb	r7, [r3, #17]
+  75d478:	7365      	strb	r5, [r4, #13]
+  75d47a:	5d74      	ldrb	r4, [r6, r5]
+  75d47c:	6572      	str	r2, [r6, #84]	@ 0x54
+  75d47e:	6563      	str	r3, [r4, #84]	@ 0x54
+  75d480:	7669      	strb	r1, [r5, #25]
+  75d482:	6465      	str	r5, [r4, #68]	@ 0x44
+  75d484:	6520      	str	r0, [r4, #80]	@ 0x50
+  75d486:	6576      	str	r6, [r6, #84]	@ 0x54
+
+------------------------------------------------------------
+TARGET = 0x00761756
+------------------------------------------------------------
+  76174e:	0000      	movs	r0, r0
+  761750:	4449      	add	r1, r9
+  761752:	445f      	add	r7, fp
+  761754:	5341      	strh	r1, [r0, r5]
+  761756:	4248      	negs	r0, r1
+  761758:	414f      	adcs	r7, r1
+  76175a:	4452      	add	r2, sl
+  76175c:	4e5f      	ldr	r6, [pc, #380]	@ (0x7618dc)
+  76175e:	5745      	ldrsb	r5, [r0, r5]
+  761760:	5f53      	ldrsh	r3, [r2, r5]
+  761762:	4f4e      	ldr	r7, [pc, #312]	@ (0x76189c)
+  761764:	555f      	strb	r7, [r3, r5]
+  761766:	4450      	add	r0, sl
+  761768:	5441      	strb	r1, [r0, r1]
+  76176a:	5345      	strh	r5, [r0, r5]
+  76176c:	0000      	movs	r0, r0
+  76176e:	0000      	movs	r0, r0
+  761770:	4449      	add	r1, r9
+  761772:	445f      	add	r7, fp
+  761774:	5341      	strh	r1, [r0, r5]
+  761776:	4248      	negs	r0, r1
+  761778:	414f      	adcs	r7, r1
+  76177a:	4452      	add	r2, sl
+  76177c:	4e5f      	ldr	r6, [pc, #380]	@ (0x7618fc)
+  76177e:	5745      	ldrsb	r5, [r0, r5]
+  761780:	5f53      	ldrsh	r3, [r2, r5]
+  761782:	5055      	str	r5, [r2, r1]
+  761784:	4144      	adcs	r4, r0
+  761786:	4954      	ldr	r1, [pc, #336]	@ (0x7618d8)
+  761788:	474e      	bx	r9
+  76178a:	4e5f      	ldr	r6, [pc, #380]	@ (0x761908)
+  76178c:	5745      	ldrsb	r5, [r0, r5]
+  76178e:	0053      	lsls	r3, r2, #1
+  761790:	4449      	add	r1, r9
+  761792:	445f      	add	r7, fp
+  761794:	5341      	strh	r1, [r0, r5]
+  761796:	4248      	negs	r0, r1
+  761798:	414f      	adcs	r7, r1
+  76179a:	4452      	add	r2, sl
+  76179c:	515f      	str	r7, [r3, r5]
+  76179e:	4955      	ldr	r1, [pc, #340]	@ (0x7618f4)
+  7617a0:	4b43      	ldr	r3, [pc, #268]	@ (0x7618b0)
+  7617a2:	494c      	ldr	r1, [pc, #304]	@ (0x7618d4)
+  7617a4:	5453      	strb	r3, [r2, r1]
+  7617a6:	4c5f      	ldr	r4, [pc, #380]	@ (0x761924)
+  7617a8:	414f      	adcs	r7, r1
+  7617aa:	4944      	ldr	r1, [pc, #272]	@ (0x7618bc)
+  7617ac:	474e      	bx	r9
+  7617ae:	0000      	movs	r0, r0
+  7617b0:	4449      	add	r1, r9
+
+------------------------------------------------------------
+TARGET = 0x007628D8
+------------------------------------------------------------
+  7628d0:	4256      	negs	r6, r2
+  7628d2:	5355      	strh	r5, [r2, r5]
+  7628d4:	7220      	strb	r0, [r4, #8]
+  7628d6:	6d65      	ldr	r5, [r4, #84]	@ 0x54
+  7628d8:	766f      	strb	r7, [r5, #25]
+  7628da:	6465      	str	r5, [r4, #68]	@ 0x44
+  7628dc:	2820      	cmp	r0, #32
+  7628de:	6964      	ldr	r4, [r4, #20]
+  7628e0:	6373      	str	r3, [r6, #52]	@ 0x34
+  7628e2:	6e6f      	ldr	r7, [r5, #100]	@ 0x64
+  7628e4:	656e      	str	r6, [r5, #84]	@ 0x54
+  7628e6:	7463      	strb	r3, [r4, #17]
+  7628e8:	6465      	str	r5, [r4, #68]	@ 0x44
+  7628ea:	0a29      	lsrs	r1, r5, #8
+  7628ec:	0000      	movs	r0, r0
+  7628ee:	0000      	movs	r0, r0
+  7628f0:	5245      	strh	r5, [r0, r1]
+  7628f2:	4f52      	ldr	r7, [pc, #328]	@ (0x762a3c)
+  7628f4:	3a52      	subs	r2, #82	@ 0x52
+  7628f6:	6e20      	ldr	r0, [r4, #96]	@ 0x60
+  7628f8:	6672      	str	r2, [r6, #100]	@ 0x64
+  7628fa:	665f      	str	r7, [r3, #100]	@ 0x64
+  7628fc:	6575      	str	r5, [r6, #84]	@ 0x54
+  7628fe:	5f6c      	ldrsh	r4, [r5, r5]
+  762900:	6167      	str	r7, [r4, #20]
+  762902:	6775      	str	r5, [r6, #116]	@ 0x74
+  762904:	5f65      	ldrsh	r5, [r4, r5]
+  762906:	6e69      	ldr	r1, [r5, #100]	@ 0x64
+  762908:	7469      	strb	r1, [r5, #17]
+  76290a:	253d      	movs	r5, #61	@ 0x3d
+  76290c:	0a64      	lsrs	r4, r4, #9
+  76290e:	0000      	movs	r0, r0
+  762910:	6e5b      	ldr	r3, [r3, #100]	@ 0x64
+  762912:	6d70      	ldr	r0, [r6, #84]	@ 0x54
+  762914:	5f78      	ldrsh	r0, [r7, r5]
+  762916:	7264      	strb	r4, [r4, #9]
+  762918:	7669      	strb	r1, [r5, #25]
+  76291a:	7265      	strb	r5, [r4, #9]
+  76291c:	205d      	movs	r0, #93	@ 0x5d
+  76291e:	4220      	tst	r0, r4
+  762920:	6975      	ldr	r5, [r6, #20]
+  762922:	646c      	str	r4, [r5, #68]	@ 0x44
+  762924:	6420      	str	r0, [r4, #64]	@ 0x40
+  762926:	7461      	strb	r1, [r4, #17]
+  762928:	3a65      	subs	r2, #101	@ 0x65
+  76292a:	2520      	movs	r5, #32
+  76292c:	0a73      	lsrs	r3, r6, #9
+  76292e:	0000      	movs	r0, r0
+  762930:	6e5b      	ldr	r3, [r3, #100]	@ 0x64
+  762932:	6d70      	ldr	r0, [r6, #84]	@ 0x54
+
+------------------------------------------------------------
+TARGET = 0x0078F6F6
+------------------------------------------------------------
+  78f6e8:	0008      	movs	r0, r1
+	...
+  78f6f2:	0200      	lsls	r0, r0, #8
+  78f6f4:	0011      	movs	r1, r2
+  78f6f6:	f201 00ff 	addw	r0, r1, #255	@ 0xff
+  78f6fa:	f101 01ff 	add.w	r1, r1, #255	@ 0xff
+  78f6fe:	fff1 f101 	vceq.i8	d31, d1, #0
+  78f702:	01ff      	lsls	r7, r7, #7
+  78f704:	fff1 f101 	vceq.i8	d31, d1, #0
+  78f708:	01ff      	lsls	r7, r7, #7
+  78f70a:	fff1 f101 	vceq.i8	d31, d1, #0
+  78f70e:	01ff      	lsls	r7, r7, #7
+  78f710:	fff1 f101 	vceq.i8	d31, d1, #0
+  78f714:	01ff      	lsls	r7, r7, #7
+  78f716:	fff1 f101 	vceq.i8	d31, d1, #0
+  78f71a:	01ff      	lsls	r7, r7, #7
+  78f71c:	fff1 f101 	vceq.i8	d31, d1, #0
+  78f720:	01ff      	lsls	r7, r7, #7
+  78f722:	fff1 f101 	vceq.i8	d31, d1, #0
+  78f726:	01ff      	lsls	r7, r7, #7
+  78f728:	fff1 f101 	vceq.i8	d31, d1, #0
+  78f72c:	01ff      	lsls	r7, r7, #7
+  78f72e:	fff1 f101 	vceq.i8	d31, d1, #0
+  78f732:	01ff      	lsls	r7, r7, #7
+  78f734:	fff1 f101 	vceq.i8	d31, d1, #0
+  78f738:	01ff      	lsls	r7, r7, #7
+  78f73a:	fff1 f101 	vceq.i8	d31, d1, #0
+  78f73e:	01ff      	lsls	r7, r7, #7
+  78f740:	fff1 f101 	vceq.i8	d31, d1, #0
+  78f744:	01ff      	lsls	r7, r7, #7
+  78f746:	fff1 f101 	vceq.i8	d31, d1, #0
+  78f74a:	01ff      	lsls	r7, r7, #7
+  78f74c:	fff1 f101 	vceq.i8	d31, d1, #0
+  78f750:	01ff      	lsls	r7, r7, #7
+  78f752:	fff1 f101 	vceq.i8	d31, d1, #0
+  78f756:	01ff      	lsls	r7, r7, #7
+  78f758:	fff1 f101 	vceq.i8	d31, d1, #0
+  78f75c:	01ff      	lsls	r7, r7, #7
+  78f75e:	fff1 f101 	vceq.i8	d31, d1, #0
+  78f762:	01ff      	lsls	r7, r7, #7
+  78f764:	fff1 f101 	vceq.i8	d31, d1, #0
+  78f768:	01ff      	lsls	r7, r7, #7
+  78f76a:	fff1 f101 	vceq.i8	d31, d1, #0
+  78f76e:	01ff      	lsls	r7, r7, #7
+  78f770:	fff1 f101 	vceq.i8	d31, d1, #0
+  78f774:	01ff      	lsls	r7, r7, #7
+  78f776:	fff1 f101 	vceq.i8	d31, d1, #0
+  78f77a:	01ff      	lsls	r7, r7, #7
+  78f77c:	fff1 f101 	vceq.i8	d31, d1, #0
+  78f780:	01ff      	lsls	r7, r7, #7
+
+------------------------------------------------------------
+TARGET = 0x0079189E
+------------------------------------------------------------
+  791892:	fff1 f101 	vceq.i8	d31, d1, #0
+  791896:	01ff      	lsls	r7, r7, #7
+  791898:	fff1 f101 	vceq.i8	d31, d1, #0
+  79189c:	016d      	lsls	r5, r5, #5
+  79189e:	0012      	movs	r2, r2
+  7918a0:	f001 0401 	and.w	r4, r1, #1
+  7918a4:	020b      	lsls	r3, r1, #8
+  7918a6:	0100      	lsls	r0, r0, #4
+  7918a8:	0620      	lsls	r0, r4, #24
+  7918aa:	0728      	lsls	r0, r5, #28
+  7918ac:	2000      	movs	r0, #0
+  7918ae:	3ff0      	subs	r7, #240	@ 0xf0
+  7918b0:	2007      	movs	r0, #7
+  7918b2:	c31e      	stmia	r3!, {r1, r2, r3, r4}
+  7918b4:	37ff      	adds	r7, #255	@ 0xff
+  7918b6:	9224      	str	r2, [sp, #144]	@ 0x90
+  7918b8:	0f0a      	lsrs	r2, r1, #28
+  7918ba:	03f3      	lsls	r3, r6, #15
+  7918bc:	0104      	lsls	r4, r0, #4
+  7918be:	1040      	asrs	r0, r0, #1
+  7918c0:	ff03 5101 	vrhadd.u8	d5, d3, d1
+  7918c4:	43c4      	mvns	r4, r0
+  7918c6:	721d      	strb	r5, [r3, #8]
+  7918c8:	0400      	lsls	r0, r0, #16
+  7918ca:	8743      	strh	r3, [r0, #58]	@ 0x3a
+  7918cc:	0805      	lsrs	r5, r0, #32
+  7918ce:	0152      	lsls	r2, r2, #5
+  7918d0:	4304      	orrs	r4, r0
+  7918d2:	4600      	mov	r0, r0
+  7918d4:	1204      	asrs	r4, r0, #8
+  7918d6:	0d87      	lsrs	r7, r0, #22
+  7918d8:	0f21      	lsrs	r1, r4, #28
+  7918da:	0552      	lsls	r2, r2, #21
+  7918dc:	4304      	orrs	r4, r0
+  7918de:	4204      	tst	r4, r0
+  7918e0:	2004      	movs	r0, #4
+  7918e2:	8702      	strh	r2, [r0, #56]	@ 0x38
+  7918e4:	0801      	lsrs	r1, r0, #32
+  7918e6:	5b00      	ldrh	r0, [r0, r4]
+  7918e8:	5f31      	ldrsh	r1, [r6, r4]
+  7918ea:	1011      	asrs	r1, r2, #32
+  7918ec:	0421      	lsls	r1, r4, #16
+  7918ee:	01f0      	lsls	r0, r6, #7
+  7918f0:	8702      	strh	r2, [r0, #56]	@ 0x38
+  7918f2:	0c01      	lsrs	r1, r0, #16
+  7918f4:	f214 1002 			@ <UNDEFINED> instruction: 0xf2141002
+  7918f8:	f214 1402 			@ <UNDEFINED> instruction: 0xf2141402
+  7918fc:	f214 1802 			@ <UNDEFINED> instruction: 0xf2141802
+  791900:	f214 1c00 			@ <UNDEFINED> instruction: 0xf2141c00
+  791904:	1214      	asrs	r4, r2, #8
+
+------------------------------------------------------------
+TARGET = 0x0079430E
+------------------------------------------------------------
+  794306:	0172      	lsls	r2, r6, #5
+  794308:	1201      	asrs	r1, r0, #8
+  79430a:	9caa      	ldr	r4, [sp, #680]	@ 0x2a8
+  79430c:	5502      	strb	r2, [r0, r4]
+  79430e:	0b10      	lsrs	r0, r2, #12
+  794310:	3801      	subs	r0, #1
+  794312:	d1fd      	bne.n	0x794310
+  794314:	4770      	bx	lr
+  794316:	4770      	bx	lr
+  794318:	f850 3b04 	ldr.w	r3, [r0], #4
+  79431c:	0441      	lsls	r1, r0, #17
+  79431e:	0130      	lsls	r0, r6, #4
+  794320:	3a01      	subs	r2, #1
+  794322:	10f9      	asrs	r1, r7, #3
+
+============================================================
+END
+============================================================
+OFFLINE ONLY
+NO COM PORT
+NO RESET
+NO GLASSES ACCESS
+NO FLASH WRITE
